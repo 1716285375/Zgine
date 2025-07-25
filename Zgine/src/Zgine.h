@@ -1,10 +1,8 @@
 #pragma once
 
 
-#include <stdio.h>
-
 #include "Zgine/Application.h"
-
+#include "Zgine/Log.h"
 // --- Entry Point ---
 #include "Zgine/EntryPoint.h"
 // --- Entry Point ---

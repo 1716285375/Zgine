@@ -5,7 +5,10 @@
 extern Zgine::Application* Zgine::CreateApplication();
 
 int main(int argc, char** argv) {
-	printf("Zgine Start!\n");
+	Zgine::Log::Init();
+	ZG_CORE_WARN("Initialized Log!");
+	ZG_INFO("Hello Zgine!");
+
 	auto app = Zgine::CreateApplication();
 	app->Run();
 	delete app;
