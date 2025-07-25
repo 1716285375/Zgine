@@ -1,0 +1,3 @@
+[submodule "Zgine/vendor/spdlog"]
+	path = Zgine/vendor/spdlog
+	url = https://github.com/gabime/spdlog
