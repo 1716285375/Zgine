@@ -1,15 +1,24 @@
 #include "Application.h"
 
-Zgine::Application::Application()
-{
+#include "Events/ApplicationEvent.h"
+#include "Zgine/Log.h"
 
-}
 
-Zgine::Application::~Application()
-{
-}
+namespace Zgine {
+	Application::Application()
+	{
 
-void Zgine::Application::Run()
-{
-	while (true);
+	}
+
+	Application::~Application()
+	{
+	}
+
+	void Application::Run()
+	{
+		WindowResizeEvent e(1280, 720);
+		ZG_TRACE(e.ToString());  // ÏÔÊ½×ª»»Îª×Ö·û´®
+
+		while (true);
+	}
 }
