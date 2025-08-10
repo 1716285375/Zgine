@@ -1,6 +1,3 @@
 [submodule "Zgine/vendor/spdlog"]
 	path = Zgine/vendor/spdlog
 	url = https://github.com/gabime/spdlog
-[submodule "Zgine/vendor/fmt"]
-	path = Zgine/vendor/fmt
-	url = https://github.com/fmtlib/fmt.git
