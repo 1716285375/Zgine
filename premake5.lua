@@ -13,6 +13,11 @@ workspace "Zgine"
 
     -- 项目根目录（根据实际情况修改，确保与你的路径一致）
     rootdir = "C:/C/Zgine"
+	
+	IncludeDir = {}
+	IncludeDir["GLFW"] = "Zgine/vendor/glfw/include"
+	
+	include "Zgine/vendor/glfw"
 
 project "Zgine"
     location "Zgine"
@@ -23,6 +28,9 @@ project "Zgine"
     targetdir ("%{rootdir}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{rootdir}/bin-int/" .. outputdir .. "/%{prj.name}")
     
+	pchheader "zgpch.h"
+	pchsource "Zgine/src/zgpch.cpp"
+	
     files
     {
         "%{prj.name}/src/**.h",
@@ -32,8 +40,15 @@ project "Zgine"
     includedirs
     {
         "%{prj.name}/src",
-        "%{prj.name}/vendor/spdlog/include"
+        "%{prj.name}/vendor/spdlog/include",
+		"%{IncludeDir.GLFW}"
     }
+	
+	links
+	{
+		"GLFW",
+		"opengl32.lib"
+	}
 
     filter "system:windows"
         cppdialect "C++17"
