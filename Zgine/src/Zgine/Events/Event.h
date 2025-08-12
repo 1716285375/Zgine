@@ -2,10 +2,6 @@
 
 #include "Zgine/Core.h"
 
-#include <string>
-#include <functional>
-
-
 
 namespace Zgine {
 
