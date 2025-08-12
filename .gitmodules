@@ -1,3 +1,7 @@
 [submodule "Zgine/vendor/spdlog"]
 	path = Zgine/vendor/spdlog
 	url = https://github.com/gabime/spdlog
+
+[submodule "Zgine/vendor/glfw"]
+    path = Zgine/vendor/glfw
+    url = https://github.com/1716285375/glfw.git
