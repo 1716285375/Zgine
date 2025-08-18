@@ -40,12 +40,72 @@
 # debug information files
 *.dwo
 
-# visual studio
-.vs
-
+# Visual Studio
+.vs/
 *.filters
 *.vcxproj
 *.sln
+*.suo
+*.user
+*.userosscache
+*.sdf
+*.cache
+*.vspscc
+*.vssscc
+*.csproj.user
+*.csproj.vspscc
+*.csproj.vssscc
+*.vbproj.user
+*.vbproj.vspscc
+*.vbproj.vssscc
+*.fsproj.user
+*.fsproj.vspscc
+*.fsproj.vssscc
+*.dbmdl
+*.dbmdl.user
+*.dbmdl.vspscc
+*.dbmdl.vssscc
+*.sqlproj.user
+*.sqlproj.vspscc
+*.sqlproj.vssscc
+*.wixproj.user
+*.wixproj.vspscc
+*.wixproj.vssscc
+*.shfbproj.user
+*.shfbproj.vspscc
+*.shfbproj.vssscc
+*.csproj.user
+*.csproj.vspscc
+*.csproj.vssscc
+*.vbproj.user
+*.vbproj.vspscc
+*.vbproj.vssscc
+*.fsproj.user
+*.fsproj.vspscc
+*.fsproj.vssscc
+*.dbmdl.user
+*.dbmdl.vspscc
+*.dbmdl.vssscc
+*.sqlproj.user
+*.sqlproj.vspscc
+*.sqlproj.vssscc
+*.wixproj.user
+*.wixproj.vspscc
+*.wixproj.vssscc
+*.shfbproj.user
+*.shfbproj.vspscc
+*.shfbproj.vssscc
+*.csproj.user
+*.csproj.vspscc
+*.csproj.vssscc
+*.vbproj.user
+*.vbproj.vspscc
+*.vbproj.vssscc
+*.fsproj.user
+*.fsproj.vspscc
+*.fsproj.vssscc
+*.dbmdl.user
+*.dbmdl.vspscc
 
 # binaray
 bin/
