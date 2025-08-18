@@ -1,3 +1,4 @@
+#include "zgpch.h"
 #include <Zgine.h>
 
 class Sandbox : public Zgine::Application {

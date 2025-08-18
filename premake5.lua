@@ -59,7 +59,8 @@ project "Zgine"
         defines
         {
             "ZG_PLATFORM_WINDOWS",
-            "ZG_BUILD_DLL"
+            "ZG_BUILD_DLL",
+			"ZG_ENABLE_ASSERTS"
         }
         
         -- 拷贝到目标路径：C:\C\Zgine\bin\Debug-windows-x86_64\Sandbox

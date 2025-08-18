@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Zgine/Core.h"
-
+#include <spdlog/fmt/fmt.h>
 
 namespace Zgine {
 
@@ -13,7 +13,6 @@ namespace Zgine {
 		AppTick, AppUpdate, AppRender,
 		KeyPressed, KeyReleased,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
-
 	};
 
 	enum EventCategory
@@ -79,8 +78,22 @@ namespace Zgine {
 	{
 		return os << e.ToString();
 	}
+
+
 }
 
+// fmt::formatter 特化
+template <>
+struct fmt::formatter<Zgine::Event> {
+	constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
+
+	template <typename FormatContext>
+	auto format(const Zgine::Event& e, FormatContext& ctx) const ->
+		decltype(ctx.out()) {
+		// 使用 Event 的 ToString 方法
+		return fmt::format_to(ctx.out(), "{}", e.ToString());
+	}
+};
 
 //template <>
 //struct fmt::v11::formatter<Zgine::Event> {
