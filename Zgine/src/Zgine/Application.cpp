@@ -3,7 +3,7 @@
 
 #include "Zgine/Log.h"
 
-#include <GLFW/glfw3.h>
+#include <glad/glad.h>
 
 
 namespace Zgine {
@@ -26,13 +26,15 @@ namespace Zgine {
 		// TODO: modern c++ use lambda
 		dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent& e) { return OnWindowClose(e); });
 
-		ZG_CORE_TRACE(e);
-	}
+		ZG_CORE_TRACE("{0}", e);
 
-	bool Application::OnWindowClose(WindowCloseEvent& e)
-	{
-		m_Running = false;
-		return true;
+		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
+			(*--it)->OnEvent(e);
+			if (e.Handled()) {
+				break;
+			}
+
+		}
 	}
 
 	void Application::Run()
@@ -40,7 +42,28 @@ namespace Zgine {
 		while (m_Running) {
 			glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
 			glClear(GL_COLOR_BUFFER_BIT);
+
+			for (auto* layer : m_LayerStack) {
+				layer->OnUpdate();
+			}
+
 			m_Window->OnUpdate();
 		}
+	}
+
+	void Application::PushLayer(Layer* layer)
+	{
+		m_LayerStack.PushLayer(layer);
+	}
+
+	void Application::PopLayer(Layer* layer)
+	{
+		m_LayerStack.PopLayer(layer);
+	}
+
+	bool Application::OnWindowClose(WindowCloseEvent& e)
+	{
+		m_Running = false;
+		return true;
 	}
 }
