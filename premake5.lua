@@ -16,8 +16,10 @@ workspace "Zgine"
 	
 	IncludeDir = {}
 	IncludeDir["GLFW"] = "Zgine/vendor/glfw/include"
+	IncludeDir["GLAD"] = "Zgine/vendor/glad/include"
 	
 	include "Zgine/vendor/glfw"
+	include "Zgine/vendor/glad"
 
 project "Zgine"
     location "Zgine"
@@ -41,12 +43,14 @@ project "Zgine"
     {
         "%{prj.name}/src",
         "%{prj.name}/vendor/spdlog/include",
-		"%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLAD}"
     }
 	
 	links
 	{
 		"GLFW",
+		"GLAD",
 		"opengl32.lib"
 	}
 
@@ -60,7 +64,8 @@ project "Zgine"
         {
             "ZG_PLATFORM_WINDOWS",
             "ZG_BUILD_DLL",
-			"ZG_ENABLE_ASSERTS"
+			"ZG_ENABLE_ASSERTS",
+			"GLFW_INCLUDE_NONE"
         }
         
         -- 拷贝到目标路径：C:\C\Zgine\bin\Debug-windows-x86_64\Sandbox
@@ -74,14 +79,17 @@ project "Zgine"
     
     filter "configurations:Debug"
         defines "ZG_DEBUG"
+		buildoptions "/MDd"
         symbols "On"
         
     filter "configurations:Release"
         defines "ZG_RELEASE"
+		buildoptions "/MD"
         symbols "On"
         
     filter "configurations:Dist"
         defines "ZG_DIST"
+		buildoptions "/MD"
         symbols "On"
         
 project "Sandbox"
@@ -117,12 +125,15 @@ project "Sandbox"
         
     filter "configurations:Debug"
         defines "ZG_DEBUG"
+		buildoptions "/MDd"
         symbols "On"
         
     filter "configurations:Release"
         defines "ZG_RELEASE"
+		buildoptions "/MD"
         symbols "On"
         
     filter "configurations:Dist"
         defines "ZG_DIST"
+		buildoptions "/MD"
         symbols "On"
