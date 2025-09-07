@@ -6,10 +6,14 @@ class ExampleLayer : public Zgine::Layer {
 		ExampleLayer() : Layer("Example") {}
 		virtual ~ExampleLayer() {}
 		void OnUpdate() override {
-			//ZG_INFO("ExampleLayer Update");
+			ZG_INFO("ExampleLayer Update");
+
+			if (Zgine::Input::IsKeyPressed(ZG_KEY_TAB)) {
+				ZG_INFO("Tab key is pressed!");
+			}
 		}
 		void OnEvent(Zgine::Event& event) override {
-			ZG_TRACE("{0}", event);
+			//ZG_TRACE("{0}", event);
 		}
 };;
 
@@ -18,6 +22,7 @@ class Sandbox : public Zgine::Application {
 		Sandbox()
 		{
 			PushLayer(new ExampleLayer());
+			PushOverlay(new Zgine::ImGuiLayer());
 		}
 		~Sandbox() {};
 };

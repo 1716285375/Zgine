@@ -11,7 +11,7 @@ namespace Zgine {
 		None = 0,
 		WindowClose, WindowResize, WindowFocus, WindowLostFocus, WindowMoved,
 		AppTick, AppUpdate, AppRender,
-		KeyPressed, KeyReleased,
+		KeyPressed, KeyReleased, KeyTyped,
 		MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled
 	};
 
@@ -66,7 +66,7 @@ namespace Zgine {
 		{
 			if (m_Event.GetEventType() == T::GetStaticType())
 			{
-				m_Event.m_Handled = func(*(T*)&m_Event);
+				m_Event.m_Handled = func(*static_cast<T*>(& m_Event));
 				return true;
 			}
 			return false;
@@ -96,14 +96,3 @@ struct fmt::formatter<Zgine::Event> {
 		return fmt::format_to(ctx.out(), "{}", e.ToString());
 	}
 };
-
-//template <>
-//struct fmt::v11::formatter<Zgine::Event> {
-//	constexpr auto parse(format_parse_context& ctx) { return ctx.begin(); }
-//
-//	template <typename FormatContext>
-//	auto format(const Zgine::Event& obj, FormatContext& ctx) const {
-//		using fmt::v11::format_to;
-//		return format_to(ctx.out(), "{}", obj.toString());
-//	}
-//};
