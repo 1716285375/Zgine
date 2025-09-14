@@ -5,6 +5,26 @@
 
 #include <glad/glad.h>
 
+#include "Zgine/Layer.h"
+#include "imgui.h"
+
+class ExampleLayerImGuiTest : public Zgine::Layer
+{
+public:
+	ExampleLayerImGuiTest()
+		: Layer("Example")
+	{
+
+	}
+	virtual ~ExampleLayerImGuiTest() {}
+
+	virtual void OnImGuiRender() override
+	{
+		ImGui::Begin("Hello, ImGui!");
+		ImGui::Text("This is some useful text.");
+		ImGui::End();
+	}
+};
 
 namespace Zgine {
 	
@@ -19,6 +39,9 @@ namespace Zgine {
 		//m_Window->(BIND_EVENT_FN(Application::OnEvent));
 		// TODO: modern c++ use lambda
 		m_Window->SetEventCallback([this](Event& e) {OnEvent(e);});
+		m_ImGuiLayer = new ImGuiLayer();
+		PushOverlay(m_ImGuiLayer);
+		PushOverlay(new ExampleLayerImGuiTest());
 	}
 
 	Application::~Application()
@@ -32,7 +55,7 @@ namespace Zgine {
 		// TODO: modern c++ use lambda
 		dispatcher.Dispatch<WindowCloseEvent>([this](WindowCloseEvent& e) { return OnWindowClose(e); });
 
-		ZG_CORE_TRACE("{0}", e);
+		//ZG_CORE_TRACE("{0}", e);
 
 		for (auto it = m_LayerStack.end(); it != m_LayerStack.begin(); ) {
 			(*--it)->OnEvent(e);
@@ -47,14 +70,18 @@ namespace Zgine {
 	{
 		while (m_Running) {
 			glClearColor(0.878f, 1.0f, 1.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
+			glClear(GL_COLOR_BUFFER_BIT); 
 
 			for (auto* layer : m_LayerStack) {
 				layer->OnUpdate();
 			}
 
-			auto [x, y] = Input::GetMousePosition();
-			//ZG_CORE_TRACE("{0}, {1}", x, y);
+			m_ImGuiLayer->Begin();
+			for (auto* layer : m_LayerStack) {
+				layer->OnImGuiRender();
+			}
+			m_ImGuiLayer->End();
+			
 			m_Window->OnUpdate();
 		}
 	}

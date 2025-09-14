@@ -1,11 +1,15 @@
 #pragma once
 
 #include "Core.h"
-#include "Events/Event.h"
-#include "Zgine/Events/ApplicationEvent.h"
-#include "Zgine/LayerStack.h"
 
 #include "Window.h"	
+#include "Zgine/LayerStack.h"
+#include "Zgine/Events/Event.h"
+#include "Zgine/Events/ApplicationEvent.h"
+
+#include "Zgine/ImGui/ImGuiLayer.h"
+
+
 
 namespace Zgine {
 	class ZG_API Application {
@@ -30,6 +34,7 @@ namespace Zgine {
 		bool OnWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 	private:

@@ -18,6 +18,7 @@ workspace "Zgine"
 	IncludeDir["GLFW"] = "Zgine/vendor/glfw/include"
 	IncludeDir["GLAD"] = "Zgine/vendor/glad/include"
 	IncludeDir["ImGui"] = "Zgine/vendor/imgui"
+	IncludeDir["glm"] = "Zgine/vendor/glm"
 	
 	
 	include "Zgine/vendor/glfw"
@@ -39,7 +40,9 @@ project "Zgine"
     files
     {
         "%{prj.name}/src/**.h",
-        "%{prj.name}/src/**.cpp"
+        "%{prj.name}/src/**.cpp",
+        "%{prj.name}/vendor/glm/glm/**.hpp",
+        "%{prj.name}/vendor/glm/glm/**.inl"
     }
     
     includedirs
@@ -48,7 +51,8 @@ project "Zgine"
         "%{prj.name}/vendor/spdlog/include",
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+        "%{IncludeDir.glm}"
     }
 	
 	links
@@ -115,10 +119,16 @@ project "Sandbox"
     includedirs
     {
         "Zgine/src",
-        "Zgine/vendor/spdlog/include"
+        "Zgine/vendor/spdlog/include",
+        "%{IncludeDir.ImGui}",
+        "%{IncludeDir.glm}"
     }
     
-    links { "Zgine" }
+    links
+    {
+        "Zgine",
+        "ImGui"
+    }
 
     filter "system:windows"
         cppdialect "C++17"
