@@ -118,7 +118,7 @@ namespace Zgine {
 				}
 			}
 
-			// Ó³Éä GLFW °´¼üµ½ ImGui °´¼ü
+			// map GLFW key to ImGui key
 			ImGuiIO& io = ImGui::GetIO();
 			ImGuiKey imgui_key = ImGuiKey_None;
 			switch (key)

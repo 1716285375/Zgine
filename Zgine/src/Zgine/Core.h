@@ -2,14 +2,18 @@
 
 
 #ifdef ZG_PLATFORM_WINDOWS
+#if HZ_DYMATIC_LINK
+
 	#ifdef ZG_BUILD_DLL
 		#define ZG_API __declspec(dllexport)
 	#else
 		#define ZG_API __declspec(dllimport)
 	#endif
 #else
+	#define ZG_API
+#endif
+#else
 	#error Zgine only support Windows!
-
 #endif
 
 #ifdef ZG_ENABLE_ASSERTS

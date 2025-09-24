@@ -1,6 +1,6 @@
 -- 1. 项目定义
 project "GLAD"
-    kind "StaticLib"       -- 与 add_library(... STATIC)
+    kind "StaticLib"
     language "C"
     cdialect "C99"
     staticruntime "On"
@@ -23,16 +23,13 @@ project "GLAD"
 -- 3. 平台分支
     filter "system:windows"
         systemversion "latest"
-		buildoptions { "-std=+c11", "-lgdi32" }
-		staticruntime "On"
+		staticruntime "on"
 
 -- 4. 通用编译选项
     filter "configurations:Debug"
-        symbols "On"
-		buildoptions "/MT"
         runtime "Debug"
+        symbols "on"
 
     filter "configurations:Release"
-        optimize "On"
-		buildoptions "/MT"
         runtime "Release"
+        optimize "on"

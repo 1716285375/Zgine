@@ -84,7 +84,7 @@ namespace Zgine {
 
 }
 
-// fmt::formatter 特化
+// fmt::formatter Specialization
 template <>
 struct fmt::formatter<Zgine::Event> {
 	constexpr auto parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
@@ -92,7 +92,7 @@ struct fmt::formatter<Zgine::Event> {
 	template <typename FormatContext>
 	auto format(const Zgine::Event& e, FormatContext& ctx) const ->
 		decltype(ctx.out()) {
-		// 使用 Event 的 ToString 方法
+		// use Event function ToString 
 		return fmt::format_to(ctx.out(), "{}", e.ToString());
 	}
 };

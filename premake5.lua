@@ -27,9 +27,11 @@ workspace "Zgine"
 	
 project "Zgine"
     location "Zgine"
-    kind "SharedLib"
+    kind "StaticLib"
     language "C++"
-    
+    cppdialect "C++17"
+    staticruntime "on"
+
     -- 目标文件输出目录：C:\C\Zgine\bin\Debug-windows-x86_64\Zgine
     targetdir ("%{rootdir}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{rootdir}/bin-int/" .. outputdir .. "/%{prj.name}")
@@ -74,37 +76,29 @@ project "Zgine"
             "ZG_PLATFORM_WINDOWS",
             "ZG_BUILD_DLL",
 			"ZG_ENABLE_ASSERTS",
-			"GLFW_INCLUDE_NONE"
+			"GLFW_INCLUDE_NONE",
+            "_CRT_SECURE_NO_WARNINGS"
         }
         
-        -- 拷贝到目标路径：C:\C\Zgine\bin\Debug-windows-x86_64\Sandbox
-        postbuildcommands
-        {
-            -- 确保目标目录存在
-            ("{MKDIR} \"%{rootdir}/bin/" .. outputdir .. "/Sandbox\""),
-            -- 拷贝Zgine.dll到指定目录
-            ("{COPY} \"%{cfg.buildtarget.abspath}\" \"%{rootdir}/bin/" .. outputdir .. "/Sandbox\"")
-        }
     
     filter "configurations:Debug"
         defines "ZG_DEBUG"
-		buildoptions "/MDd"
-        symbols "On"
+        symbols "on"
         
     filter "configurations:Release"
         defines "ZG_RELEASE"
-		buildoptions "/MD"
-        symbols "On"
+        symbols "on"
         
     filter "configurations:Dist"
         defines "ZG_DIST"
-		buildoptions "/MD"
-        symbols "On"
+        symbols "on"
         
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
     language "C++"
+    cppdialect "C++17"
+    staticruntime "on"
     
     -- Sandbox输出目录：C:\C\Zgine\bin\Debug-windows-x86_64\Sandbox
     targetdir ("%{rootdir}/bin/" .. outputdir .. "/%{prj.name}")
@@ -112,7 +106,7 @@ project "Sandbox"
     
     files
     {
-        "%{prj.name}/src/**.h",
+        "%{prj.name}/src/**.h", 
         "%{prj.name}/src/**.cpp"
     }
     
@@ -140,15 +134,12 @@ project "Sandbox"
         
     filter "configurations:Debug"
         defines "ZG_DEBUG"
-		buildoptions "/MDd"
-        symbols "On"
+        symbols "on"
         
     filter "configurations:Release"
         defines "ZG_RELEASE"
-		buildoptions "/MD"
-        symbols "On"
+        symbols "on"
         
     filter "configurations:Dist"
         defines "ZG_DIST"
-		buildoptions "/MD"
-        symbols "On"
+        symbols "on"
