@@ -68,7 +68,7 @@ namespace Zgine {
 
 	void ImGuiLayer::Begin()
 	{
-		ZG_INFO("ImGuiLayer::Begin called");
+		//ZG_INFO("ImGuiLayer::Begin called");
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();

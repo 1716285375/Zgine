@@ -3,6 +3,8 @@
 #include "Zgine/Window.h"
 #include <GLFW/glfw3.h>
 
+#include "Zgine/Renderer/GraphicsContext.h"
+
 namespace  Zgine {
 
 	class WindowsWindow : public Window
@@ -29,6 +31,7 @@ namespace  Zgine {
 		virtual void Shutdonw();
 	private:
 		GLFWwindow* m_Window;
+		GraphicsContext* m_Context;
 
 		struct WindowData
 		{
