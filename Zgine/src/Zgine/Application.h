@@ -9,6 +9,8 @@
 
 #include "Zgine/ImGui/ImGuiLayer.h"
 
+#include "Zgine/Renderer/Shader.h"
+
 
 
 namespace Zgine {
@@ -40,6 +42,8 @@ namespace Zgine {
 		static Application* s_Instance;
 
 		unsigned int m_VertexArray, m_VertexBuffer, m_IndexBuffer;
+
+		std::unique_ptr<Shader> m_Shader;
 	};
 
 	// To be defined in CLIENT
