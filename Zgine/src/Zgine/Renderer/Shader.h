@@ -10,7 +10,7 @@ namespace Zgine {
 		~Shader();
 
 		void Bind() const;
-		void UnBind() const;
+		void Unbind() const;
 
 	private:
 		uint32_t m_RendererID;
