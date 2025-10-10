@@ -40,6 +40,7 @@ namespace  Zgine {
 			bool VSync;
 
 			EventCallbackFn EventCallback;
+
 		};
 
 		WindowData m_Data;

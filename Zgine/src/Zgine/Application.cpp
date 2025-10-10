@@ -93,6 +93,8 @@ namespace Zgine {
 	Application::~Application()
 	{
 		m_Shader->Unbind();
+		m_VertexBuffer->Unbind();
+		m_IndexBuffer->Unbind();
 	}
 
 	void Application::OnEvent(Event& e)

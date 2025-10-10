@@ -19,6 +19,7 @@ namespace Zgine {
 					unsigned int height = 720)
 			: Title(title), Width(width), Height(height)
 		{
+			
 		}
 
 	};

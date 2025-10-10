@@ -7,6 +7,7 @@
 namespace Zgine {
 
 	Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc)
+		: m_RendererID(0)
 	{
 		// Create an empty vertex shader handle
 		GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -101,7 +102,7 @@ namespace Zgine {
 
 	Shader::~Shader()
 	{
-		glDeleteProgram(m_RendererID );
+		glDeleteProgram(m_RendererID);
 	}
 
 	void Shader::Bind() const

@@ -26,8 +26,9 @@ namespace Zgine {
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!");
-			case RendererAPI::OpenGL: return new OpenGLIndexBuffer(indices, size);
+			case RendererAPI::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); break;
+
+			case RendererAPI::OpenGL: return new OpenGLIndexBuffer(indices, size); break;
 		}
 
 		ZG_CORE_ASSERT(false, "Unknown RendererAPI!");
