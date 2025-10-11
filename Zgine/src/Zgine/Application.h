@@ -11,6 +11,7 @@
 
 #include "Zgine/Renderer/Shader.h"
 #include "Zgine/Renderer/Buffer.h"
+#include "Zgine/Renderer/VertexArray.h"
 
 
 
@@ -42,11 +43,11 @@ namespace Zgine {
 		LayerStack m_LayerStack;
 		static Application* s_Instance;
 
-		unsigned int m_VertexArray;
+		std::shared_ptr<Shader> m_Shader;
+		std::shared_ptr<VertexArray> m_VertexArray;
 
-		std::unique_ptr<Shader> m_Shader;
-		std::unique_ptr<VertexBuffer> m_VertexBuffer;
-		std::unique_ptr<IndexBuffer> m_IndexBuffer;
+		std::shared_ptr<Shader> m_BlueShader;
+		std::shared_ptr<VertexArray> m_SquaredVA;
 	};
 
 	// To be defined in CLIENT
