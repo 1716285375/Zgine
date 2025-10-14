@@ -3,10 +3,10 @@
 #include "Input.h"
 #include "Zgine/Log.h"
 
-#include <glad/glad.h>
-
 #include "Zgine/Layer.h"
 #include "imgui.h"
+#include "Zgine/Renderer/Renderer.h"
+
 
 class ExampleLayerImGuiTest : public Zgine::Layer
 {
@@ -185,16 +185,20 @@ namespace Zgine {
 	void Application::Run()
 	{
 		while (m_Running) {
-			glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT); 
+			
+			RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
+			RenderCommand::Clear();
+
+			Renderer::BeginScene();
 
 			m_BlueShader->Bind();
-			m_SquaredVA->Bind();
-			glDrawElements(GL_TRIANGLES, m_SquaredVA->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+			Renderer::Submit(m_SquaredVA);
 
 			m_Shader->Bind();
-			m_VertexArray->Bind();
-			glDrawElements(GL_TRIANGLES, m_VertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
+			Renderer::Submit(m_VertexArray);
+
+			Renderer::EndScene();
+
 
 			for (auto* layer : m_LayerStack) {
 				layer->OnUpdate();

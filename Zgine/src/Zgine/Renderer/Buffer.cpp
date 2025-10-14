@@ -1,6 +1,7 @@
 #include "zgpch.h"
 #include "Buffer.h"
 #include "Renderer.h"
+#include "RendererAPI.h"
 
 #include "Platform/OpenGL/OpenGLBuffer.h"
 
@@ -14,9 +15,9 @@ namespace Zgine {
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); break;
+			case RendererAPI::API::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); break;
 
-			case RendererAPI::OpenGL: return new OpenGLVertexBuffer(vertices, size); break;
+			case RendererAPI::API::OpenGL: return new OpenGLVertexBuffer(vertices, size); break;
 		}
 
 		ZG_CORE_ASSERT(false, "Unknown RendererAPI!");
@@ -27,9 +28,9 @@ namespace Zgine {
 	{
 		switch (Renderer::GetAPI())
 		{
-			case RendererAPI::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); break;
+			case RendererAPI::API::None: ZG_CORE_ASSERT(false, "RendererAPI::None is currently not supported!"); break;
 
-			case RendererAPI::OpenGL: return new OpenGLIndexBuffer(indices, size); break;
+			case RendererAPI::API::OpenGL: return new OpenGLIndexBuffer(indices, size); break;
 		}
 
 		ZG_CORE_ASSERT(false, "Unknown RendererAPI!");
