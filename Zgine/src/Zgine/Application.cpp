@@ -7,6 +7,9 @@
 #include "imgui.h"
 #include "Zgine/Renderer/Renderer.h"
 
+#include "Zgine/KeyCodes.h"
+
+
 
 class ExampleLayerImGuiTest : public Zgine::Layer
 {
@@ -33,6 +36,7 @@ namespace Zgine {
 
 
 	Application::Application()
+		: m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
 	{
 		ZG_CORE_ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
@@ -99,6 +103,8 @@ namespace Zgine {
 			layout(location = 0) in vec3 a_Position; 
 			layout(location = 1 ) in vec4 a_Color; 
 
+			uniform mat4 u_ViewProjection;
+
 			out vec3 v_Position;
 			out vec4 v_Color;
 
@@ -106,7 +112,7 @@ namespace Zgine {
 			{
 				v_Position = a_Position;
 				v_Color = a_Color;
-				gl_Position = vec4(a_Position, 1.0);
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
 			}
 		)";
 
@@ -133,12 +139,14 @@ namespace Zgine {
 			
 			layout(location = 0) in vec3 a_Position; 
 
+			uniform mat4 u_ViewProjection;
+
 			out vec3 v_Position;
 
 			void main()
 			{
 				v_Position = a_Position;
-				gl_Position = vec4(a_Position, 1.0);
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
 			}
 		)";
 
@@ -184,18 +192,17 @@ namespace Zgine {
 
 	void Application::Run()
 	{
+		static glm::vec3 cameraPos(0.0f);
 		while (m_Running) {
 			
 			RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
 			RenderCommand::Clear();
 
-			Renderer::BeginScene();
+			m_Camera.SetPosition(cameraPos);
 
-			m_BlueShader->Bind();
-			Renderer::Submit(m_SquaredVA);
-
-			m_Shader->Bind();
-			Renderer::Submit(m_VertexArray);
+			Renderer::BeginScene(m_Camera);
+			Renderer::Submit(m_BlueShader, m_SquaredVA);
+			Renderer::Submit(m_Shader, m_VertexArray);
 
 			Renderer::EndScene();
 
@@ -211,6 +218,20 @@ namespace Zgine {
 			m_ImGuiLayer->End();
 			
 			m_Window->OnUpdate();
+
+			if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT))
+			{
+				cameraPos.x += 0.01f;
+			} else if (Zgine::Input::IsKeyPressed(ZG_KEY_RIGHT))
+			{
+				cameraPos.x -= 0.01f;
+			} else if (Zgine::Input::IsKeyPressed(ZG_KEY_UP))
+			{
+				cameraPos.y -= 0.01f;
+			} else if (Zgine::Input::IsKeyPressed(ZG_KEY_DOWN))
+			{
+				cameraPos.y += 0.01f;
+			}
 		}
 	}
 

@@ -12,6 +12,7 @@
 #include "Zgine/Renderer/Shader.h"
 #include "Zgine/Renderer/Buffer.h"
 #include "Zgine/Renderer/VertexArray.h"
+#include "Zgine/Renderer/OrthographicCamera.h"
 
 
 
@@ -48,6 +49,8 @@ namespace Zgine {
 
 		std::shared_ptr<Shader> m_BlueShader;
 		std::shared_ptr<VertexArray> m_SquaredVA;
+
+		OrthographicCamera m_Camera;
 	};
 
 	// To be defined in CLIENT
