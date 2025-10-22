@@ -1,4 +1,5 @@
 #include "MainControlLayer.h"
+#include "Zgine/Renderer/Renderer.h"
 
 namespace Sandbox {
 
@@ -6,7 +7,7 @@ namespace Sandbox {
 		: Layer("MainControlLayer"),
 		m_2DCamera(-1.6f, 1.6f, -0.9f, 0.9f),
 		m_3DCamera(45.0f, 1280.0f / 720.0f, 0.1f, 1000.0f),
-		m_2DCameraPosition(0.0f),
+		m_2DCameraPosition(0.0f, 0.0f, 0.0f),
 		m_2DCameraSpeed(1.0f),
 		m_3DCameraPosition(0.0f, 0.0f, 3.0f),
 		m_3DCameraRotation(0.0f),
@@ -55,6 +56,13 @@ namespace Sandbox {
 	{
 	}
 
+	void MainControlLayer::OnAttach()
+	{
+		// Initialize camera positions
+		m_2DCamera.SetPosition(m_2DCameraPosition);
+		m_3DCamera.SetPosition(m_3DCameraPosition);
+	}
+
 	void MainControlLayer::OnUpdate(Zgine::Timestep ts)
 	{
 		// Update time
@@ -77,7 +85,7 @@ namespace Sandbox {
 		// Render 2D scene if window is open
 		if (m_Show2DTestWindow)
 		{
-			Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
+			Zgine::Renderer::BeginScene(m_2DCamera);
 			
 			if (m_2DShowQuads)
 				Render2DBasicShapes();
@@ -88,13 +96,13 @@ namespace Sandbox {
 			if (m_2DAnimateCircles || m_2DAnimateQuads)
 				Render2DAnimatedShapes();
 			
-			Zgine::BatchRenderer2D::EndScene();
+			Zgine::Renderer::EndScene();
 		}
 
 		// Render 3D scene if window is open
 		if (m_Show3DTestWindow)
 		{
-			Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
+			Zgine::Renderer::BeginScene(m_3DCamera);
 			
 			if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
 				Render3DBasicShapes();
@@ -105,7 +113,7 @@ namespace Sandbox {
 			if (m_3DShowEnvironment)
 				Render3DEnvironment();
 			
-			Zgine::BatchRenderer3D::EndScene();
+			Zgine::Renderer::EndScene();
 		}
 	}
 

@@ -22,6 +22,7 @@ namespace Sandbox {
 		MainControlLayer();
 		virtual ~MainControlLayer();
 
+		virtual void OnAttach() override;
 		virtual void OnUpdate(Zgine::Timestep ts) override;
 		virtual void OnImGuiRender() override;
 
