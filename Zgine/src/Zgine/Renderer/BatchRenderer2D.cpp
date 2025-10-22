@@ -247,10 +247,16 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, float thickness, float fade)
 	{
+		DrawCircle(position, radius, color, 32, thickness, fade);
+	}
+
+	void BatchRenderer2D::DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, int segments, float thickness, float fade)
+	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
 
-		const int segments = 32; // Number of segments for the circle
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 128);
 		const float angleStep = 2.0f * glm::pi<float>() / segments;
 		
 		// Draw filled circle using triangles

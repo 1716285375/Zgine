@@ -139,7 +139,8 @@ public:
 				Zgine::BatchRenderer2D::DrawCircle(
 					{ x, y, 0.0f },
 					m_CircleRadius,
-					color
+					color,
+					m_CircleSegments
 				);
 			}
 
@@ -164,7 +165,8 @@ public:
 					Zgine::BatchRenderer2D::DrawCircle(
 						{ x, y, 0.0f },
 						radius,
-						color
+						color,
+						m_CircleSegments
 					);
 				}
 			}
@@ -175,55 +177,92 @@ public:
 
 	virtual void OnImGuiRender() override
 	{
-		ImGui::Begin("Primitive Test Layer");
+		// Main control panel
+		ImGui::Begin("Primitive Test Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		
 		ImGui::Text("Primitive Rendering Test");
 		ImGui::Separator();
 		
-		ImGui::Text("Controls:");
+		// Camera controls
+		ImGui::Text("Camera Controls:");
 		ImGui::Text("WASD - Move camera");
-		ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", 
+		ImGui::Text("Position: (%.2f, %.2f, %.2f)", 
 			m_CameraPosition.x, m_CameraPosition.y, m_CameraPosition.z);
 		
 		ImGui::Separator();
 		
-		// Render controls
+		// Render options
 		ImGui::Text("Render Options:");
 		ImGui::Checkbox("Show Quads", &m_ShowQuads);
+		ImGui::SameLine();
 		ImGui::Checkbox("Show Lines", &m_ShowLines);
 		ImGui::Checkbox("Show Circles", &m_ShowCircles);
+		ImGui::SameLine();
 		ImGui::Checkbox("Animate Circles", &m_AnimateCircles);
 		
 		ImGui::Separator();
 		
-		// Line controls
-		ImGui::Text("Line Settings:");
-		ImGui::SliderFloat("Line Thickness", &m_LineThickness, 0.01f, 0.2f);
+		// Line settings
+		if (m_ShowLines)
+		{
+			ImGui::Text("Line Settings:");
+			ImGui::SliderFloat("Line Thickness", &m_LineThickness, 0.01f, 0.2f, "%.3f");
+		}
 		
-		ImGui::Separator();
+		// Circle settings
+		if (m_ShowCircles)
+		{
+			ImGui::Text("Circle Settings:");
+			ImGui::SliderFloat("Circle Radius", &m_CircleRadius, 0.1f, 0.8f, "%.2f");
+			ImGui::SliderInt("Circle Segments", &m_CircleSegments, 8, 64);
+			
+			// Show circle info
+			ImGui::Text("Circle Info:");
+			ImGui::Text("Current segments: %d", m_CircleSegments);
+			ImGui::Text("Current radius: %.2f", m_CircleRadius);
+		}
 		
-		// Circle controls
-		ImGui::Text("Circle Settings:");
-		ImGui::SliderFloat("Circle Radius", &m_CircleRadius, 0.1f, 0.8f);
-		ImGui::SliderInt("Circle Segments", &m_CircleSegments, 8, 64);
+		ImGui::End();
 		
-		ImGui::Separator();
+		// Performance stats window
+		ImGui::Begin("Performance Stats", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
 		
-		// Performance stats
 		auto stats = Zgine::BatchRenderer2D::GetStats();
-		ImGui::Text("Performance Stats:");
+		ImGui::Text("Performance Statistics:");
+		ImGui::Separator();
 		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
 		ImGui::Text("Quad Count: %d", stats.QuadCount);
 		ImGui::Text("Vertex Count: %d", stats.VertexCount);
 		ImGui::Text("Index Count: %d", stats.IndexCount);
 		
-		if (ImGui::Button("Reset Stats"))
+		ImGui::Separator();
+		ImGui::Text("Time: %.2f seconds", m_Time);
+		
+		ImGui::Separator();
+		if (ImGui::Button("Reset Stats", ImVec2(100, 30)))
 		{
 			Zgine::BatchRenderer2D::ResetStats();
 		}
 		
+		ImGui::End();
+		
+		// Debug info window
+		ImGui::Begin("Debug Info", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		
+		ImGui::Text("Debug Information:");
 		ImGui::Separator();
-		ImGui::Text("Time: %.2f", m_Time);
+		ImGui::Text("FPS: %.1f", 1.0f / 0.016f); // Approximate FPS
+		ImGui::Text("Camera Speed: %.3f", m_CameraSpeed);
+		ImGui::Text("Line Thickness: %.3f", m_LineThickness);
+		ImGui::Text("Circle Radius: %.2f", m_CircleRadius);
+		ImGui::Text("Circle Segments: %d", m_CircleSegments);
+		
+		ImGui::Separator();
+		ImGui::Text("Render States:");
+		ImGui::Text("Quads: %s", m_ShowQuads ? "ON" : "OFF");
+		ImGui::Text("Lines: %s", m_ShowLines ? "ON" : "OFF");
+		ImGui::Text("Circles: %s", m_ShowCircles ? "ON" : "OFF");
+		ImGui::Text("Animation: %s", m_AnimateCircles ? "ON" : "OFF");
 		
 		ImGui::End();
 	}
