@@ -48,8 +48,6 @@ namespace Sandbox {
 		m_FrameCount(0),
 		m_FPSTimer(0.0f)
 	{
-		// Initialize 3D camera
-		m_3DCamera.SetPosition(m_3DCameraPosition);
 	}
 
 	MainControlLayer::~MainControlLayer()
@@ -85,35 +83,49 @@ namespace Sandbox {
 		// Render 2D scene if window is open
 		if (m_Show2DTestWindow)
 		{
-			Zgine::Renderer::BeginScene(m_2DCamera);
-			
-			if (m_2DShowQuads)
-				Render2DBasicShapes();
-			
-			if (m_2DShowAdvanced)
-				Render2DAdvancedShapes();
-			
-			if (m_2DAnimateCircles || m_2DAnimateQuads)
-				Render2DAnimatedShapes();
-			
-			Zgine::Renderer::EndScene();
+			try
+			{
+				Zgine::Renderer::BeginScene(m_2DCamera);
+				
+				if (m_2DShowQuads)
+					Render2DBasicShapes();
+				
+				if (m_2DShowAdvanced)
+					Render2DAdvancedShapes();
+				
+				if (m_2DAnimateCircles || m_2DAnimateQuads)
+					Render2DAnimatedShapes();
+				
+				Zgine::Renderer::EndScene();
+			}
+			catch (...)
+			{
+				// Ignore rendering errors for now
+			}
 		}
 
 		// Render 3D scene if window is open
 		if (m_Show3DTestWindow)
 		{
-			Zgine::Renderer::BeginScene(m_3DCamera);
-			
-			if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
-				Render3DBasicShapes();
-			
-			if (m_3DAnimateObjects)
-				Render3DAnimatedShapes();
-			
-			if (m_3DShowEnvironment)
-				Render3DEnvironment();
-			
-			Zgine::Renderer::EndScene();
+			try
+			{
+				Zgine::Renderer::BeginScene(m_3DCamera);
+				
+				if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
+					Render3DBasicShapes();
+				
+				if (m_3DAnimateObjects)
+					Render3DAnimatedShapes();
+				
+				if (m_3DShowEnvironment)
+					Render3DEnvironment();
+				
+				Zgine::Renderer::EndScene();
+			}
+			catch (...)
+			{
+				// Ignore rendering errors for now
+			}
 		}
 	}
 
