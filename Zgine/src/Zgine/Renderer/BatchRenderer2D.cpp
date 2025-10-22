@@ -458,7 +458,6 @@ namespace Zgine {
 			// Draw line segment as a quad
 			DrawLine(p1, p2, color, thickness);
 		}
-		}
 	}
 
 	void BatchRenderer2D::DrawQuadGradient(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colorTopLeft, const glm::vec4& colorTopRight, const glm::vec4& colorBottomLeft, const glm::vec4& colorBottomRight)
@@ -597,6 +596,31 @@ namespace Zgine {
 
 		s_QuadIndexCount += 6;
 		s_Stats.QuadCount++;
+	}
+
+	float BatchRenderer2D::GetTextureIndex(const Ref<Texture2D>& texture)
+	{
+		float textureIndex = 0.0f;
+		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)
+		{
+			if (*s_TextureSlots[i] == *texture)
+			{
+				textureIndex = (float)i;
+				break;
+			}
+		}
+
+		if (textureIndex == 0.0f)
+		{
+			if (s_TextureSlotIndex >= MaxTextureSlots)
+				NextBatch();
+
+			textureIndex = (float)s_TextureSlotIndex;
+			s_TextureSlots[s_TextureSlotIndex] = texture;
+			s_TextureSlotIndex++;
+		}
+
+		return textureIndex;
 	}
 
 	RenderStats BatchRenderer2D::GetStats()

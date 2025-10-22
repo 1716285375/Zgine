@@ -254,8 +254,8 @@ public:
 				float x = -1.0f + i * 0.6f;
 				float y = -1.5f;
 				
-				float startAngle = i * glm::pi<float>() / 2.0f;
-				float endAngle = startAngle + glm::pi<float>() / 2.0f;
+				float startAngle = i * 3.14159f / 2.0f;
+				float endAngle = startAngle + 3.14159f / 2.0f;
 				
 				glm::vec4 color = glm::vec4(
 					(float)i / 3.0f,
