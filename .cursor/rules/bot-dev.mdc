@@ -1,0 +1,132 @@
+---
+alwaysApply: true
+---
+
+name: "Auto Git Commit Rule"
+description: "智能体在修改/生成代码后，自动执行 git add 与 git commit（仅生成本地提交，不执行 push）。"
+author: "GPT-5"
+version: "1.0.0"
+
+prompt: "AutoGitCommit"
+description: "当智能体在工作区写入或修改代码后，自动检测改动并执行 git add 与 git commit，生成语义化提交信息。"
+content: |
+你是一个开发智能体，完成代码修改、生成或重构后需要自动把改动提交到本地 Git 仓库。请严格按以下步骤执行（仅生成命令/文本，不做任何网络推送）：
+
+1. **检测仓库与改动**
+
+   * 检查当前工作目录是否为 Git 仓库（存在 `.git` 目录 或 `git rev-parse --is-inside-work-tree` 返回 true）。
+   * 列出未暂存或已修改的文件（`git status --porcelain`），将变更按类型分类：新增 (A)、修改 (M)、删除 (D)、重命名 (R)、非跟踪 (??)。
+   * 如果没有改动，返回一条简短信息：`No changes to commit.`，并结束流程。
+
+2. **生成语义化提交信息**
+
+   * 根据改动类型与文件路径生成一句 **简短、语义化** 的提交信息（不包含绝对路径、敏感信息或长堆栈），格式优先使用 Conventional Commits 风格：
+
+     * `feat: 添加 <模块/功能>` （新增文件或新功能）
+     * `fix: 修复 <模块/问题描述>` （修复 bug）
+     * `refactor: 重构 <模块/功能>` （仅重构，无功能改动）
+     * `chore: 更新配置/依赖` （构建/配置相关）
+     * `test: 新增/更新 测试` （测试相关）
+     * `docs: 更新文档` （文档改动）
+     * 若改动涉及多类文件或无法归类，使用 `update: 多模块修改` 或 `chore: 自动提交`
+   * 若改动包含多个文件且可归为单一含义，在 info 中尽量列出主要受影响模块（例如 `feat: 添加 PlayerMovement 模块，包含 player.h/cpp`）。
+   * 若改动为“自动格式化”或“自动化生成”，使用 `chore: 自动格式化` 或 `chore: 生成代码`。
+
+3. **执行暂存与提交**
+
+   * 执行 `git add .`（或更保守地仅暂存改动文件 `git add <file1> <file2>`，但默认使用 `git add .`）。
+   * 执行 `git commit -m "<提交信息>"`。
+   * 在提交完成后，输出提交摘要：提交哈希（短哈希）、提交信息、修改文件列表（包含类型 A/M/D）。
+
+4. **错误与边界处理**
+
+   * 若当前目录不是 Git 仓库，返回提示信息：
+     `⚠️ 未检测到 Git 仓库，请先运行 'git init' 或在仓库根目录执行操作。`
+   * 若暂存或提交失败（例如冲突、pre-commit hook 拒绝），捕获错误并把原始 git 错误信息返回给用户，附上可执行的建议（如 `git status`、`git add -p`、查看 pre-commit hook）。
+   * **绝对禁止**自动执行 `git push` 或对远程仓库进行任何写操作；只在本地完成 `git commit`。
+
+5. **隐私与安全**
+
+   * 提交信息**不得**包含任何密钥、凭证、私有路径或敏感片段。若检测到疑似密钥（例如长连续字母数字串、`AKIA`、`-----BEGIN PRIVATE KEY-----`），中止提交并提示“发现疑似敏感信息，请人工确认”。
+   * 若改动包含文件名或内容可能泄露敏感信息，提示并列出受影响文件，要求人工确认后再提交。
+
+6. **示例流程与消息**
+
+   * 若新增文件 `src/ai/player_controller.cpp`：
+
+     ```text
+     git add .
+     git commit -m "feat: 添加 PlayerController AI 控制器实现"
+     ```
+   * 若修改多个模块（AI、Physics）：
+
+     ```text
+     git add .
+     git commit -m "refactor: 优化 AI 与 Physics 更新循环，提升可维护性"
+     ```
+   * 若仅调整测试：
+
+     ```text
+     git add .
+     git commit -m "test: 新增 PlayerController 单元测试"
+     ```
+
+7. **输出格式（在执行后返回）**
+
+   * 若成功提交，输出 JSON 格式摘要（方便被外部工具解析）：
+
+     ```json
+     {
+       "status": "committed",
+       "commit_short_sha": "<short-sha>",
+       "message": "<commit message>",
+       "files": [
+         {"path": "src/ai/player_controller.cpp", "type": "A"},
+         {"path": "src/ai/player_ai.h", "type": "M"}
+       ]
+     }
+     ```
+   * 若无改动：
+
+     ```json
+     {"status":"no_changes"}
+     ```
+   * 若失败或被拦截，返回：
+
+     ```json
+     {
+       "status":"error",
+       "error":"<原始 git 错误信息或说明>",
+       "advice":"<建议的下一步操作>"
+     }
+     ```
+
+8. **调用时机**
+
+   * 仅在智能体完成对文件系统的写入（新增/修改/删除文件）后触发；
+   * 可由用户显式触发（例如通过命令 `#AutoGitCommit: run`），或在智能体完成“保存更改”动作后自动触发。
+
+9. **可选项（非必须）**
+
+   * 若希望更精细控制暂存列表，可在执行前列出改动供用户确认（交互模式）。
+   * 支持在 commit message 中加入 `Co-authored-by` 行（仅在明确需要时，并不自动添加）。
+
+prompt: "AutoGitCommit:dry-run"
+description: "模拟执行提交动作，返回将要执行的命令和拟用的提交信息，但不实际修改 git 状态（用于预览）。"
+content: |
+
+1. 检测改动（`git status --porcelain`）。
+2. 基于改动生成拟用提交信息（按 AutoGitCommit 规则）。
+3. 返回将要执行的命令列表（例如：`git add .`、`git commit -m "..."`）及拟用提交信息，但**不**执行任何 git 命令。
+4. 返回改动文件清单与类型，方便人工核对。
+
+prompt: "AutoGitCommit:configure"
+description: "配置自动提交行为（用户可通过该 prompt 修改提交策略，如是否使用 'git add .'、是否启用 dry-run 默认等）。"
+content: |
+允许用户选择以下配置选项并输出相应确认：
+
+* `staging_mode`: "all"（使用 `git add .`）或 "selective"（仅暂存改动文件列表）。
+* `auto_run`: true / false （是否在修改后自动执行，false 则仅生成建议并等待确认）。
+* `allow_push`: false（始终禁止自动 push；如需启用需手动设置并确认风险）。
+* `include_tests_in_message`: true/false （是否在 commit message 中列出测试文件改动）。
+  根据用户选择，返回确认摘要与下一步执行建议。
