@@ -6,7 +6,8 @@
 
 A modern, lightweight 2D/3D game engine built with C++17, OpenGL, and ImGui.
 
-**中文文档**: [README_CN.md](README_CN.md)
+**中文文档**: [README_CN.md](README_CN.md)  
+**📚 Documentation**: [docs/README.md](docs/README.md)
 
 ## 🚀 Features
 
@@ -183,11 +184,27 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **GLM** - Mathematics library
 - **spdlog** - Logging library
 
+## 📚 Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- **[API Reference](docs/api/)** - Complete API documentation
+- **[Architecture](docs/architecture/)** - Engine architecture and design
+- **[Algorithms](docs/algorithms/)** - Implementation details and algorithms
+- **[Developer Guides](docs/guides/)** - Getting started and best practices
+- **[Examples](docs/examples/)** - Code examples and tutorials
+
+### Quick Links
+- [Getting Started Guide](docs/guides/getting-started.md)
+- [Renderer API](docs/api/renderer.md)
+- [Batch Rendering Algorithm](docs/algorithms/batch-rendering.md)
+- [Circle Rendering Algorithm](docs/algorithms/circle-rendering.md)
+
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/Zgine/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/yourusername/Zgine/discussions)
-- **Documentation**: [Wiki](https://github.com/yourusername/Zgine/wiki)
+- **Documentation**: [docs/README.md](docs/README.md)
 
 ---
 

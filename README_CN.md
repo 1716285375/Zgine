@@ -6,7 +6,8 @@
 
 一个使用 C++17、OpenGL 和 ImGui 构建的现代轻量级 2D/3D 游戏引擎。
 
-**English Documentation**: [README.md](README.md)
+**English Documentation**: [README.md](README.md)  
+**📚 文档**: [docs/README.md](docs/README.md)
 
 ## 🚀 功能特性
 
