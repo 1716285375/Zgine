@@ -19,10 +19,12 @@ A modern, lightweight 2D/3D game engine built with C++17, OpenGL, and ImGui.
 
 ### Rendering System
 - **2D Batch Renderer**: High-performance 2D rendering with texture batching
+- **3D Batch Renderer**: Modern 3D rendering with cubes, spheres, and planes
+- **Dual Camera System**: Orthographic (2D) and perspective (3D) camera support
 - **OpenGL Backend**: Modern OpenGL 3.3+ rendering pipeline
 - **Shader System**: Flexible shader management with hot-reloading support
 - **Texture Management**: Efficient texture loading and caching
-- **Camera System**: Orthographic and perspective camera support
+- **Lighting System**: Basic ambient and diffuse lighting support
 
 ### Developer Tools
 - **ImGui Integration**: Built-in debug UI and editor tools

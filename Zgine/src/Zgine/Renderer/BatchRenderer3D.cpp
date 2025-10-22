@@ -3,7 +3,6 @@
 
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/euler_angles.hpp>
 #include "Zgine/Renderer/RendererAPI.h"
 #include "Zgine/Renderer/RenderCommand.h"
 
@@ -166,7 +165,7 @@ namespace Zgine {
 			s_TextureSlots[i]->Bind(i);
 		}
 
-		RenderCommand::DrawIndexed(s_VertexArray, s_IndexCount);
+		RenderCommand::DrawIndexed(s_VertexArray);
 		
 		// Update statistics
 		s_Stats.DrawCalls++;

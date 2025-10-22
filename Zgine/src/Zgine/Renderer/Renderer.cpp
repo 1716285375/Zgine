@@ -10,7 +10,6 @@ namespace Zgine {
 
 	void Renderer::Init()
 	{
-		RenderCommand::Init();
 		BatchRenderer2D::Init();
 		BatchRenderer3D::Init();
 	}

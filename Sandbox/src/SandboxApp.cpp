@@ -568,17 +568,17 @@ public:
 		if (Zgine::Input::IsMouseButtonPressed(ZG_MOUSE_BUTTON_RIGHT))
 		{
 			auto mousePos = Zgine::Input::GetMousePosition();
-			static glm::vec2 lastMousePos = mousePos;
+			static glm::vec2 lastMousePos = glm::vec2(mousePos.first, mousePos.second);
 			
 			if (lastMousePos != glm::vec2(-1.0f))
 			{
-				float deltaX = mousePos.x - lastMousePos.x;
-				float deltaY = mousePos.y - lastMousePos.y;
+				float deltaX = mousePos.first - lastMousePos.x;
+				float deltaY = mousePos.second - lastMousePos.y;
 				
 				m_Camera.Rotate(deltaX * 0.1f, -deltaY * 0.1f);
 			}
 			
-			lastMousePos = mousePos;
+			lastMousePos = glm::vec2(mousePos.first, mousePos.second);
 		}
 
 		// Render 3D scene

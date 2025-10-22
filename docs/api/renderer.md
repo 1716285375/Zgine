@@ -1,12 +1,14 @@
 # Renderer API Reference
 
-The Zgine rendering system provides high-performance 2D rendering capabilities with batch processing and modern OpenGL backend.
+The Zgine rendering system provides high-performance 2D and 3D rendering capabilities with batch processing and modern OpenGL backend.
 
 ## Overview
 
-The rendering system is built around the `BatchRenderer2D` class, which provides efficient batch rendering of 2D primitives including quads, lines, and circles.
+The rendering system consists of two main components:
+- `BatchRenderer2D`: Efficient batch rendering of 2D primitives including quads, lines, and circles
+- `BatchRenderer3D`: High-performance 3D rendering with support for cubes, spheres, planes, and complex transformations
 
-## Core Classes
+## 2D Rendering System
 
 ### BatchRenderer2D
 
@@ -525,3 +527,225 @@ The renderer handles errors gracefully:
 ## Thread Safety
 
 **Note**: The current implementation is not thread-safe. All rendering operations should be performed on the main thread.
+
+## 3D Rendering System
+
+### PerspectiveCamera
+
+The 3D camera class for perspective projection rendering.
+
+#### Constructor
+
+```cpp
+PerspectiveCamera(float fov = 45.0f, float aspectRatio = 16.0f / 9.0f, 
+                  float nearClip = 0.1f, float farClip = 1000.0f);
+```
+
+**Description**: Creates a perspective camera with specified parameters.
+
+**Parameters**:
+- `fov`: Field of view in degrees
+- `aspectRatio`: Width to height ratio
+- `nearClip`: Near clipping plane distance
+- `farClip`: Far clipping plane distance
+
+#### Methods
+
+##### Projection Settings
+
+```cpp
+void SetProjection(float fov, float aspectRatio, float nearClip, float farClip);
+void SetFOV(float fov);
+void SetAspectRatio(float aspectRatio);
+void SetNearClip(float nearClip);
+void SetFarClip(float farClip);
+```
+
+**Description**: Configure camera projection parameters.
+
+##### Position and Rotation
+
+```cpp
+const glm::vec3& GetPosition() const;
+void SetPosition(const glm::vec3& position);
+const glm::vec3& GetRotation() const;
+void SetRotation(const glm::vec3& rotation);
+```
+
+**Description**: Get and set camera position and rotation (yaw, pitch, roll).
+
+##### Movement
+
+```cpp
+void MoveForward(float distance);
+void MoveRight(float distance);
+void MoveUp(float distance);
+void Rotate(float yaw, float pitch);
+void SetYaw(float yaw);
+void SetPitch(float pitch);
+```
+
+**Description**: Move and rotate the camera.
+
+##### Matrices
+
+```cpp
+const glm::mat4& GetProjectionMatrix() const;
+const glm::mat4& GetViewMatrix() const;
+const glm::mat4& GetViewProjectionMatrix() const;
+```
+
+**Description**: Get camera transformation matrices.
+
+### BatchRenderer3D
+
+The main rendering class for 3D graphics.
+
+#### Static Methods
+
+##### Initialization
+
+```cpp
+static void Init();
+static void Shutdown();
+```
+
+**Description**: Initialize and shutdown the 3D batch renderer system.
+
+##### Scene Management
+
+```cpp
+static void BeginScene(const PerspectiveCamera& camera);
+static void EndScene();
+static void Flush();
+```
+
+**Description**: Manage 3D rendering scenes and batches.
+
+##### 3D Primitives
+
+```cpp
+// Cubes
+static void DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color);
+static void DrawCube(const glm::vec3& position, const glm::vec3& size, 
+                     const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+static void DrawCube(const glm::vec3& position, const glm::vec3& size, 
+                     const glm::mat4& transform, const glm::vec4& color);
+static void DrawCube(const glm::vec3& position, const glm::vec3& size, 
+                     const glm::mat4& transform, const Ref<Texture2D>& texture, 
+                     const glm::vec4& tintColor = glm::vec4(1.0f));
+
+// Spheres
+static void DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color, 
+                       int segments = 32);
+static void DrawSphere(const glm::vec3& position, float radius, 
+                       const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f), 
+                       int segments = 32);
+
+// Planes
+static void DrawPlane(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
+static void DrawPlane(const glm::vec3& position, const glm::vec2& size, 
+                      const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+```
+
+**Description**: Render 3D primitives with various options.
+
+##### Statistics
+
+```cpp
+static RenderStats3D GetStats();
+static void ResetStats();
+```
+
+**Description**: Get and reset rendering statistics.
+
+#### RenderStats3D Structure
+
+```cpp
+struct RenderStats3D
+{
+    uint32_t DrawCalls = 0;
+    uint32_t TriangleCount = 0;
+    uint32_t VertexCount = 0;
+    uint32_t IndexCount = 0;
+};
+```
+
+## 3D Examples
+
+### Basic 3D Scene
+
+```cpp
+#include <Zgine.h>
+
+class My3DLayer : public Zgine::Layer
+{
+public:
+    My3DLayer() : Layer("My3DLayer"), m_Camera(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f) 
+    {
+        m_Camera.SetPosition({0.0f, 5.0f, 10.0f});
+    }
+
+    virtual void OnUpdate(Zgine::Timestep ts) override
+    {
+        // Update camera
+        if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
+            m_Camera.MoveForward(5.0f * ts);
+        if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
+            m_Camera.MoveForward(-5.0f * ts);
+
+        // Begin 3D rendering
+        Zgine::BatchRenderer3D::BeginScene(m_Camera);
+
+        // Draw cubes
+        Zgine::BatchRenderer3D::DrawCube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 
+                                         {1.0f, 0.0f, 0.0f, 1.0f});
+        Zgine::BatchRenderer3D::DrawCube({2.0f, 0.0f, 0.0f}, {0.5f, 2.0f, 0.5f}, 
+                                         {0.0f, 1.0f, 0.0f, 1.0f});
+
+        // Draw spheres
+        Zgine::BatchRenderer3D::DrawSphere({-2.0f, 0.0f, 0.0f}, 1.0f, 
+                                          {0.0f, 0.0f, 1.0f, 1.0f}, 32);
+
+        // Draw ground plane
+        Zgine::BatchRenderer3D::DrawPlane({0.0f, -2.0f, 0.0f}, {20.0f, 20.0f}, 
+                                          {0.3f, 0.3f, 0.3f, 1.0f});
+
+        // End rendering
+        Zgine::BatchRenderer3D::EndScene();
+    }
+
+private:
+    Zgine::PerspectiveCamera m_Camera;
+};
+```
+
+### Combined 2D/3D Scene
+
+```cpp
+class CombinedLayer : public Zgine::Layer
+{
+public:
+    CombinedLayer() : Layer("Combined"), 
+        m_2DCamera(-2.0f, 2.0f, -1.5f, 1.5f),
+        m_3DCamera(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f) {}
+
+    virtual void OnUpdate(Zgine::Timestep ts) override
+    {
+        // Render 3D scene first
+        Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
+        Zgine::BatchRenderer3D::DrawCube({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f}, 
+                                         {1.0f, 0.0f, 0.0f, 1.0f});
+        Zgine::BatchRenderer3D::EndScene();
+
+        // Render 2D overlay
+        Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
+        Zgine::BatchRenderer2D::DrawQuad({-1.5f, 1.0f}, {0.3f, 0.1f}, {1.0f, 1.0f, 1.0f, 0.8f});
+        Zgine::BatchRenderer2D::EndScene();
+    }
+
+private:
+    Zgine::OrthographicCamera m_2DCamera;
+    Zgine::PerspectiveCamera m_3DCamera;
+};
+```
