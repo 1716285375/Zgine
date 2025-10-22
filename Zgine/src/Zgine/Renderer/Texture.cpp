@@ -2,6 +2,7 @@
 #include "Texture.h"
 
 #include "Platform/OpenGL/OpenGLTexture.h"
+#include "Zgine/Renderer/RendererAPI.h"
 
 namespace Zgine {
 

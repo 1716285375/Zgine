@@ -49,6 +49,11 @@ namespace Zgine {
 		static std::shared_ptr<Texture2D> Create(uint32_t width, uint32_t height);
 		static std::shared_ptr<Texture2D> Create(const std::string& path);
 
+		bool operator==(const Texture2D& other) const
+		{
+			return m_RendererID == other.m_RendererID;
+		}
+
 	protected:
 		std::string m_Path;
 		uint32_t m_Width, m_Height;

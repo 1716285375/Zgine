@@ -3,6 +3,8 @@
 
 #include <glad/glad.h>
 #include <glm/gtc/matrix_transform.hpp>
+#include "Zgine/Renderer/RendererAPI.h"
+#include "Zgine/Renderer/RenderCommand.h"
 
 namespace Zgine {
 
@@ -31,7 +33,7 @@ namespace Zgine {
 	{
 		s_QuadVertexArray.reset(VertexArray::Create());
 
-		s_QuadVertexBuffer.reset(VertexBuffer::Create(MaxVertices * sizeof(QuadVertex)));
+		s_QuadVertexBuffer.reset(VertexBuffer::Create(nullptr, MaxVertices * sizeof(QuadVertex)));
 		s_QuadVertexBuffer->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float4, "a_Color" },
@@ -154,7 +156,7 @@ namespace Zgine {
 			s_TextureSlots[i]->Bind(i);
 		}
 
-		RenderCommand::DrawIndexed(s_QuadVertexArray, s_QuadIndexCount);
+		RenderCommand::DrawIndexed(s_QuadVertexArray);
 		s_Stats.DrawCalls++;
 	}
 
@@ -179,7 +181,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
-		DrawQuad({ position.x, position.y, 0.0f }, size, color);
+		DrawQuad(glm::vec3(position.x, position.y, 0.0f), size, color);
 	}
 
 	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
@@ -189,7 +191,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tintColor);
+		DrawQuad(glm::vec3(position.x, position.y, 0.0f), size, texture, tintColor);
 	}
 
 	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
@@ -199,7 +201,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 	{
-		DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, color);
+		DrawRotatedQuad(glm::vec3(position.x, position.y, 0.0f), size, rotation, color);
 	}
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
@@ -209,7 +211,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tintColor);
+		DrawRotatedQuad(glm::vec3(position.x, position.y, 0.0f), size, rotation, texture, tintColor);
 	}
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
@@ -344,7 +346,7 @@ namespace Zgine {
 		float textureIndex = 0.0f;
 		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)
 		{
-			if (*s_TextureSlots[i].get() == *texture.get())
+			if (s_TextureSlots[i] && texture && s_TextureSlots[i]->GetRendererID() == texture->GetRendererID())
 			{
 				textureIndex = (float)i;
 				break;
