@@ -53,6 +53,9 @@ namespace Zgine {
 
 		static void DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, float thickness = 1.0f, float fade = 0.005f);
 		static void DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, int segments, float thickness = 1.0f, float fade = 0.005f);
+		
+		// Circle outline rendering
+		static void DrawCircleOutline(const glm::vec3& position, float radius, const glm::vec4& color, float thickness = 0.1f, int segments = 32);
 
 		static RenderStats GetStats();
 		static void ResetStats();

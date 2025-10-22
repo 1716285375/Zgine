@@ -254,9 +254,77 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, int segments, float thickness, float fade)
 	{
-		// For now, draw circle as a simple quad - we'll implement proper circle rendering later
-		// This is a temporary fix to ensure the renderer works correctly
-		DrawQuad(position, { radius * 2.0f, radius * 2.0f }, color);
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+		
+		// Draw circle as multiple triangular sectors
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+			
+			float angle1 = i * angleStep;
+			float angle2 = (i + 1) * angleStep;
+			
+			// Calculate sector vertices
+			glm::vec3 center = position;
+			glm::vec3 v1 = position + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0.0f);
+			glm::vec3 v2 = position + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0.0f);
+			
+			// Create a triangular sector using center and two edge points
+			// We'll create a quad that forms a triangle (two vertices are the same)
+			glm::vec3 quadVertices[4] = {
+				center,           // Bottom-left
+				v1,              // Bottom-right  
+				v2,              // Top-right
+				center           // Top-left (same as center to form triangle)
+			};
+			
+			// Add vertices to buffer
+			for (int j = 0; j < 4; j++)
+			{
+				s_QuadVertexBufferPtr->Position = quadVertices[j];
+				s_QuadVertexBufferPtr->Color = color;
+				s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+				s_QuadVertexBufferPtr->TexIndex = 0.0f;
+				s_QuadVertexBufferPtr++;
+			}
+			
+			s_QuadIndexCount += 6;
+		}
+		
+		s_Stats.QuadCount += segments;
+	}
+
+	void BatchRenderer2D::DrawCircleOutline(const glm::vec3& position, float radius, const glm::vec4& color, float thickness, int segments)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+		
+		// Draw circle outline as connected lines (quads)
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+			
+			float angle1 = i * angleStep;
+			float angle2 = (i + 1) * angleStep;
+			
+			// Calculate line segment points
+			glm::vec3 p1 = position + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0.0f);
+			glm::vec3 p2 = position + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0.0f);
+			
+			// Draw line segment as a quad
+			DrawLine(p1, p2, color, thickness);
+		}
 	}
 
 	RenderStats BatchRenderer2D::GetStats()

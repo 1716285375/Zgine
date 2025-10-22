@@ -123,7 +123,7 @@ public:
 		// Draw test circles
 		if (m_ShowCircles)
 		{
-			// Draw static circles
+			// Draw static filled circles
 			for (int i = 0; i < 3; i++)
 			{
 				float x = (i - 1) * 0.6f;
@@ -140,6 +140,23 @@ public:
 					{ x, y, 0.0f },
 					m_CircleRadius,
 					color,
+					m_CircleSegments
+				);
+			}
+
+			// Draw circle outlines
+			for (int i = 0; i < 3; i++)
+			{
+				float x = (i - 1) * 0.6f;
+				float y = 0.0f;
+				
+				glm::vec4 outlineColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.9f); // White outline
+
+				Zgine::BatchRenderer2D::DrawCircleOutline(
+					{ x, y, 0.0f },
+					m_CircleRadius,
+					outlineColor,
+					0.02f, // Thin outline
 					m_CircleSegments
 				);
 			}
@@ -166,6 +183,16 @@ public:
 						{ x, y, 0.0f },
 						radius,
 						color,
+						m_CircleSegments
+					);
+					
+					// Add outline to animated circles
+					glm::vec4 outlineColor = glm::vec4(1.0f, 1.0f, 1.0f, 0.8f);
+					Zgine::BatchRenderer2D::DrawCircleOutline(
+						{ x, y, 0.0f },
+						radius,
+						outlineColor,
+						0.015f, // Thin outline
 						m_CircleSegments
 					);
 				}
