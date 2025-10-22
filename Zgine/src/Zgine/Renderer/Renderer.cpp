@@ -6,10 +6,14 @@
 
 namespace Zgine {
 
-	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
+	Renderer::SceneData* Renderer::m_SceneData = nullptr;
 
 	void Renderer::Init()
 	{
+		// Initialize scene data
+		if (!m_SceneData)
+			m_SceneData = new Renderer::SceneData;
+			
 		BatchRenderer2D::Init();
 		BatchRenderer3D::Init();
 	}
@@ -18,16 +22,25 @@ namespace Zgine {
 	{
 		BatchRenderer3D::Shutdown();
 		BatchRenderer2D::Shutdown();
+		
+		// Clean up scene data
+		if (m_SceneData)
+		{
+			delete m_SceneData;
+			m_SceneData = nullptr;
+		}
 	}
 
 	void Renderer::BeginScene(OrthographicCamera& camera)
 	{
-		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+		if (m_SceneData)
+			m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
 
 	void Renderer::BeginScene(PerspectiveCamera& camera)
 	{
-		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+		if (m_SceneData)
+			m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}
 
 	void Renderer::EndScene()

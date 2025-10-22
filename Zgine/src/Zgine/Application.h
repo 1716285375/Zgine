@@ -28,6 +28,9 @@ namespace Zgine {
 		inline Window& GetWindow() { return *m_Window; }
 		inline static Application& Get() { return *s_Instance; }
 
+	protected:
+		virtual void OnApplicationStart() {}
+
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 

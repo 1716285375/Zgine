@@ -28,6 +28,9 @@ namespace Zgine {
 		
 		m_ImGuiLayer = CreateScope<ImGuiLayer>();
 		PushOverlay(m_ImGuiLayer.get());
+		
+		// Call derived class initialization
+		OnApplicationStart();
 	}
 
 	Application::~Application()
