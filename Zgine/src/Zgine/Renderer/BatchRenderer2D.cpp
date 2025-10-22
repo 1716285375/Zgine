@@ -221,12 +221,75 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, float thickness)
 	{
-		// TODO: Implement line rendering
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Calculate line direction and length
+		glm::vec3 direction = p1 - p0;
+		float length = glm::length(direction);
+		
+		if (length < 0.001f) return; // Skip very short lines
+		
+		direction = glm::normalize(direction);
+		
+		// Calculate rotation angle
+		float angle = atan2(direction.y, direction.x);
+		
+		// Calculate center position
+		glm::vec3 center = (p0 + p1) * 0.5f;
+		
+		// Calculate size (length x thickness)
+		glm::vec2 size(length, thickness);
+		
+		// Use the rotated quad drawing function
+		DrawRotatedQuadInternal(center, size, angle, color, -1);
 	}
 
 	void BatchRenderer2D::DrawCircle(const glm::vec3& position, float radius, const glm::vec4& color, float thickness, float fade)
 	{
-		// TODO: Implement circle rendering
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		const int segments = 32; // Number of segments for the circle
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+		
+		// Draw filled circle using triangles
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+			
+			float angle1 = i * angleStep;
+			float angle2 = (i + 1) * angleStep;
+			
+			// Calculate vertices for triangle
+			glm::vec3 v0 = position;
+			glm::vec3 v1 = position + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0.0f);
+			glm::vec3 v2 = position + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0.0f);
+			
+			// Add vertices to buffer
+			s_QuadVertexBufferPtr->Position = v0;
+			s_QuadVertexBufferPtr->Color = color;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = 0.0f;
+			s_QuadVertexBufferPtr++;
+			
+			s_QuadVertexBufferPtr->Position = v1;
+			s_QuadVertexBufferPtr->Color = color;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = 0.0f;
+			s_QuadVertexBufferPtr++;
+			
+			s_QuadVertexBufferPtr->Position = v2;
+			s_QuadVertexBufferPtr->Color = color;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = 0.0f;
+			s_QuadVertexBufferPtr++;
+			
+			s_QuadIndexCount += 3;
+		}
+		
+		s_Stats.QuadCount++;
 	}
 
 	RenderStats BatchRenderer2D::GetStats()

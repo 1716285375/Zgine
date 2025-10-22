@@ -3,181 +3,256 @@
 
 #include "imgui.h"
 
-class ExampleLayer : public Zgine::Layer
+class PrimitiveTestLayer : public Zgine::Layer
 {
 public:
-	ExampleLayer()
-		: Layer("Example")
-		, m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
+	PrimitiveTestLayer()
+		: Layer("PrimitiveTest")
+		, m_Camera(-2.0f, 2.0f, -1.5f, 1.5f)
 		, m_CameraPosition(0.0f)
-		, m_CameraSpeed(0.01f)
+		, m_CameraSpeed(0.02f)
+		, m_Time(0.0f)
+		, m_LineThickness(0.05f)
+		, m_CircleRadius(0.3f)
+		, m_CircleSegments(32)
+		, m_ShowLines(true)
+		, m_ShowCircles(true)
+		, m_ShowQuads(true)
+		, m_AnimateCircles(true)
 	{
-		// Create triangle vertex array
-		m_VertexArray.reset(Zgine::VertexArray::Create());
-
-		float vertices[3 * 7] = {
-			-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
-			0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-			0.0f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-		};
-		std::shared_ptr<Zgine::VertexBuffer> vertexBuffer;
-		vertexBuffer.reset(Zgine::VertexBuffer::Create(vertices, sizeof(vertices)));
-
-		Zgine::BufferLayout layout = {
-			{ Zgine::ShaderDataType::Float3, "a_Position"},
-			{ Zgine::ShaderDataType::Float4, "a_Color" }
-		};
-
-		vertexBuffer->SetLayout(layout);
-		m_VertexArray->AddVertexBuffer(vertexBuffer);
-
-		uint32_t indices[3] = { 0, 1, 2 };
-
-		std::shared_ptr<Zgine::IndexBuffer> indexBuffer;
-		indexBuffer.reset(Zgine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
-		m_VertexArray->SetIndexBuffer(indexBuffer);
-
-		// Create square vertex array
-		m_SquaredVA.reset(Zgine::VertexArray::Create());
-
-		float squareVertices[3 * 4] = {
-			-0.75f, -0.75f, 0.0f,
-			0.75f, -0.75f, 0.0f,  
-			0.75f, 0.75f, 0.0f,
-			-0.75f, 0.75f, 0.0f
-		};
-
-		std::shared_ptr<Zgine::VertexBuffer> squareVB(Zgine::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
-		squareVB->SetLayout({
-			{ Zgine::ShaderDataType::Float3, "a_Position"}
-		});
-		m_SquaredVA->AddVertexBuffer(squareVB);
-
-		uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
-		std::shared_ptr<Zgine::IndexBuffer> squareIB(Zgine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
-		m_SquaredVA->SetIndexBuffer(squareIB);
-
-		// Create triangle shader
-		std::string vertexSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) in vec3 a_Position; 
-			layout(location = 1 ) in vec4 a_Color; 
-
-			uniform mat4 u_ViewProjection;
-
-			out vec3 v_Position;
-			out vec4 v_Color;
-
-			void main()
-			{
-				v_Position = a_Position;
-				v_Color = a_Color;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
-			}
-		)";
-
-		std::string fragmentSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) out vec4 color;
-			
-			in vec3 v_Position;
-			in vec4 v_Color;
-
-			void main()
-			{
-				color = vec4(v_Position * 0.5 + 0.5, 1.0);
-				color = v_Color;
-			}
-		)";
-
-		m_Shader.reset(new Zgine::Shader(vertexSrc, fragmentSrc));
-
-		// Create blue square shader
-		std::string blueShaderVertexSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) in vec3 a_Position; 
-
-			uniform mat4 u_ViewProjection;
-
-			out vec3 v_Position;
-
-			void main()
-			{
-				v_Position = a_Position;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
-			}
-		)";
-
-		std::string blueShaderFragmentSrc = R"(
-			#version 330 core
-			
-			layout(location = 0) out vec4 color;
-			
-			in vec3 v_Position;
-
-			void main()
-			{
-				color = vec4(0.2, 0.3, 0.8, 1.0);
-			}
-		)";
-
-		m_BlueShader.reset(new Zgine::Shader(blueShaderVertexSrc, blueShaderFragmentSrc));
+		// Initialize batch renderer
+		Zgine::BatchRenderer2D::Init();
 	}
 
-	virtual ~ExampleLayer() {}
+	virtual ~PrimitiveTestLayer()
+	{
+		Zgine::BatchRenderer2D::Shutdown();
+	}
 
 	virtual void OnUpdate() override
 	{
 		// Update camera position based on input
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT))
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
 			m_CameraPosition.x += m_CameraSpeed;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_RIGHT))
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
 			m_CameraPosition.x -= m_CameraSpeed;
 
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_UP))
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
 			m_CameraPosition.y -= m_CameraSpeed;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_DOWN))
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
 			m_CameraPosition.y += m_CameraSpeed;
 
-		// Render
-		m_Camera.SetPosition(m_CameraPosition);
+		// Update time for animations
+		m_Time += 0.016f; // Approximate 60 FPS
 
-		Zgine::Renderer::BeginScene(m_Camera);
-		Zgine::Renderer::Submit(m_BlueShader, m_SquaredVA);
-		Zgine::Renderer::Submit(m_Shader, m_VertexArray);
-		Zgine::Renderer::EndScene();
+		// Render with batch renderer
+		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
+		Zgine::RenderCommand::Clear();
+
+		m_Camera.SetPosition(m_CameraPosition);
+		Zgine::BatchRenderer2D::BeginScene(m_Camera);
+
+		// Draw test quads
+		if (m_ShowQuads)
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				float x = (i - 2) * 0.4f;
+				float y = sin(m_Time + i) * 0.2f;
+				
+				glm::vec4 color = glm::vec4(
+					(float)(i % 3) / 2.0f,
+					(float)((i + 1) % 3) / 2.0f,
+					(float)((i + 2) % 3) / 2.0f,
+					1.0f
+				);
+
+				Zgine::BatchRenderer2D::DrawQuad(
+					{ x, y, 0.0f }, 
+					{ 0.3f, 0.3f }, 
+					color
+				);
+			}
+		}
+
+		// Draw test lines
+		if (m_ShowLines)
+		{
+			// Draw a grid of lines
+			for (int i = -3; i <= 3; i++)
+			{
+				float pos = i * 0.3f;
+				
+				// Vertical lines
+				Zgine::BatchRenderer2D::DrawLine(
+					{ pos, -1.0f, 0.0f },
+					{ pos, 1.0f, 0.0f },
+					{ 0.5f, 0.5f, 0.5f, 0.8f },
+					m_LineThickness
+				);
+				
+				// Horizontal lines
+				Zgine::BatchRenderer2D::DrawLine(
+					{ -1.0f, pos, 0.0f },
+					{ 1.0f, pos, 0.0f },
+					{ 0.5f, 0.5f, 0.5f, 0.8f },
+					m_LineThickness
+				);
+			}
+
+			// Draw animated lines
+			for (int i = 0; i < 8; i++)
+			{
+				float angle = m_Time + i * 0.5f;
+				float radius = 0.8f;
+				
+				glm::vec3 start = { cos(angle) * radius, sin(angle) * radius, 0.0f };
+				glm::vec3 end = { cos(angle + 1.0f) * radius * 0.5f, sin(angle + 1.0f) * radius * 0.5f, 0.0f };
+				
+				glm::vec4 color = glm::vec4(
+					sin(angle) * 0.5f + 0.5f,
+					cos(angle) * 0.5f + 0.5f,
+					0.8f,
+					1.0f
+				);
+
+				Zgine::BatchRenderer2D::DrawLine(start, end, color, m_LineThickness * 2.0f);
+			}
+		}
+
+		// Draw test circles
+		if (m_ShowCircles)
+		{
+			// Draw static circles
+			for (int i = 0; i < 3; i++)
+			{
+				float x = (i - 1) * 0.6f;
+				float y = 0.0f;
+				
+				glm::vec4 color = glm::vec4(
+					(float)(i % 3) / 2.0f,
+					(float)((i + 1) % 3) / 2.0f,
+					(float)((i + 2) % 3) / 2.0f,
+					0.8f
+				);
+
+				Zgine::BatchRenderer2D::DrawCircle(
+					{ x, y, 0.0f },
+					m_CircleRadius,
+					color
+				);
+			}
+
+			// Draw animated circles
+			if (m_AnimateCircles)
+			{
+				for (int i = 0; i < 6; i++)
+				{
+					float angle = m_Time * 0.5f + i * 1.0f;
+					float radius = 0.4f + sin(m_Time + i) * 0.2f;
+					
+					float x = cos(angle) * 0.8f;
+					float y = sin(angle) * 0.8f;
+					
+					glm::vec4 color = glm::vec4(
+						sin(angle) * 0.5f + 0.5f,
+						cos(angle) * 0.5f + 0.5f,
+						0.6f,
+						0.7f
+					);
+
+					Zgine::BatchRenderer2D::DrawCircle(
+						{ x, y, 0.0f },
+						radius,
+						color
+					);
+				}
+			}
+		}
+
+		Zgine::BatchRenderer2D::EndScene();
 	}
 
 	virtual void OnImGuiRender() override
 	{
-		ImGui::Begin("Example Layer");
-		ImGui::Text("Hello, ImGui!");
-		ImGui::Text("Use arrow keys to move camera");
+		ImGui::Begin("Primitive Test Layer");
+		
+		ImGui::Text("Primitive Rendering Test");
+		ImGui::Separator();
+		
+		ImGui::Text("Controls:");
+		ImGui::Text("WASD - Move camera");
 		ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", 
 			m_CameraPosition.x, m_CameraPosition.y, m_CameraPosition.z);
+		
+		ImGui::Separator();
+		
+		// Render controls
+		ImGui::Text("Render Options:");
+		ImGui::Checkbox("Show Quads", &m_ShowQuads);
+		ImGui::Checkbox("Show Lines", &m_ShowLines);
+		ImGui::Checkbox("Show Circles", &m_ShowCircles);
+		ImGui::Checkbox("Animate Circles", &m_AnimateCircles);
+		
+		ImGui::Separator();
+		
+		// Line controls
+		ImGui::Text("Line Settings:");
+		ImGui::SliderFloat("Line Thickness", &m_LineThickness, 0.01f, 0.2f);
+		
+		ImGui::Separator();
+		
+		// Circle controls
+		ImGui::Text("Circle Settings:");
+		ImGui::SliderFloat("Circle Radius", &m_CircleRadius, 0.1f, 0.8f);
+		ImGui::SliderInt("Circle Segments", &m_CircleSegments, 8, 64);
+		
+		ImGui::Separator();
+		
+		// Performance stats
+		auto stats = Zgine::BatchRenderer2D::GetStats();
+		ImGui::Text("Performance Stats:");
+		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+		ImGui::Text("Quad Count: %d", stats.QuadCount);
+		ImGui::Text("Vertex Count: %d", stats.VertexCount);
+		ImGui::Text("Index Count: %d", stats.IndexCount);
+		
+		if (ImGui::Button("Reset Stats"))
+		{
+			Zgine::BatchRenderer2D::ResetStats();
+		}
+		
+		ImGui::Separator();
+		ImGui::Text("Time: %.2f", m_Time);
+		
 		ImGui::End();
 	}
 
 private:
-	std::shared_ptr<Zgine::Shader> m_Shader;
-	std::shared_ptr<Zgine::VertexArray> m_VertexArray;
-
-	std::shared_ptr<Zgine::Shader> m_BlueShader;
-	std::shared_ptr<Zgine::VertexArray> m_SquaredVA;
-
 	Zgine::OrthographicCamera m_Camera;
 	glm::vec3 m_CameraPosition;
 	float m_CameraSpeed;
+	float m_Time;
+	
+	// Line settings
+	float m_LineThickness;
+	
+	// Circle settings
+	float m_CircleRadius;
+	int m_CircleSegments;
+	
+	// Render options
+	bool m_ShowLines;
+	bool m_ShowCircles;
+	bool m_ShowQuads;
+	bool m_AnimateCircles;
 };
 
 class Sandbox : public Zgine::Application {
 public:
 	Sandbox()
 	{
-		PushLayer(new ExampleLayer());
+		PushLayer(new PrimitiveTestLayer());
 	}
 	~Sandbox() {}
 };
