@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Zgine/Core/SmartPointers.h"
+
 /*  Compiler Detection  */
 #if defined(_MSC_VER)                       // Microsoft Visual C++
 #   define ZG_COMPILER_MSVC

@@ -40,14 +40,14 @@ namespace Zgine {
 		// Primitives
 		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color);
 		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color);
-		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
-		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+		static void DrawQuad(const glm::vec2& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+		static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 
 		// Rotated quads
 		static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color);
 		static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color);
-		static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
-		static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+		static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+		static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
 
 		static void DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, float thickness = 0.1f);
 
@@ -68,11 +68,11 @@ namespace Zgine {
 
 		// Quad rendering helpers
 		static void DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID = -1);
-		static void DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID = -1);
+		static void DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID = -1);
 		static void DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color, int entityID = -1);
-		static void DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID = -1);
+		static void DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID = -1);
 
-		static float GetTextureIndex(const std::shared_ptr<Texture2D>& texture);
+		static float GetTextureIndex(const Ref<Texture2D>& texture);
 
 	private:
 		static const uint32_t MaxQuads = 10000;
@@ -80,16 +80,16 @@ namespace Zgine {
 		static const uint32_t MaxIndices = MaxQuads * 6;
 		static const uint32_t MaxTextureSlots = 32; // TODO: RenderCaps
 
-		static std::shared_ptr<VertexArray> s_QuadVertexArray;
-		static std::shared_ptr<VertexBuffer> s_QuadVertexBuffer;
-		static std::shared_ptr<Shader> s_TextureShader;
-		static std::shared_ptr<Texture2D> s_WhiteTexture;
+		static Ref<VertexArray> s_QuadVertexArray;
+		static Ref<VertexBuffer> s_QuadVertexBuffer;
+		static Ref<Shader> s_TextureShader;
+		static Ref<Texture2D> s_WhiteTexture;
 
 		static uint32_t s_QuadIndexCount;
-		static std::unique_ptr<QuadVertex[]> s_QuadVertexBufferBase;
+		static ScopeArray<QuadVertex> s_QuadVertexBufferBase;
 		static QuadVertex* s_QuadVertexBufferPtr;
 
-		static std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> s_TextureSlots;
+		static std::array<Ref<Texture2D>, MaxTextureSlots> s_TextureSlots;
 		static uint32_t s_TextureSlotIndex;
 
 		static glm::vec4 s_QuadVertexPositions[4];

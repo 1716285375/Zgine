@@ -31,7 +31,7 @@ namespace  Zgine {
 		virtual void Shutdonw();
 	private:
 		GLFWwindow* m_Window;
-		std::unique_ptr<GraphicsContext> m_Context;
+		Scope<GraphicsContext> m_Context;
 
 		struct WindowData
 		{

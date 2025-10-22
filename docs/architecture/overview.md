@@ -174,16 +174,26 @@ The engine uses modern C++ smart pointers for automatic memory management:
 
 ```cpp
 // Unique ownership
-std::unique_ptr<Window> m_Window;
-std::unique_ptr<ImGuiLayer> m_ImGuiLayer;
+Scope<Window> m_Window;
+Scope<ImGuiLayer> m_ImGuiLayer;
 
 // Shared ownership
-std::shared_ptr<Texture2D> texture;
-std::shared_ptr<Shader> shader;
+Ref<Texture2D> texture;
+Ref<Shader> shader;
 
 // Array management
-std::unique_ptr<QuadVertex[]> s_QuadVertexBufferBase;
+ScopeArray<QuadVertex> s_QuadVertexBufferBase;
 ```
+
+**Smart Pointer Aliases**:
+- `Ref<T>`: Alias for `std::shared_ptr<T>` (shared ownership)
+- `Scope<T>`: Alias for `std::unique_ptr<T>` (unique ownership)
+- `ScopeArray<T>`: Alias for `std::unique_ptr<T[]>` (unique array ownership)
+
+**Helper Functions**:
+- `CreateRef<T>(...)`: Creates a `Ref<T>` using `std::make_shared`
+- `CreateScope<T>(...)`: Creates a `Scope<T>` using `std::make_unique`
+- `CreateScopeArray<T>(size)`: Creates a `ScopeArray<T>` using `std::make_unique<T[]>`
 
 ### RAII Principles
 

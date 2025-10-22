@@ -8,16 +8,16 @@
 
 namespace Zgine {
 
-	std::shared_ptr<VertexArray> BatchRenderer2D::s_QuadVertexArray;
-	std::shared_ptr<VertexBuffer> BatchRenderer2D::s_QuadVertexBuffer;
-	std::shared_ptr<Shader> BatchRenderer2D::s_TextureShader;
-	std::shared_ptr<Texture2D> BatchRenderer2D::s_WhiteTexture;
+	Ref<VertexArray> BatchRenderer2D::s_QuadVertexArray;
+	Ref<VertexBuffer> BatchRenderer2D::s_QuadVertexBuffer;
+	Ref<Shader> BatchRenderer2D::s_TextureShader;
+	Ref<Texture2D> BatchRenderer2D::s_WhiteTexture;
 
 	uint32_t BatchRenderer2D::s_QuadIndexCount;
-	std::unique_ptr<QuadVertex[]> BatchRenderer2D::s_QuadVertexBufferBase;
+	ScopeArray<QuadVertex> BatchRenderer2D::s_QuadVertexBufferBase;
 	QuadVertex* BatchRenderer2D::s_QuadVertexBufferPtr;
 
-	std::array<std::shared_ptr<Texture2D>, BatchRenderer2D::MaxTextureSlots> BatchRenderer2D::s_TextureSlots;
+	std::array<Ref<Texture2D>, BatchRenderer2D::MaxTextureSlots> BatchRenderer2D::s_TextureSlots;
 	uint32_t BatchRenderer2D::s_TextureSlotIndex = 1; // 0 = white texture
 
 	glm::vec4 BatchRenderer2D::s_QuadVertexPositions[4] = {
@@ -42,7 +42,7 @@ namespace Zgine {
 		});
 		s_QuadVertexArray->AddVertexBuffer(s_QuadVertexBuffer);
 
-		s_QuadVertexBufferBase = std::make_unique<QuadVertex[]>(MaxVertices);
+		s_QuadVertexBufferBase = CreateScopeArray<QuadVertex>(MaxVertices);
 
 		// Create indices array - keep it alive until IndexBuffer is created
 		std::vector<uint32_t> quadIndices(MaxIndices);
@@ -60,7 +60,7 @@ namespace Zgine {
 			offset += 4;
 		}
 
-		std::shared_ptr<IndexBuffer> quadIB;
+		Ref<IndexBuffer> quadIB;
 		quadIB.reset(IndexBuffer::Create(quadIndices.data(), MaxIndices));
 		s_QuadVertexArray->SetIndexBuffer(quadIB);
 
@@ -114,7 +114,7 @@ namespace Zgine {
 			}
 		)";
 
-		s_TextureShader.reset(new Shader(vertexSrc, fragmentSrc));
+		s_TextureShader = CreateRef<Shader>(vertexSrc, fragmentSrc);
 		s_TextureShader->Bind();
 		s_TextureShader->UploadUniformIntArray("u_Textures", samplers, MaxTextureSlots);
 
@@ -361,7 +361,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	void BatchRenderer2D::DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
+	void BatchRenderer2D::DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
@@ -412,7 +412,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	void BatchRenderer2D::DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
+	void BatchRenderer2D::DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
@@ -439,7 +439,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	float BatchRenderer2D::GetTextureIndex(const std::shared_ptr<Texture2D>& texture)
+	float BatchRenderer2D::GetTextureIndex(const Ref<Texture2D>& texture)
 	{
 		float textureIndex = 0.0f;
 		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)

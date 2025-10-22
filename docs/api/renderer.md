@@ -97,10 +97,10 @@ Zgine::BatchRenderer2D::DrawQuad(
 
 ```cpp
 static void DrawQuad(const glm::vec2& position, const glm::vec2& size, 
-                    const std::shared_ptr<Texture2D>& texture, 
+                    const Ref<Texture2D>& texture, 
                     const glm::vec4& tintColor = glm::vec4(1.0f));
 static void DrawQuad(const glm::vec3& position, const glm::vec2& size, 
-                    const std::shared_ptr<Texture2D>& texture, 
+                    const Ref<Texture2D>& texture, 
                     const glm::vec4& tintColor = glm::vec4(1.0f));
 ```
 
@@ -109,7 +109,7 @@ static void DrawQuad(const glm::vec3& position, const glm::vec2& size,
 **Parameters**:
 - `position`: Position of the quad
 - `size`: Size of the quad
-- `texture`: Texture to apply
+- `texture`: Texture to apply (using `Ref<Texture2D>` smart pointer)
 - `tintColor`: Color tint (default: white)
 
 **Returns**: void
@@ -133,10 +133,10 @@ static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size,
 static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, 
                            float rotation, const glm::vec4& color);
 static void DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, 
-                           float rotation, const std::shared_ptr<Texture2D>& texture, 
+                           float rotation, const Ref<Texture2D>& texture, 
                            const glm::vec4& tintColor = glm::vec4(1.0f));
 static void DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, 
-                           float rotation, const std::shared_ptr<Texture2D>& texture, 
+                           float rotation, const Ref<Texture2D>& texture, 
                            const glm::vec4& tintColor = glm::vec4(1.0f));
 ```
 
