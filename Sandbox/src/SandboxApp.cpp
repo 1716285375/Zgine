@@ -3,17 +3,17 @@
 #include "Test2DLayer.h"
 #include "Test3DLayer.h"
 
-class Sandbox : public Zgine::Application
+class SandboxApp : public Zgine::Application
 {
 public:
-	Sandbox()
+	SandboxApp()
 	{
 		// Push test layers
-		PushLayer(new Test2DLayer());
-		PushLayer(new Test3DLayer());
+		PushLayer(new Sandbox::Test2DLayer());
+		PushLayer(new Sandbox::Test3DLayer());
 	}
 
-	~Sandbox()
+	~SandboxApp()
 	{
 		// Layers are automatically cleaned up by Application destructor
 	}
@@ -21,5 +21,5 @@ public:
 
 Zgine::Application* Zgine::CreateApplication()
 {
-	return new Sandbox();
+	return new SandboxApp();
 }

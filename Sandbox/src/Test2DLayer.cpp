@@ -150,13 +150,13 @@ namespace Sandbox {
 		if (m_ShowGradients)
 		{
 			// Gradient quads
-			Zgine::BatchRenderer2D::DrawQuadGradient({-1.0f, 1.5f}, {0.4f, 0.4f}, 
-				{1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f, 1.0f}, 
-				{0.0f, 0.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 0.0f, 1.0f});
+			Zgine::BatchRenderer2D::DrawQuadGradient(glm::vec3(-1.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 
+				glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 
+				glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
 			
-			Zgine::BatchRenderer2D::DrawRotatedQuadGradient({0.0f, 1.5f}, {0.4f, 0.4f}, 45.0f,
-				{1.0f, 0.0f, 1.0f, 1.0f}, {0.0f, 1.0f, 1.0f, 1.0f}, 
-				{1.0f, 1.0f, 0.0f, 1.0f}, {0.5f, 0.5f, 0.5f, 1.0f});
+			Zgine::BatchRenderer2D::DrawRotatedQuadGradient(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 45.0f,
+				glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), 
+				glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
 		}
 	}
 
