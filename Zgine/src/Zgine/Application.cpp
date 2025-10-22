@@ -1,5 +1,7 @@
 #include "zgpch.h"
 #include "Application.h"
+
+#include <GLFW/glfw3.h>
 #include "Input.h"
 #include "Zgine/Log.h"
 
@@ -43,12 +45,18 @@ namespace Zgine {
 
 	void Application::Run()
 	{
+		float lastFrameTime = 0.0f;
+		
 		while (m_Running) {
+			float time = (float)glfwGetTime(); // TODO: Platform::GetTime
+			Timestep timestep = time - lastFrameTime;
+			lastFrameTime = time;
+
 			RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
 			RenderCommand::Clear();
 
 			for (auto* layer : m_LayerStack) {
-				layer->OnUpdate();
+				layer->OnUpdate(timestep);
 			}
 
 			m_ImGuiLayer->Begin();

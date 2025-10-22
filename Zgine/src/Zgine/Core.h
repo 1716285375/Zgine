@@ -2,6 +2,9 @@
 
 #include "Zgine/Core/SmartPointers.h"
 
+// Time types
+using Timestep = float;
+
 /*  Compiler Detection  */
 #if defined(_MSC_VER)                       // Microsoft Visual C++
 #   define ZG_COMPILER_MSVC
