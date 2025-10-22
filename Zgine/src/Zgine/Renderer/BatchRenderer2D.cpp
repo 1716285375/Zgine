@@ -327,6 +327,278 @@ namespace Zgine {
 		}
 	}
 
+	void BatchRenderer2D::DrawTriangle(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color)
+	{
+		if (s_QuadIndexCount >= MaxIndices - 6)
+			NextBatch();
+
+		// Create a triangle using the quad system (two vertices are the same)
+		glm::vec3 quadVertices[4] = {
+			p0,  // Bottom-left
+			p1,  // Bottom-right
+			p2,  // Top-right
+			p0   // Top-left (same as p0 to form triangle)
+		};
+
+		// Add vertices to buffer
+		for (int i = 0; i < 4; i++)
+		{
+			s_QuadVertexBufferPtr->Position = quadVertices[i];
+			s_QuadVertexBufferPtr->Color = color;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = 0.0f;
+			s_QuadVertexBufferPtr++;
+		}
+
+		s_QuadIndexCount += 6;
+		s_Stats.QuadCount++;
+	}
+
+	void BatchRenderer2D::DrawEllipse(const glm::vec3& position, float radiusX, float radiusY, const glm::vec4& color, int segments)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+
+		// Draw ellipse as multiple triangular sectors
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+
+			float angle1 = i * angleStep;
+			float angle2 = (i + 1) * angleStep;
+
+			// Calculate sector vertices
+			glm::vec3 center = position;
+			glm::vec3 v1 = position + glm::vec3(cos(angle1) * radiusX, sin(angle1) * radiusY, 0.0f);
+			glm::vec3 v2 = position + glm::vec3(cos(angle2) * radiusX, sin(angle2) * radiusY, 0.0f);
+
+			// Create triangular sector
+			glm::vec3 quadVertices[4] = {
+				center,  // Bottom-left
+				v1,      // Bottom-right
+				v2,      // Top-right
+				center   // Top-left (same as center to form triangle)
+			};
+
+			// Add vertices to buffer
+			for (int j = 0; j < 4; j++)
+			{
+				s_QuadVertexBufferPtr->Position = quadVertices[j];
+				s_QuadVertexBufferPtr->Color = color;
+				s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+				s_QuadVertexBufferPtr->TexIndex = 0.0f;
+				s_QuadVertexBufferPtr++;
+			}
+
+			s_QuadIndexCount += 6;
+		}
+
+		s_Stats.QuadCount += segments;
+	}
+
+	void BatchRenderer2D::DrawEllipseOutline(const glm::vec3& position, float radiusX, float radiusY, const glm::vec4& color, float thickness, int segments)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+
+		// Draw ellipse outline as connected lines
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+
+			float angle1 = i * angleStep;
+			float angle2 = (i + 1) * angleStep;
+
+			// Calculate line segment points
+			glm::vec3 p1 = position + glm::vec3(cos(angle1) * radiusX, sin(angle1) * radiusY, 0.0f);
+			glm::vec3 p2 = position + glm::vec3(cos(angle2) * radiusX, sin(angle2) * radiusY, 0.0f);
+
+			// Draw line segment as a quad
+			DrawLine(p1, p2, color, thickness);
+		}
+	}
+
+	void BatchRenderer2D::DrawArc(const glm::vec3& position, float radius, float startAngle, float endAngle, const glm::vec4& color, float thickness, int segments)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		
+		// Calculate angle range
+		float angleRange = endAngle - startAngle;
+		if (angleRange < 0.0f) angleRange += 2.0f * glm::pi<float>();
+		
+		const float angleStep = angleRange / segments;
+
+		// Draw arc as connected lines
+		for (int i = 0; i < segments; i++)
+		{
+			if (s_QuadIndexCount >= MaxIndices - 6)
+				NextBatch();
+
+			float angle1 = startAngle + i * angleStep;
+			float angle2 = startAngle + (i + 1) * angleStep;
+
+			// Calculate line segment points
+			glm::vec3 p1 = position + glm::vec3(cos(angle1) * radius, sin(angle1) * radius, 0.0f);
+			glm::vec3 p2 = position + glm::vec3(cos(angle2) * radius, sin(angle2) * radius, 0.0f);
+
+			// Draw line segment as a quad
+			DrawLine(p1, p2, color, thickness);
+		}
+		}
+	}
+
+	void BatchRenderer2D::DrawQuadGradient(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colorTopLeft, const glm::vec4& colorTopRight, const glm::vec4& colorBottomLeft, const glm::vec4& colorBottomRight)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		float textureIndex = 0.0f; // White texture
+
+		glm::vec3 quadVertices[4] = {
+			{ position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-left
+			{ position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-right
+			{ position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z }, // Top-right
+			{ position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z }  // Top-left
+		};
+
+		glm::vec4 colors[4] = { colorBottomLeft, colorBottomRight, colorTopRight, colorTopLeft };
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_QuadVertexBufferPtr->Position = quadVertices[i];
+			s_QuadVertexBufferPtr->Color = colors[i];
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_QuadVertexBufferPtr++;
+		}
+
+		s_QuadIndexCount += 6;
+		s_Stats.QuadCount++;
+	}
+
+	void BatchRenderer2D::DrawRotatedQuadGradient(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& colorTopLeft, const glm::vec4& colorTopRight, const glm::vec4& colorBottomLeft, const glm::vec4& colorBottomRight)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		float textureIndex = 0.0f; // White texture
+
+		float cosR = cos(rotation);
+		float sinR = sin(rotation);
+
+		glm::vec3 quadVertices[4] = {
+			{ position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-left
+			{ position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-right
+			{ position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z }, // Top-right
+			{ position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z }  // Top-left
+		};
+
+		// Apply rotation
+		for (int i = 0; i < 4; i++)
+		{
+			float x = quadVertices[i].x - position.x;
+			float y = quadVertices[i].y - position.y;
+			quadVertices[i].x = position.x + (x * cosR - y * sinR);
+			quadVertices[i].y = position.y + (x * sinR + y * cosR);
+		}
+
+		glm::vec4 colors[4] = { colorBottomLeft, colorBottomRight, colorTopRight, colorTopLeft };
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_QuadVertexBufferPtr->Position = quadVertices[i];
+			s_QuadVertexBufferPtr->Color = colors[i];
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_QuadVertexBufferPtr++;
+		}
+
+		s_QuadIndexCount += 6;
+		s_Stats.QuadCount++;
+	}
+
+	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::mat4& transform, const glm::vec4& color)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		float textureIndex = 0.0f; // White texture
+
+		glm::vec3 quadVertices[4] = {
+			{ position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-left
+			{ position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-right
+			{ position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z }, // Top-right
+			{ position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z }  // Top-left
+		};
+
+		// Apply transform matrix
+		for (int i = 0; i < 4; i++)
+		{
+			glm::vec4 transformed = transform * glm::vec4(quadVertices[i], 1.0f);
+			quadVertices[i] = glm::vec3(transformed);
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_QuadVertexBufferPtr->Position = quadVertices[i];
+			s_QuadVertexBufferPtr->Color = color;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_QuadVertexBufferPtr++;
+		}
+
+		s_QuadIndexCount += 6;
+		s_Stats.QuadCount++;
+	}
+
+	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		if (s_QuadIndexCount >= MaxIndices)
+			NextBatch();
+
+		float textureIndex = GetTextureIndex(texture);
+
+		glm::vec3 quadVertices[4] = {
+			{ position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-left
+			{ position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z }, // Bottom-right
+			{ position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z }, // Top-right
+			{ position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z }  // Top-left
+		};
+
+		// Apply transform matrix
+		for (int i = 0; i < 4; i++)
+		{
+			glm::vec4 transformed = transform * glm::vec4(quadVertices[i], 1.0f);
+			quadVertices[i] = glm::vec3(transformed);
+		}
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_QuadVertexBufferPtr->Position = quadVertices[i];
+			s_QuadVertexBufferPtr->Color = tintColor;
+			s_QuadVertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_QuadVertexBufferPtr->TexIndex = textureIndex;
+			s_QuadVertexBufferPtr++;
+		}
+
+		s_QuadIndexCount += 6;
+		s_Stats.QuadCount++;
+	}
+
 	RenderStats BatchRenderer2D::GetStats()
 	{
 		return s_Stats;

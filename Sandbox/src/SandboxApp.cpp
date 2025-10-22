@@ -18,6 +18,7 @@ public:
 		, m_ShowLines(true)
 		, m_ShowCircles(true)
 		, m_ShowQuads(true)
+		, m_ShowAdvanced(true)
 		, m_AnimateCircles(true)
 	{
 		// Initialize batch renderer
@@ -199,6 +200,100 @@ public:
 			}
 		}
 
+		// Draw new 2D primitives
+		if (m_ShowAdvanced)
+		{
+			// Draw triangles
+			for (int i = 0; i < 3; i++)
+			{
+				float x = (i - 1) * 0.8f;
+				float y = -1.2f;
+				
+				glm::vec3 p0 = { x - 0.2f, y - 0.2f, 0.0f };
+				glm::vec3 p1 = { x + 0.2f, y - 0.2f, 0.0f };
+				glm::vec3 p2 = { x, y + 0.2f, 0.0f };
+				
+				glm::vec4 color = glm::vec4(
+					(float)(i % 3) / 2.0f,
+					(float)((i + 1) % 3) / 2.0f,
+					(float)((i + 2) % 3) / 2.0f,
+					0.8f
+				);
+
+				Zgine::BatchRenderer2D::DrawTriangle(p0, p1, p2, color);
+			}
+
+			// Draw ellipses
+			for (int i = 0; i < 3; i++)
+			{
+				float x = (i - 1) * 0.6f;
+				float y = 1.5f;
+				
+				glm::vec4 color = glm::vec4(0.8f, 0.2f, 0.8f, 0.7f);
+
+				Zgine::BatchRenderer2D::DrawEllipse(
+					{ x, y, 0.0f },
+					0.3f, 0.2f, // radiusX, radiusY
+					color,
+					16
+				);
+
+				// Draw ellipse outline
+				Zgine::BatchRenderer2D::DrawEllipseOutline(
+					{ x, y, 0.0f },
+					0.3f, 0.2f,
+					glm::vec4(1.0f, 1.0f, 1.0f, 0.9f),
+					0.02f,
+					16
+				);
+			}
+
+			// Draw arcs
+			for (int i = 0; i < 4; i++)
+			{
+				float x = -1.0f + i * 0.6f;
+				float y = -1.5f;
+				
+				float startAngle = i * glm::pi<float>() / 2.0f;
+				float endAngle = startAngle + glm::pi<float>() / 2.0f;
+				
+				glm::vec4 color = glm::vec4(
+					(float)i / 3.0f,
+					1.0f - (float)i / 3.0f,
+					0.5f,
+					0.8f
+				);
+
+				Zgine::BatchRenderer2D::DrawArc(
+					{ x, y, 0.0f },
+					0.25f,
+					startAngle,
+					endAngle,
+					color,
+					0.03f,
+					16
+				);
+			}
+
+			// Draw gradient quads
+			for (int i = 0; i < 2; i++)
+			{
+				float x = (i - 0.5f) * 1.2f;
+				float y = 0.0f;
+				
+				glm::vec4 topLeft = glm::vec4(1.0f, 0.0f, 0.0f, 0.8f);     // Red
+				glm::vec4 topRight = glm::vec4(0.0f, 1.0f, 0.0f, 0.8f);   // Green
+				glm::vec4 bottomLeft = glm::vec4(0.0f, 0.0f, 1.0f, 0.8f); // Blue
+				glm::vec4 bottomRight = glm::vec4(1.0f, 1.0f, 0.0f, 0.8f); // Yellow
+
+				Zgine::BatchRenderer2D::DrawQuadGradient(
+					{ x, y, 0.0f },
+					{ 0.4f, 0.4f },
+					topLeft, topRight, bottomLeft, bottomRight
+				);
+			}
+		}
+
 		Zgine::BatchRenderer2D::EndScene();
 	}
 
@@ -225,6 +320,7 @@ public:
 		ImGui::Checkbox("Show Lines", &m_ShowLines);
 		ImGui::Checkbox("Show Circles", &m_ShowCircles);
 		ImGui::SameLine();
+		ImGui::Checkbox("Show Advanced", &m_ShowAdvanced);
 		ImGui::Checkbox("Animate Circles", &m_AnimateCircles);
 		
 		ImGui::Separator();
@@ -288,8 +384,9 @@ public:
 		ImGui::Text("Render States:");
 		ImGui::Text("Quads: %s", m_ShowQuads ? "ON" : "OFF");
 		ImGui::Text("Lines: %s", m_ShowLines ? "ON" : "OFF");
-		ImGui::Text("Circles: %s", m_ShowCircles ? "ON" : "OFF");
-		ImGui::Text("Animation: %s", m_AnimateCircles ? "ON" : "OFF");
+	ImGui::Text("Circles: %s", m_ShowCircles ? "ON" : "OFF");
+	ImGui::Text("Advanced: %s", m_ShowAdvanced ? "ON" : "OFF");
+	ImGui::Text("Animation: %s", m_AnimateCircles ? "ON" : "OFF");
 		
 		ImGui::End();
 	}
@@ -311,6 +408,7 @@ private:
 	bool m_ShowLines;
 	bool m_ShowCircles;
 	bool m_ShowQuads;
+	bool m_ShowAdvanced;
 	bool m_AnimateCircles;
 };
 

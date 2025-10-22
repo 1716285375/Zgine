@@ -318,6 +318,202 @@ Zgine::BatchRenderer2D::ResetStats();
 3. **Texture Management**: Reuse textures when possible
 4. **Statistics Monitoring**: Monitor rendering statistics for optimization
 
+## Additional 2D Primitives
+
+### Triangle
+
+```cpp
+static void DrawTriangle(const glm::vec3& p0, const glm::vec3& p1, const glm::vec3& p2, const glm::vec4& color);
+```
+
+**Description**: Draw a filled triangle defined by three vertices.
+
+**Parameters**:
+- `p0`, `p1`, `p2`: Triangle vertices
+- `color`: Triangle color
+
+**Returns**: void
+
+**Example**:
+```cpp
+// Draw a red triangle
+Zgine::BatchRenderer2D::DrawTriangle(
+    {-0.5f, -0.5f, 0.0f},  // Bottom-left
+    {0.5f, -0.5f, 0.0f},   // Bottom-right
+    {0.0f, 0.5f, 0.0f},    // Top
+    {1.0f, 0.0f, 0.0f, 1.0f} // Red color
+);
+```
+
+### Ellipse
+
+```cpp
+static void DrawEllipse(const glm::vec3& position, float radiusX, float radiusY, const glm::vec4& color, int segments = 32);
+```
+
+**Description**: Draw a filled ellipse.
+
+**Parameters**:
+- `position`: Center position
+- `radiusX`: Horizontal radius
+- `radiusY`: Vertical radius
+- `color`: Ellipse color
+- `segments`: Number of segments (default: 32)
+
+**Returns**: void
+
+**Example**:
+```cpp
+// Draw a purple ellipse
+Zgine::BatchRenderer2D::DrawEllipse(
+    {0.0f, 0.0f, 0.0f},     // Position
+    0.4f, 0.2f,             // radiusX, radiusY
+    {0.8f, 0.2f, 0.8f, 1.0f}, // Purple color
+    16                       // Segments
+);
+```
+
+### Ellipse Outline
+
+```cpp
+static void DrawEllipseOutline(const glm::vec3& position, float radiusX, float radiusY, const glm::vec4& color, float thickness = 0.1f, int segments = 32);
+```
+
+**Description**: Draw an ellipse outline.
+
+**Parameters**:
+- `position`: Center position
+- `radiusX`: Horizontal radius
+- `radiusY`: Vertical radius
+- `color`: Outline color
+- `thickness`: Line thickness (default: 0.1f)
+- `segments`: Number of segments (default: 32)
+
+**Returns**: void
+
+### Arc
+
+```cpp
+static void DrawArc(const glm::vec3& position, float radius, float startAngle, float endAngle, const glm::vec4& color, float thickness = 0.1f, int segments = 32);
+```
+
+**Description**: Draw an arc (partial circle).
+
+**Parameters**:
+- `position`: Center position
+- `radius`: Arc radius
+- `startAngle`: Starting angle in radians
+- `endAngle`: Ending angle in radians
+- `color`: Arc color
+- `thickness`: Line thickness (default: 0.1f)
+- `segments`: Number of segments (default: 32)
+
+**Returns**: void
+
+**Example**:
+```cpp
+// Draw a quarter circle arc
+Zgine::BatchRenderer2D::DrawArc(
+    {0.0f, 0.0f, 0.0f},     // Position
+    0.5f,                   // Radius
+    0.0f,                   // Start angle
+    glm::pi<float>() / 2.0f, // End angle (90 degrees)
+    {1.0f, 1.0f, 0.0f, 1.0f}, // Yellow color
+    0.05f,                  // Thickness
+    16                      // Segments
+);
+```
+
+## Advanced 2D Features
+
+### Gradient Quad
+
+```cpp
+static void DrawQuadGradient(const glm::vec3& position, const glm::vec2& size, const glm::vec4& colorTopLeft, const glm::vec4& colorTopRight, const glm::vec4& colorBottomLeft, const glm::vec4& colorBottomRight);
+```
+
+**Description**: Draw a quad with gradient colors at each corner.
+
+**Parameters**:
+- `position`: Center position
+- `size`: Quad size
+- `colorTopLeft`: Top-left corner color
+- `colorTopRight`: Top-right corner color
+- `colorBottomLeft`: Bottom-left corner color
+- `colorBottomRight`: Bottom-right corner color
+
+**Returns**: void
+
+**Example**:
+```cpp
+// Draw a gradient quad
+Zgine::BatchRenderer2D::DrawQuadGradient(
+    {0.0f, 0.0f, 0.0f},     // Position
+    {1.0f, 1.0f},           // Size
+    {1.0f, 0.0f, 0.0f, 1.0f}, // Top-left: Red
+    {0.0f, 1.0f, 0.0f, 1.0f}, // Top-right: Green
+    {0.0f, 0.0f, 1.0f, 1.0f}, // Bottom-left: Blue
+    {1.0f, 1.0f, 0.0f, 1.0f}  // Bottom-right: Yellow
+);
+```
+
+### Rotated Gradient Quad
+
+```cpp
+static void DrawRotatedQuadGradient(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& colorTopLeft, const glm::vec4& colorTopRight, const glm::vec4& colorBottomLeft, const glm::vec4& colorBottomRight);
+```
+
+**Description**: Draw a rotated quad with gradient colors.
+
+**Parameters**:
+- `position`: Center position
+- `size`: Quad size
+- `rotation`: Rotation angle in radians
+- `colorTopLeft`: Top-left corner color
+- `colorTopRight`: Top-right corner color
+- `colorBottomLeft`: Bottom-left corner color
+- `colorBottomRight`: Bottom-right corner color
+
+**Returns**: void
+
+## Transform Functions
+
+### Quad with Transform Matrix
+
+```cpp
+static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::mat4& transform, const glm::vec4& color);
+static void DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor = glm::vec4(1.0f));
+```
+
+**Description**: Draw a quad with custom transformation matrix.
+
+**Parameters**:
+- `position`: Center position
+- `size`: Quad size
+- `transform`: Transformation matrix
+- `color`: Quad color (for solid color version)
+- `texture`: Texture to apply (for textured version)
+- `tintColor`: Color tint for textured quad (default: white)
+
+**Returns**: void
+
+**Example**:
+```cpp
+// Create a transformation matrix
+glm::mat4 transform = glm::mat4(1.0f);
+transform = glm::translate(transform, glm::vec3(1.0f, 0.0f, 0.0f));
+transform = glm::rotate(transform, glm::pi<float>() / 4.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+transform = glm::scale(transform, glm::vec3(1.5f, 0.5f, 1.0f));
+
+// Draw transformed quad
+Zgine::BatchRenderer2D::DrawQuad(
+    {0.0f, 0.0f, 0.0f},     // Position
+    {1.0f, 1.0f},           // Size
+    transform,              // Transform matrix
+    {0.5f, 0.8f, 0.2f, 1.0f} // Color
+);
+```
+
 ## Error Handling
 
 The renderer handles errors gracefully:
