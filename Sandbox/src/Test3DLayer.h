@@ -1,8 +1,16 @@
 #pragma once
 
-#include <Zgine.h>
+#include "Zgine/Layer.h"
+#include "Zgine/Renderer/PerspectiveCamera.h"
+#include "Zgine/Renderer/BatchRenderer3D.h"
+#include "Zgine/Input.h"
+#include "Zgine/KeyCodes.h"
+#include "Zgine/MouseButtonCodes.h"
 #include "imgui.h"
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <functional>
+#include <string>
 
 namespace Sandbox {
 
