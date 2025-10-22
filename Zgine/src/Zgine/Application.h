@@ -9,13 +9,6 @@
 
 #include "Zgine/ImGui/ImGuiLayer.h"
 
-#include "Zgine/Renderer/Shader.h"
-#include "Zgine/Renderer/Buffer.h"
-#include "Zgine/Renderer/VertexArray.h"
-#include "Zgine/Renderer/OrthographicCamera.h"
-
-
-
 namespace Zgine {
 	class ZG_API Application {
 	public:
@@ -43,14 +36,6 @@ namespace Zgine {
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 		static Application* s_Instance;
-
-		std::shared_ptr<Shader> m_Shader;
-		std::shared_ptr<VertexArray> m_VertexArray;
-
-		std::shared_ptr<Shader> m_BlueShader;
-		std::shared_ptr<VertexArray> m_SquaredVA;
-
-		OrthographicCamera m_Camera;
 	};
 
 	// To be defined in CLIENT

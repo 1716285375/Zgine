@@ -3,134 +3,183 @@
 
 #include "imgui.h"
 
-class BatchRendererTestLayer : public Zgine::Layer
+class ExampleLayer : public Zgine::Layer
 {
 public:
-	BatchRendererTestLayer()
-		: Layer("BatchRendererTest")
+	ExampleLayer()
+		: Layer("Example")
+		, m_Camera(-1.6f, 1.6f, -0.9f, 0.9f)
+		, m_CameraPosition(0.0f)
+		, m_CameraSpeed(0.01f)
 	{
-		// Initialize batch renderer
-		Zgine::BatchRenderer2D::Init();
+		// Create triangle vertex array
+		m_VertexArray.reset(Zgine::VertexArray::Create());
 
-		// Create some test textures
-		m_RedTexture = Zgine::Texture2D::Create(1, 1);
-		uint32_t redTextureData = 0xff0000ff; // Red color
-		m_RedTexture->SetData(&redTextureData, sizeof(uint32_t));
+		float vertices[3 * 7] = {
+			-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f,
+			0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+			0.0f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+		};
+		std::shared_ptr<Zgine::VertexBuffer> vertexBuffer;
+		vertexBuffer.reset(Zgine::VertexBuffer::Create(vertices, sizeof(vertices)));
 
-		m_GreenTexture = Zgine::Texture2D::Create(1, 1);
-		uint32_t greenTextureData = 0x00ff00ff; // Green color
-		m_GreenTexture->SetData(&greenTextureData, sizeof(uint32_t));
+		Zgine::BufferLayout layout = {
+			{ Zgine::ShaderDataType::Float3, "a_Position"},
+			{ Zgine::ShaderDataType::Float4, "a_Color" }
+		};
 
-		m_BlueTexture = Zgine::Texture2D::Create(1, 1);
-		uint32_t blueTextureData = 0x0000ffff; // Blue color
-		m_BlueTexture->SetData(&blueTextureData, sizeof(uint32_t));
+		vertexBuffer->SetLayout(layout);
+		m_VertexArray->AddVertexBuffer(vertexBuffer);
+
+		uint32_t indices[3] = { 0, 1, 2 };
+
+		std::shared_ptr<Zgine::IndexBuffer> indexBuffer;
+		indexBuffer.reset(Zgine::IndexBuffer::Create(indices, sizeof(indices) / sizeof(uint32_t)));
+		m_VertexArray->SetIndexBuffer(indexBuffer);
+
+		// Create square vertex array
+		m_SquaredVA.reset(Zgine::VertexArray::Create());
+
+		float squareVertices[3 * 4] = {
+			-0.75f, -0.75f, 0.0f,
+			0.75f, -0.75f, 0.0f,  
+			0.75f, 0.75f, 0.0f,
+			-0.75f, 0.75f, 0.0f
+		};
+
+		std::shared_ptr<Zgine::VertexBuffer> squareVB(Zgine::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
+		squareVB->SetLayout({
+			{ Zgine::ShaderDataType::Float3, "a_Position"}
+		});
+		m_SquaredVA->AddVertexBuffer(squareVB);
+
+		uint32_t squareIndices[6] = { 0, 1, 2, 2, 3, 0 };
+		std::shared_ptr<Zgine::IndexBuffer> squareIB(Zgine::IndexBuffer::Create(squareIndices, sizeof(squareIndices) / sizeof(uint32_t)));
+		m_SquaredVA->SetIndexBuffer(squareIB);
+
+		// Create triangle shader
+		std::string vertexSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) in vec3 a_Position; 
+			layout(location = 1 ) in vec4 a_Color; 
+
+			uniform mat4 u_ViewProjection;
+
+			out vec3 v_Position;
+			out vec4 v_Color;
+
+			void main()
+			{
+				v_Position = a_Position;
+				v_Color = a_Color;
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+			}
+		)";
+
+		std::string fragmentSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) out vec4 color;
+			
+			in vec3 v_Position;
+			in vec4 v_Color;
+
+			void main()
+			{
+				color = vec4(v_Position * 0.5 + 0.5, 1.0);
+				color = v_Color;
+			}
+		)";
+
+		m_Shader.reset(new Zgine::Shader(vertexSrc, fragmentSrc));
+
+		// Create blue square shader
+		std::string blueShaderVertexSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) in vec3 a_Position; 
+
+			uniform mat4 u_ViewProjection;
+
+			out vec3 v_Position;
+
+			void main()
+			{
+				v_Position = a_Position;
+				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+			}
+		)";
+
+		std::string blueShaderFragmentSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) out vec4 color;
+			
+			in vec3 v_Position;
+
+			void main()
+			{
+				color = vec4(0.2, 0.3, 0.8, 1.0);
+			}
+		)";
+
+		m_BlueShader.reset(new Zgine::Shader(blueShaderVertexSrc, blueShaderFragmentSrc));
 	}
 
-	virtual ~BatchRendererTestLayer()
-	{
-		Zgine::BatchRenderer2D::Shutdown();
-	}
+	virtual ~ExampleLayer() {}
 
 	virtual void OnUpdate() override
 	{
 		// Update camera position based on input
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
-			m_CameraPosition.x -= m_CameraSpeed;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT))
 			m_CameraPosition.x += m_CameraSpeed;
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_RIGHT))
+			m_CameraPosition.x -= m_CameraSpeed;
 
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
-			m_CameraPosition.y += m_CameraSpeed;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_UP))
 			m_CameraPosition.y -= m_CameraSpeed;
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_DOWN))
+			m_CameraPosition.y += m_CameraSpeed;
 
-		// Render with batch renderer
-		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
-		Zgine::RenderCommand::Clear();
-
+		// Render
 		m_Camera.SetPosition(m_CameraPosition);
-		Zgine::BatchRenderer2D::BeginScene(m_Camera);
 
-		// Draw multiple quads with different colors and textures
-		for (int i = 0; i < 100; i++)
-		{
-			float x = (i % 10) * 0.2f - 1.0f;
-			float y = (i / 10) * 0.2f - 1.0f;
-			
-			glm::vec4 color = glm::vec4(
-				(float)(i % 3) / 2.0f,
-				(float)((i + 1) % 3) / 2.0f,
-				(float)((i + 2) % 3) / 2.0f,
-				1.0f
-			);
-
-			if (i % 3 == 0)
-				Zgine::BatchRenderer2D::DrawQuad({ x, y, 0.0f }, { 0.15f, 0.15f }, m_RedTexture, color);
-			else if (i % 3 == 1)
-				Zgine::BatchRenderer2D::DrawQuad({ x, y, 0.0f }, { 0.15f, 0.15f }, m_GreenTexture, color);
-			else
-				Zgine::BatchRenderer2D::DrawQuad({ x, y, 0.0f }, { 0.15f, 0.15f }, m_BlueTexture, color);
-		}
-
-		// Draw some rotated quads
-		for (int i = 0; i < 20; i++)
-		{
-			float angle = m_Time + i * 0.1f;
-			float x = cos(angle) * 0.5f;
-			float y = sin(angle) * 0.5f;
-			
-			Zgine::BatchRenderer2D::DrawRotatedQuad(
-				{ x, y, 0.0f }, 
-				{ 0.1f, 0.1f }, 
-				angle, 
-				glm::vec4(1.0f, 1.0f, 1.0f, 0.8f)
-			);
-		}
-
-		Zgine::BatchRenderer2D::EndScene();
-
-		m_Time += 0.016f; // Approximate 60 FPS
+		Zgine::Renderer::BeginScene(m_Camera);
+		Zgine::Renderer::Submit(m_BlueShader, m_SquaredVA);
+		Zgine::Renderer::Submit(m_Shader, m_VertexArray);
+		Zgine::Renderer::EndScene();
 	}
 
 	virtual void OnImGuiRender() override
 	{
-		ImGui::Begin("Batch Renderer Test");
-		ImGui::Text("Batch Renderer 2D Test");
-		ImGui::Text("Use WASD to move camera");
-		
-		auto stats = Zgine::BatchRenderer2D::GetStats();
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quad Count: %d", stats.QuadCount);
-		ImGui::Text("Vertex Count: %d", stats.VertexCount);
-		ImGui::Text("Index Count: %d", stats.IndexCount);
-		
-		ImGui::Text("Time: %.2f", m_Time);
-		
-		if (ImGui::Button("Reset Stats"))
-		{
-			Zgine::BatchRenderer2D::ResetStats();
-		}
-		
+		ImGui::Begin("Example Layer");
+		ImGui::Text("Hello, ImGui!");
+		ImGui::Text("Use arrow keys to move camera");
+		ImGui::Text("Camera Position: (%.2f, %.2f, %.2f)", 
+			m_CameraPosition.x, m_CameraPosition.y, m_CameraPosition.z);
 		ImGui::End();
 	}
 
 private:
-	std::shared_ptr<Zgine::Texture2D> m_RedTexture;
-	std::shared_ptr<Zgine::Texture2D> m_GreenTexture;
-	std::shared_ptr<Zgine::Texture2D> m_BlueTexture;
-	Zgine::OrthographicCamera m_Camera{ -1.6f, 1.6f, -0.9f, 0.9f };
-	glm::vec3 m_CameraPosition{ 0.0f };
-	float m_CameraSpeed = 0.01f;
-	float m_Time = 0.0f;
+	std::shared_ptr<Zgine::Shader> m_Shader;
+	std::shared_ptr<Zgine::VertexArray> m_VertexArray;
+
+	std::shared_ptr<Zgine::Shader> m_BlueShader;
+	std::shared_ptr<Zgine::VertexArray> m_SquaredVA;
+
+	Zgine::OrthographicCamera m_Camera;
+	glm::vec3 m_CameraPosition;
+	float m_CameraSpeed;
 };
 
 class Sandbox : public Zgine::Application {
 public:
 	Sandbox()
 	{
-		PushLayer(new BatchRendererTestLayer());
+		PushLayer(new ExampleLayer());
 	}
-	~Sandbox() {};
+	~Sandbox() {}
 };
 
 Zgine::Application* Zgine::CreateApplication() {

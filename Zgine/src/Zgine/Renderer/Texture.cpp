@@ -54,4 +54,18 @@ namespace Zgine {
 		return nullptr;
 	}
 
+	Texture2D::Texture2D(uint32_t width, uint32_t height)
+		: m_Width(width), m_Height(height), m_RendererID(0), m_IsLoaded(false)
+	{
+	}
+
+	Texture2D::Texture2D(const std::string& path)
+		: m_Path(path), m_Width(0), m_Height(0), m_RendererID(0), m_IsLoaded(false)
+	{
+	}
+
+	Texture2D::~Texture2D()
+	{
+	}
+
 }

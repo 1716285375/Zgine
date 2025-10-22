@@ -1,6 +1,6 @@
-MIT License
+# Zgine License
 
-Copyright (c) 2025 Coder_Jie
+Copyright (c) 2024 Zgine Contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +19,32 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## Third-Party Licenses
+
+This project uses the following third-party libraries:
+
+### GLFW
+Copyright (c) 2002-2006 Marcus Geelnard
+Copyright (c) 2006-2019 Camilla Löwy
+Licensed under the zlib/libpng license
+
+### GLAD
+Copyright (c) 2013-2020 David Herberth
+Licensed under the MIT License
+
+### ImGui
+Copyright (c) 2014-2024 Omar Cornut
+Licensed under the MIT License
+
+### GLM
+Copyright (c) 2005 - G-Truc Creation
+Licensed under the MIT License
+
+### spdlog
+Copyright (c) 2015 Gabi Melman
+Licensed under the MIT License
+
+### stb_image
+Copyright (c) 2017 Sean Barrett
+Licensed under the MIT License

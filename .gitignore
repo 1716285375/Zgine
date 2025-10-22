@@ -37,7 +37,7 @@
 *.out
 *.app
 
-# debug information files
+# Debug information files
 *.dwo
 
 # Visual Studio
@@ -74,41 +74,49 @@
 *.shfbproj.user
 *.shfbproj.vspscc
 *.shfbproj.vssscc
-*.csproj.user
-*.csproj.vspscc
-*.csproj.vssscc
-*.vbproj.user
-*.vbproj.vspscc
-*.vbproj.vssscc
-*.fsproj.user
-*.fsproj.vspscc
-*.fsproj.vssscc
-*.dbmdl.user
-*.dbmdl.vspscc
-*.dbmdl.vssscc
-*.sqlproj.user
-*.sqlproj.vspscc
-*.sqlproj.vssscc
-*.wixproj.user
-*.wixproj.vspscc
-*.wixproj.vssscc
-*.shfbproj.user
-*.shfbproj.vspscc
-*.shfbproj.vssscc
-*.csproj.user
-*.csproj.vspscc
-*.csproj.vssscc
-*.vbproj.user
-*.vbproj.vspscc
-*.vbproj.vssscc
-*.fsproj.user
-*.fsproj.vspscc
-*.fsproj.vssscc
-*.dbmdl.user
-*.dbmdl.vspscc
 
-# binaray
+# Build directories
 bin/
 bin-int/
 
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Game engine specific
+# Asset cache
+assets/cache/
+*.cache
+
+# Shader compilation cache
+shaders/cache/
+
+# Project specific
+*.user
+*.userosscache
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# Premake generated files (keep premake5.lua)
+*.vcxproj.filters
+*.vcxproj.user
+*.sln.DotSettings.user

@@ -186,7 +186,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
-		DrawQuad(position, size, color, -1);
+		DrawQuadInternal(position, size, color, -1);
 	}
 
 	void BatchRenderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
@@ -196,7 +196,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		DrawQuad(position, size, texture, tintColor, -1);
+		DrawQuadInternal(position, size, texture, tintColor, -1);
 	}
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const glm::vec4& color)
@@ -206,7 +206,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color)
 	{
-		DrawRotatedQuad(position, size, rotation, color, -1);
+		DrawRotatedQuadInternal(position, size, rotation, color, -1);
 	}
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
@@ -216,7 +216,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor)
 	{
-		DrawRotatedQuad(position, size, rotation, texture, tintColor, -1);
+		DrawRotatedQuadInternal(position, size, rotation, texture, tintColor, -1);
 	}
 
 	void BatchRenderer2D::DrawLine(const glm::vec3& p0, const glm::vec3& p1, const glm::vec4& color, float thickness)
@@ -239,7 +239,7 @@ namespace Zgine {
 		memset(&s_Stats, 0, sizeof(RenderStats));
 	}
 
-	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID)
+	void BatchRenderer2D::DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
@@ -263,7 +263,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
+	void BatchRenderer2D::DrawQuadInternal(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
@@ -289,7 +289,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color, int entityID)
+	void BatchRenderer2D::DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const glm::vec4& color, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
@@ -314,7 +314,7 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	void BatchRenderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
+	void BatchRenderer2D::DrawRotatedQuadInternal(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
 	{
 		if (s_QuadIndexCount >= MaxIndices)
 			NextBatch();
