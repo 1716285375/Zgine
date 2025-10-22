@@ -83,7 +83,7 @@ namespace Zgine {
 		static std::shared_ptr<Texture2D> s_WhiteTexture;
 
 		static uint32_t s_QuadIndexCount;
-		static QuadVertex* s_QuadVertexBufferBase;
+		static std::unique_ptr<QuadVertex[]> s_QuadVertexBufferBase;
 		static QuadVertex* s_QuadVertexBufferPtr;
 
 		static std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> s_TextureSlots;

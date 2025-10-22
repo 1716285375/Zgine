@@ -20,8 +20,8 @@ namespace Zgine {
 
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEventCallback([this](Event& e) {OnEvent(e);});
-		m_ImGuiLayer = new ImGuiLayer();
-		PushOverlay(m_ImGuiLayer);
+		m_ImGuiLayer = std::make_unique<ImGuiLayer>();
+		PushOverlay(m_ImGuiLayer.get());
 	}
 
 	Application::~Application()

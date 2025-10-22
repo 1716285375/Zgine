@@ -14,7 +14,7 @@ namespace Zgine {
 	std::shared_ptr<Texture2D> BatchRenderer2D::s_WhiteTexture;
 
 	uint32_t BatchRenderer2D::s_QuadIndexCount;
-	QuadVertex* BatchRenderer2D::s_QuadVertexBufferBase;
+	std::unique_ptr<QuadVertex[]> BatchRenderer2D::s_QuadVertexBufferBase;
 	QuadVertex* BatchRenderer2D::s_QuadVertexBufferPtr;
 
 	std::array<std::shared_ptr<Texture2D>, BatchRenderer2D::MaxTextureSlots> BatchRenderer2D::s_TextureSlots;
@@ -42,9 +42,9 @@ namespace Zgine {
 		});
 		s_QuadVertexArray->AddVertexBuffer(s_QuadVertexBuffer);
 
-		s_QuadVertexBufferBase = new QuadVertex[MaxVertices];
+		s_QuadVertexBufferBase = std::make_unique<QuadVertex[]>(MaxVertices);
 
-		uint32_t* quadIndices = new uint32_t[MaxIndices];
+		auto quadIndices = std::make_unique<uint32_t[]>(MaxIndices);
 
 		uint32_t offset = 0;
 		for (uint32_t i = 0; i < MaxIndices; i += 6)
@@ -61,10 +61,8 @@ namespace Zgine {
 		}
 
 		std::shared_ptr<IndexBuffer> quadIB;
-		quadIB.reset(IndexBuffer::Create(quadIndices, MaxIndices));
+		quadIB.reset(IndexBuffer::Create(quadIndices.get(), MaxIndices));
 		s_QuadVertexArray->SetIndexBuffer(quadIB);
-
-		delete[] quadIndices;
 
 		// Create white texture
 		s_WhiteTexture = Texture2D::Create(1, 1);
@@ -126,7 +124,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::Shutdown()
 	{
-		delete[] s_QuadVertexBufferBase;
+		// Smart pointers will automatically clean up memory
 	}
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
@@ -147,8 +145,8 @@ namespace Zgine {
 		if (s_QuadIndexCount == 0)
 			return; // Nothing to draw
 
-		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase);
-		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase, dataSize);
+		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase.get());
+		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase.get(), dataSize);
 
 		// Bind textures
 		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
@@ -167,7 +165,7 @@ namespace Zgine {
 	void BatchRenderer2D::StartBatch()
 	{
 		s_QuadIndexCount = 0;
-		s_QuadVertexBufferPtr = s_QuadVertexBufferBase;
+		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
 		s_TextureSlotIndex = 1;
 	}
 
