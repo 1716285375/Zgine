@@ -77,7 +77,7 @@ namespace Sandbox {
 		// Render 2D scene if window is open
 		if (m_Show2DTestWindow)
 		{
-			Zgine::Renderer2D::BeginScene(m_2DCamera);
+			Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
 			
 			if (m_2DShowQuads)
 				Render2DBasicShapes();
@@ -88,13 +88,13 @@ namespace Sandbox {
 			if (m_2DAnimateCircles || m_2DAnimateQuads)
 				Render2DAnimatedShapes();
 			
-			Zgine::Renderer2D::EndScene();
+			Zgine::BatchRenderer2D::EndScene();
 		}
 
 		// Render 3D scene if window is open
 		if (m_Show3DTestWindow)
 		{
-			Zgine::Renderer3D::BeginScene(m_3DCamera);
+			Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
 			
 			if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
 				Render3DBasicShapes();
@@ -105,7 +105,7 @@ namespace Sandbox {
 			if (m_3DShowEnvironment)
 				Render3DEnvironment();
 			
-			Zgine::Renderer3D::EndScene();
+			Zgine::BatchRenderer3D::EndScene();
 		}
 	}
 
@@ -275,7 +275,7 @@ namespace Sandbox {
 		// 2D Stats
 		if (m_Show2DTestWindow)
 		{
-			auto stats2D = Zgine::Renderer2D::GetStats();
+			auto stats2D = Zgine::BatchRenderer2D::GetStats();
 			ImGui::Text("2D Render Stats:");
 			ImGui::Text("  Draw Calls: %d", stats2D.DrawCalls);
 			ImGui::Text("  Quads: %d", stats2D.QuadCount);
@@ -288,7 +288,7 @@ namespace Sandbox {
 		// 3D Stats
 		if (m_Show3DTestWindow)
 		{
-			auto stats3D = Zgine::Renderer3D::GetStats();
+			auto stats3D = Zgine::BatchRenderer3D::GetStats();
 			ImGui::Text("3D Render Stats:");
 			ImGui::Text("  Draw Calls: %d", stats3D.DrawCalls);
 			ImGui::Text("  Cubes: %d", stats3D.CubeCount);
@@ -300,11 +300,11 @@ namespace Sandbox {
 		
 		// Reset buttons
 		if (ImGui::Button("Reset 2D Stats"))
-			Zgine::Renderer2D::ResetStats();
+			Zgine::BatchRenderer2D::ResetStats();
 		
 		ImGui::SameLine();
 		if (ImGui::Button("Reset 3D Stats"))
-			Zgine::Renderer3D::ResetStats();
+			Zgine::BatchRenderer3D::ResetStats();
 		
 		ImGui::End();
 	}
@@ -415,21 +415,21 @@ namespace Sandbox {
 	void MainControlLayer::Render2DBasicShapes()
 	{
 		// Basic quads
-		Zgine::Renderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-		Zgine::Renderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
-		Zgine::Renderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
+		Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
+		Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
+		Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
 
 		// Lines
 		if (m_2DShowLines)
 		{
-			Zgine::Renderer2D::DrawLine({ -1.0f, -1.0f }, { 1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 1.0f, 1.0f, 1.0f });
-			Zgine::Renderer2D::DrawLine({ 1.0f, -1.0f }, { -1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 0.0f, 1.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawLine({ -1.0f, -1.0f }, { 1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 1.0f, 1.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawLine({ 1.0f, -1.0f }, { -1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 0.0f, 1.0f, 1.0f });
 		}
 
 		// Circles
 		if (m_2DShowCircles)
 		{
-			Zgine::Renderer2D::DrawCircle({ 0.0f, 0.0f }, m_2DCircleRadius, { 0.2f, 0.8f, 0.3f, 1.0f }, m_2DCircleSegments);
+			Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f }, m_2DCircleRadius, { 0.2f, 0.8f, 0.3f, 1.0f }, m_2DCircleSegments);
 		}
 	}
 
@@ -438,29 +438,29 @@ namespace Sandbox {
 		// Triangles
 		if (m_2DShowTriangles)
 		{
-			Zgine::Renderer2D::DrawTriangle({ -1.5f, 0.0f }, { -0.5f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawTriangle({ -1.5f, 0.0f }, { -0.5f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
 		}
 
 		// Ellipses
 		if (m_2DShowEllipses)
 		{
-			Zgine::Renderer2D::DrawEllipse({ 1.0f, 0.0f }, { 0.6f, 0.3f }, { 0.0f, 0.5f, 1.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawEllipse({ 1.0f, 0.0f }, { 0.6f, 0.3f }, { 0.0f, 0.5f, 1.0f, 1.0f });
 		}
 
 		// Arcs
 		if (m_2DShowArcs)
 		{
-			Zgine::Renderer2D::DrawArc({ 0.0f, 1.0f }, 0.4f, 0.0f, 3.14159f, m_2DLineThickness, { 1.0f, 0.0f, 0.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawArc({ 0.0f, 1.0f }, 0.4f, 0.0f, 3.14159f, m_2DLineThickness, { 1.0f, 0.0f, 0.0f, 1.0f });
 		}
 
 		// Gradients
 		if (m_2DShowGradients)
 		{
-			Zgine::Renderer2D::DrawQuadGradient(glm::vec3(-1.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 
+			Zgine::BatchRenderer2D::DrawQuadGradient(glm::vec3(-1.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 
 				glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 
 				glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
 			
-			Zgine::Renderer2D::DrawRotatedQuadGradient(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 45.0f,
+			Zgine::BatchRenderer2D::DrawRotatedQuadGradient(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 45.0f,
 				glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), 
 				glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
 		}
@@ -478,7 +478,7 @@ namespace Sandbox {
 				float angle = time + i * 1.256f; // 72 degrees apart
 				float radius = 0.3f + i * 0.1f;
 				glm::vec2 pos = { cos(angle) * radius, sin(angle) * radius };
-				Zgine::Renderer2D::DrawCircle(pos, 0.1f, { 0.8f, 0.2f, 0.8f, 1.0f }, m_2DCircleSegments);
+				Zgine::BatchRenderer2D::DrawCircle(pos, 0.1f, { 0.8f, 0.2f, 0.8f, 1.0f }, m_2DCircleSegments);
 			}
 		}
 
@@ -489,7 +489,7 @@ namespace Sandbox {
 			{
 				float scale = 0.5f + 0.3f * sin(time + i);
 				glm::vec2 pos = { -0.8f + i * 0.8f, 0.5f + 0.2f * cos(time + i) };
-				Zgine::Renderer2D::DrawQuad(pos, { scale, scale }, { 0.2f, 0.8f, 0.8f, 1.0f });
+				Zgine::BatchRenderer2D::DrawQuad(pos, { scale, scale }, { 0.2f, 0.8f, 0.8f, 1.0f });
 			}
 		}
 	}
@@ -499,21 +499,21 @@ namespace Sandbox {
 		// Cubes
 		if (m_3DShowCubes)
 		{
-			Zgine::Renderer3D::DrawCube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, glm::mat4(1.0f), { 0.8f, 0.2f, 0.3f, 1.0f });
-			Zgine::Renderer3D::DrawCube({ 2.0f, 0.0f, 0.0f }, { 0.5f, 1.5f, 0.5f }, glm::mat4(1.0f), { 0.2f, 0.8f, 0.3f, 1.0f });
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, glm::mat4(1.0f), { 0.8f, 0.2f, 0.3f, 1.0f });
+			Zgine::BatchRenderer3D::DrawCube({ 2.0f, 0.0f, 0.0f }, { 0.5f, 1.5f, 0.5f }, glm::mat4(1.0f), { 0.2f, 0.8f, 0.3f, 1.0f });
 		}
 
 		// Spheres
 		if (m_3DShowSpheres)
 		{
-			Zgine::Renderer3D::DrawSphere({ -2.0f, 0.0f, 0.0f }, 0.8f, { 0.2f, 0.3f, 0.8f, 1.0f }, 16);
-			Zgine::Renderer3D::DrawSphere({ 0.0f, 2.0f, 0.0f }, 0.5f, { 0.8f, 0.8f, 0.2f, 1.0f }, 12);
+			Zgine::BatchRenderer3D::DrawSphere({ -2.0f, 0.0f, 0.0f }, 0.8f, { 0.2f, 0.3f, 0.8f, 1.0f }, 16);
+			Zgine::BatchRenderer3D::DrawSphere({ 0.0f, 2.0f, 0.0f }, 0.5f, { 0.8f, 0.8f, 0.2f, 1.0f }, 12);
 		}
 
 		// Planes
 		if (m_3DShowPlanes)
 		{
-			Zgine::Renderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 10.0f, 10.0f }, { 0.5f, 0.5f, 0.5f, 1.0f });
+			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 10.0f, 10.0f }, { 0.5f, 0.5f, 0.5f, 1.0f });
 		}
 	}
 
@@ -526,14 +526,14 @@ namespace Sandbox {
 
 		// Rotating cube
 		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
-		Zgine::Renderer3D::DrawCube({ 0.0f, 1.0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, rotation, { 1.0f, 0.5f, 0.0f, 1.0f });
+		Zgine::BatchRenderer3D::DrawCube({ 0.0f, 1.0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, rotation, { 1.0f, 0.5f, 0.0f, 1.0f });
 
 		// Floating spheres
 		for (int i = 0; i < 3; i++)
 		{
 			float y = 1.0f + 0.5f * sin(time + i * 2.0f);
 			glm::vec3 pos = { -3.0f + i * 3.0f, y, 0.0f };
-			Zgine::Renderer3D::DrawSphere(pos, 0.3f, { 0.8f, 0.2f, 0.8f, 1.0f }, 12);
+			Zgine::BatchRenderer3D::DrawSphere(pos, 0.3f, { 0.8f, 0.2f, 0.8f, 1.0f }, 12);
 		}
 	}
 
@@ -545,12 +545,12 @@ namespace Sandbox {
 		// Ground grid
 		for (int i = -5; i <= 5; i++)
 		{
-			Zgine::Renderer3D::DrawCube({ i * 2.0f, -1.5f, 0.0f }, { 0.1f, 0.1f, 10.0f }, glm::mat4(1.0f), { 0.3f, 0.3f, 0.3f, 1.0f });
-			Zgine::Renderer3D::DrawCube({ 0.0f, -1.5f, i * 2.0f }, { 10.0f, 0.1f, 0.1f }, glm::mat4(1.0f), { 0.3f, 0.3f, 0.3f, 1.0f });
+			Zgine::BatchRenderer3D::DrawCube({ i * 2.0f, -1.5f, 0.0f }, { 0.1f, 0.1f, 10.0f }, glm::mat4(1.0f), { 0.3f, 0.3f, 0.3f, 1.0f });
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, -1.5f, i * 2.0f }, { 10.0f, 0.1f, 0.1f }, glm::mat4(1.0f), { 0.3f, 0.3f, 0.3f, 1.0f });
 		}
 
 		// Light source visualization
-		Zgine::Renderer3D::DrawSphere(m_3DLightPosition, 0.2f, glm::vec4(m_3DLightColor, 1.0f), 8);
+		Zgine::BatchRenderer3D::DrawSphere(m_3DLightPosition, 0.2f, glm::vec4(m_3DLightColor, 1.0f), 8);
 	}
 
 }
