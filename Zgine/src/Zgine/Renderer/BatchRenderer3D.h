@@ -26,6 +26,14 @@ namespace Zgine {
 		uint32_t TriangleCount = 0;
 		uint32_t VertexCount = 0;
 		uint32_t IndexCount = 0;
+		
+		// Additional counters for specific shapes
+		uint32_t CubeCount = 0;
+		uint32_t SphereCount = 0;
+		uint32_t PlaneCount = 0;
+		
+		uint32_t GetTotalVertexCount() const { return VertexCount; }
+		uint32_t GetTotalIndexCount() const { return IndexCount; }
 	};
 
 	class BatchRenderer3D

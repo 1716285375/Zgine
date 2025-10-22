@@ -25,6 +25,9 @@ namespace Zgine {
 		uint32_t QuadCount = 0;
 		uint32_t VertexCount = 0;
 		uint32_t IndexCount = 0;
+		
+		uint32_t GetTotalVertexCount() const { return VertexCount; }
+		uint32_t GetTotalIndexCount() const { return IndexCount; }
 	};
 
 	class BatchRenderer2D

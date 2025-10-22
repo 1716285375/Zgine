@@ -415,21 +415,21 @@ namespace Sandbox {
 	void MainControlLayer::Render2DBasicShapes()
 	{
 		// Basic quads
-		Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-		Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
-		Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
+		Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
+		Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
+		Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
 
 		// Lines
 		if (m_2DShowLines)
 		{
-			Zgine::BatchRenderer2D::DrawLine({ -1.0f, -1.0f }, { 1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 1.0f, 1.0f, 1.0f });
-			Zgine::BatchRenderer2D::DrawLine({ 1.0f, -1.0f }, { -1.0f, 1.0f }, m_2DLineThickness, { 1.0f, 0.0f, 1.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawLine({ -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, m_2DLineThickness);
+			Zgine::BatchRenderer2D::DrawLine({ 1.0f, -1.0f, 0.0f }, { -1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 1.0f, 1.0f }, m_2DLineThickness);
 		}
 
 		// Circles
 		if (m_2DShowCircles)
 		{
-			Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f }, m_2DCircleRadius, { 0.2f, 0.8f, 0.3f, 1.0f }, m_2DCircleSegments);
+			Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f, 0.0f }, m_2DCircleRadius, { 0.2f, 0.8f, 0.3f, 1.0f }, m_2DCircleSegments);
 		}
 	}
 
@@ -438,19 +438,19 @@ namespace Sandbox {
 		// Triangles
 		if (m_2DShowTriangles)
 		{
-			Zgine::BatchRenderer2D::DrawTriangle({ -1.5f, 0.0f }, { -0.5f, 1.0f }, { 0.0f, 0.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawTriangle({ -1.5f, 0.0f, 0.0f }, { -0.5f, 1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f }, { 1.0f, 0.5f, 0.0f, 1.0f });
 		}
 
 		// Ellipses
 		if (m_2DShowEllipses)
 		{
-			Zgine::BatchRenderer2D::DrawEllipse({ 1.0f, 0.0f }, { 0.6f, 0.3f }, { 0.0f, 0.5f, 1.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawEllipse({ 1.0f, 0.0f, 0.0f }, 0.6f, 0.3f, { 0.0f, 0.5f, 1.0f, 1.0f });
 		}
 
 		// Arcs
 		if (m_2DShowArcs)
 		{
-			Zgine::BatchRenderer2D::DrawArc({ 0.0f, 1.0f }, 0.4f, 0.0f, 3.14159f, m_2DLineThickness, { 1.0f, 0.0f, 0.0f, 1.0f });
+			Zgine::BatchRenderer2D::DrawArc({ 0.0f, 1.0f, 0.0f }, 0.4f, 0.0f, 3.14159f, { 1.0f, 0.0f, 0.0f, 1.0f }, m_2DLineThickness);
 		}
 
 		// Gradients
@@ -477,7 +477,7 @@ namespace Sandbox {
 			{
 				float angle = time + i * 1.256f; // 72 degrees apart
 				float radius = 0.3f + i * 0.1f;
-				glm::vec2 pos = { cos(angle) * radius, sin(angle) * radius };
+				glm::vec3 pos = { cos(angle) * radius, sin(angle) * radius, 0.0f };
 				Zgine::BatchRenderer2D::DrawCircle(pos, 0.1f, { 0.8f, 0.2f, 0.8f, 1.0f }, m_2DCircleSegments);
 			}
 		}
@@ -488,7 +488,7 @@ namespace Sandbox {
 			for (int i = 0; i < 3; i++)
 			{
 				float scale = 0.5f + 0.3f * sin(time + i);
-				glm::vec2 pos = { -0.8f + i * 0.8f, 0.5f + 0.2f * cos(time + i) };
+				glm::vec3 pos = { -0.8f + i * 0.8f, 0.5f + 0.2f * cos(time + i), 0.0f };
 				Zgine::BatchRenderer2D::DrawQuad(pos, { scale, scale }, { 0.2f, 0.8f, 0.8f, 1.0f });
 			}
 		}
