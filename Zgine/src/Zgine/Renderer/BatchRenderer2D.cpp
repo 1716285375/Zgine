@@ -157,7 +157,11 @@ namespace Zgine {
 		}
 
 		RenderCommand::DrawIndexed(s_QuadVertexArray);
+		
+		// Update statistics
 		s_Stats.DrawCalls++;
+		s_Stats.VertexCount += s_QuadIndexCount * 4 / 6; // Each quad has 4 vertices, 6 indices
+		s_Stats.IndexCount += s_QuadIndexCount;          // s_QuadIndexCount is the number of indices
 	}
 
 	void BatchRenderer2D::StartBatch()
