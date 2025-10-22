@@ -10,8 +10,11 @@ public:
 		: Layer("PrimitiveTest")
 		, m_Camera(-2.0f, 2.0f, -1.5f, 1.5f)
 		, m_CameraPosition(0.0f)
-		, m_CameraSpeed(0.02f)
+		, m_CameraSpeed(2.0f)
 		, m_Time(0.0f)
+		, m_FPS(0.0f)
+		, m_FrameCount(0)
+		, m_FPSTimer(0.0f)
 		, m_LineThickness(0.05f)
 		, m_CircleRadius(0.3f)
 		, m_CircleSegments(32)
@@ -30,21 +33,31 @@ public:
 		Zgine::BatchRenderer2D::Shutdown();
 	}
 
-	virtual void OnUpdate() override
+	virtual void OnUpdate(Zgine::Timestep ts) override
 	{
 		// Update camera position based on input
 		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
-			m_CameraPosition.x += m_CameraSpeed;
+			m_CameraPosition.x -= m_CameraSpeed * ts;
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
-			m_CameraPosition.x -= m_CameraSpeed;
+			m_CameraPosition.x += m_CameraSpeed * ts;
 
 		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
-			m_CameraPosition.y -= m_CameraSpeed;
+			m_CameraPosition.y += m_CameraSpeed * ts;
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
-			m_CameraPosition.y += m_CameraSpeed;
+			m_CameraPosition.y -= m_CameraSpeed * ts;
 
 		// Update time for animations
-		m_Time += 0.016f; // Approximate 60 FPS
+		m_Time += ts;
+		
+		// Calculate FPS
+		m_FrameCount++;
+		m_FPSTimer += ts;
+		if (m_FPSTimer >= 1.0f)
+		{
+			m_FPS = m_FrameCount / m_FPSTimer;
+			m_FrameCount = 0;
+			m_FPSTimer = 0.0f;
+		}
 
 		// Render with batch renderer
 		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -311,6 +324,9 @@ public:
 		ImGui::Text("Position: (%.2f, %.2f, %.2f)", 
 			m_CameraPosition.x, m_CameraPosition.y, m_CameraPosition.z);
 		
+		// Camera speed control
+		ImGui::SliderFloat("Camera Speed", &m_CameraSpeed, 0.5f, 10.0f, "%.1f");
+		
 		ImGui::Separator();
 		
 		// Render options
@@ -345,6 +361,15 @@ public:
 			ImGui::Text("Current radius: %.2f", m_CircleRadius);
 		}
 		
+		// Advanced settings
+		if (m_ShowAdvanced)
+		{
+			ImGui::Separator();
+			ImGui::Text("Advanced Settings:");
+			ImGui::Text("Advanced primitives are enabled");
+			ImGui::Text("Includes: Triangles, Ellipses, Arcs, Gradients");
+		}
+		
 		ImGui::End();
 		
 		// Performance stats window
@@ -353,6 +378,17 @@ public:
 		auto stats = Zgine::BatchRenderer2D::GetStats();
 		ImGui::Text("Performance Statistics:");
 		ImGui::Separator();
+		
+		// FPS display with color coding
+		if (m_FPS >= 60.0f)
+			ImGui::TextColored({0.0f, 1.0f, 0.0f, 1.0f}, "FPS: %.1f", m_FPS);
+		else if (m_FPS >= 30.0f)
+			ImGui::TextColored({1.0f, 1.0f, 0.0f, 1.0f}, "FPS: %.1f", m_FPS);
+		else
+			ImGui::TextColored({1.0f, 0.0f, 0.0f, 1.0f}, "FPS: %.1f", m_FPS);
+		
+		ImGui::Separator();
+		ImGui::Text("Rendering Stats:");
 		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
 		ImGui::Text("Quad Count: %d", stats.QuadCount);
 		ImGui::Text("Vertex Count: %d", stats.VertexCount);
@@ -362,7 +398,7 @@ public:
 		ImGui::Text("Time: %.2f seconds", m_Time);
 		
 		ImGui::Separator();
-		if (ImGui::Button("Reset Stats", ImVec2(100, 30)))
+		if (ImGui::Button("Reset Stats", ImVec2(120, 30)))
 		{
 			Zgine::BatchRenderer2D::ResetStats();
 		}
@@ -374,7 +410,7 @@ public:
 		
 		ImGui::Text("Debug Information:");
 		ImGui::Separator();
-		ImGui::Text("FPS: %.1f", 1.0f / 0.016f); // Approximate FPS
+		
 		ImGui::Text("Camera Speed: %.3f", m_CameraSpeed);
 		ImGui::Text("Line Thickness: %.3f", m_LineThickness);
 		ImGui::Text("Circle Radius: %.2f", m_CircleRadius);
@@ -384,9 +420,81 @@ public:
 		ImGui::Text("Render States:");
 		ImGui::Text("Quads: %s", m_ShowQuads ? "ON" : "OFF");
 		ImGui::Text("Lines: %s", m_ShowLines ? "ON" : "OFF");
-	ImGui::Text("Circles: %s", m_ShowCircles ? "ON" : "OFF");
-	ImGui::Text("Advanced: %s", m_ShowAdvanced ? "ON" : "OFF");
-	ImGui::Text("Animation: %s", m_AnimateCircles ? "ON" : "OFF");
+		ImGui::Text("Circles: %s", m_ShowCircles ? "ON" : "OFF");
+		ImGui::Text("Advanced: %s", m_ShowAdvanced ? "ON" : "OFF");
+		ImGui::Text("Animation: %s", m_AnimateCircles ? "ON" : "OFF");
+		
+		ImGui::Separator();
+		ImGui::Text("Controls:");
+		ImGui::Text("WASD - Move Camera");
+		ImGui::Text("Mouse - Interact with UI");
+		ImGui::Text("ESC - Exit Application");
+		
+		ImGui::End();
+		
+		// Preset configurations window
+		ImGui::Begin("Preset Configurations", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		
+		ImGui::Text("Quick Presets:");
+		ImGui::Separator();
+		
+		if (ImGui::Button("Basic Shapes", ImVec2(120, 30)))
+		{
+			m_ShowQuads = true;
+			m_ShowLines = false;
+			m_ShowCircles = false;
+			m_ShowAdvanced = false;
+			m_AnimateCircles = false;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Lines Only", ImVec2(120, 30)))
+		{
+			m_ShowQuads = false;
+			m_ShowLines = true;
+			m_ShowCircles = false;
+			m_ShowAdvanced = false;
+			m_AnimateCircles = false;
+		}
+		
+		if (ImGui::Button("Circles Only", ImVec2(120, 30)))
+		{
+			m_ShowQuads = false;
+			m_ShowLines = false;
+			m_ShowCircles = true;
+			m_ShowAdvanced = false;
+			m_AnimateCircles = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Advanced", ImVec2(120, 30)))
+		{
+			m_ShowQuads = true;
+			m_ShowLines = true;
+			m_ShowCircles = true;
+			m_ShowAdvanced = true;
+			m_AnimateCircles = true;
+		}
+		
+		if (ImGui::Button("All Features", ImVec2(120, 30)))
+		{
+			m_ShowQuads = true;
+			m_ShowLines = true;
+			m_ShowCircles = true;
+			m_ShowAdvanced = true;
+			m_AnimateCircles = true;
+			m_CircleRadius = 0.3f;
+			m_CircleSegments = 32;
+			m_LineThickness = 0.05f;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Performance Test", ImVec2(120, 30)))
+		{
+			m_ShowQuads = true;
+			m_ShowLines = true;
+			m_ShowCircles = true;
+			m_ShowAdvanced = true;
+			m_AnimateCircles = true;
+			m_CircleSegments = 64; // High detail for performance testing
+		}
 		
 		ImGui::End();
 	}
@@ -396,6 +504,9 @@ private:
 	glm::vec3 m_CameraPosition;
 	float m_CameraSpeed;
 	float m_Time;
+	float m_FPS;
+	int m_FrameCount;
+	float m_FPSTimer;
 	
 	// Line settings
 	float m_LineThickness;
