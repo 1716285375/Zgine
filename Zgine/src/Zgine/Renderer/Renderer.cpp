@@ -1,12 +1,32 @@
 #include "zgpch.h"
 #include "Renderer.h"
+#include "BatchRenderer2D.h"
+#include "BatchRenderer3D.h"
 
 
 namespace Zgine {
 
 	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
 
+	void Renderer::Init()
+	{
+		RenderCommand::Init();
+		BatchRenderer2D::Init();
+		BatchRenderer3D::Init();
+	}
+
+	void Renderer::Shutdown()
+	{
+		BatchRenderer3D::Shutdown();
+		BatchRenderer2D::Shutdown();
+	}
+
 	void Renderer::BeginScene(OrthographicCamera& camera)
+	{
+		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
+	}
+
+	void Renderer::BeginScene(PerspectiveCamera& camera)
 	{
 		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
 	}

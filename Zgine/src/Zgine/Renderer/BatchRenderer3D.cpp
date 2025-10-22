@@ -1,0 +1,517 @@
+#include "zgpch.h"
+#include "BatchRenderer3D.h"
+
+#include <glad/glad.h>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include "Zgine/Renderer/RendererAPI.h"
+#include "Zgine/Renderer/RenderCommand.h"
+
+namespace Zgine {
+
+	Ref<VertexArray> BatchRenderer3D::s_VertexArray;
+	Ref<VertexBuffer> BatchRenderer3D::s_VertexBuffer;
+	Ref<Shader> BatchRenderer3D::s_Shader;
+	Ref<Texture2D> BatchRenderer3D::s_WhiteTexture;
+
+	uint32_t BatchRenderer3D::s_IndexCount;
+	ScopeArray<Vertex3D> BatchRenderer3D::s_VertexBufferBase;
+	Vertex3D* BatchRenderer3D::s_VertexBufferPtr;
+
+	std::array<Ref<Texture2D>, BatchRenderer3D::MaxTextureSlots> BatchRenderer3D::s_TextureSlots;
+	uint32_t BatchRenderer3D::s_TextureSlotIndex = 1;
+
+	RenderStats3D BatchRenderer3D::s_Stats;
+
+	void BatchRenderer3D::Init()
+	{
+		s_VertexArray.reset(VertexArray::Create());
+
+		s_VertexBuffer.reset(VertexBuffer::Create(nullptr, MaxVertices * sizeof(Vertex3D)));
+		s_VertexBuffer->SetLayout({
+			{ ShaderDataType::Float3, "a_Position" },
+			{ ShaderDataType::Float3, "a_Normal" },
+			{ ShaderDataType::Float4, "a_Color" },
+			{ ShaderDataType::Float2, "a_TexCoord" },
+			{ ShaderDataType::Float, "a_TexIndex" }
+		});
+		s_VertexArray->AddVertexBuffer(s_VertexBuffer);
+
+		s_VertexBufferBase = CreateScopeArray<Vertex3D>(MaxVertices);
+
+		// Create indices array
+		std::vector<uint32_t> indices(MaxIndices);
+		for (uint32_t i = 0; i < MaxIndices; i++)
+		{
+			indices[i] = i;
+		}
+
+		Ref<IndexBuffer> indexBuffer;
+		indexBuffer.reset(IndexBuffer::Create(indices.data(), MaxIndices));
+		s_VertexArray->SetIndexBuffer(indexBuffer);
+
+		// Create white texture
+		s_WhiteTexture = Texture2D::Create(1, 1);
+		uint32_t whiteTextureData = 0xffffffff;
+		s_WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
+
+		int32_t samplers[MaxTextureSlots];
+		for (uint32_t i = 0; i < MaxTextureSlots; i++)
+			samplers[i] = i;
+
+		// Create 3D shader
+		std::string vertexSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) in vec3 a_Position;
+			layout(location = 1) in vec3 a_Normal;
+			layout(location = 2) in vec4 a_Color;
+			layout(location = 3) in vec2 a_TexCoord;
+			layout(location = 4) in float a_TexIndex;
+
+			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
+
+			out vec4 v_Color;
+			out vec2 v_TexCoord;
+			out float v_TexIndex;
+			out vec3 v_Normal;
+			out vec3 v_WorldPos;
+
+			void main()
+			{
+				vec4 worldPos = u_Transform * vec4(a_Position, 1.0);
+				v_WorldPos = worldPos.xyz;
+				v_Normal = mat3(u_Transform) * a_Normal;
+				v_Color = a_Color;
+				v_TexCoord = a_TexCoord;
+				v_TexIndex = a_TexIndex;
+				gl_Position = u_ViewProjection * worldPos;
+			}
+		)";
+
+		std::string fragmentSrc = R"(
+			#version 330 core
+			
+			layout(location = 0) out vec4 color;
+			
+			in vec4 v_Color;
+			in vec2 v_TexCoord;
+			in float v_TexIndex;
+			in vec3 v_Normal;
+			in vec3 v_WorldPos;
+
+			uniform sampler2D u_Textures[32];
+			uniform vec3 u_LightPosition;
+			uniform vec3 u_LightColor;
+			uniform float u_LightIntensity;
+
+			void main()
+			{
+				vec4 texColor = texture(u_Textures[int(v_TexIndex)], v_TexCoord);
+				vec3 finalColor = texColor.rgb * v_Color.rgb;
+				
+				// Simple lighting calculation
+				vec3 lightDir = normalize(u_LightPosition - v_WorldPos);
+				float diff = max(dot(normalize(v_Normal), lightDir), 0.0);
+				vec3 diffuse = diff * u_LightColor * u_LightIntensity;
+				
+				finalColor = finalColor * (0.3 + diffuse); // Ambient + diffuse
+				color = vec4(finalColor, v_Color.a * texColor.a);
+			}
+		)";
+
+		s_Shader = CreateRef<Shader>(vertexSrc, fragmentSrc);
+		s_Shader->Bind();
+		s_Shader->UploadUniformIntArray("u_Textures", samplers, MaxTextureSlots);
+		
+		// Set default lighting
+		s_Shader->UploadUniformFloat3("u_LightPosition", { 0.0f, 10.0f, 0.0f });
+		s_Shader->UploadUniformFloat3("u_LightColor", { 1.0f, 1.0f, 1.0f });
+		s_Shader->UploadUniformFloat("u_LightIntensity", 1.0f);
+
+		// Set all texture slots to 0
+		s_TextureSlots[0] = s_WhiteTexture;
+	}
+
+	void BatchRenderer3D::Shutdown()
+	{
+		// Smart pointers will automatically clean up memory
+	}
+
+	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
+	{
+		s_Shader->Bind();
+		s_Shader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+
+		StartBatch();
+	}
+
+	void BatchRenderer3D::EndScene()
+	{
+		Flush();
+	}
+
+	void BatchRenderer3D::Flush()
+	{
+		if (s_IndexCount == 0)
+			return; // Nothing to draw
+
+		uint32_t dataSize = (uint32_t)((uint8_t*)s_VertexBufferPtr - (uint8_t*)s_VertexBufferBase.get());
+		s_VertexBuffer->SetData(s_VertexBufferBase.get(), dataSize);
+
+		// Bind textures
+		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
+		{
+			s_TextureSlots[i]->Bind(i);
+		}
+
+		RenderCommand::DrawIndexed(s_VertexArray, s_IndexCount);
+		
+		// Update statistics
+		s_Stats.DrawCalls++;
+		s_Stats.TriangleCount += s_IndexCount / 3;
+		s_Stats.VertexCount += s_IndexCount;
+		s_Stats.IndexCount += s_IndexCount;
+	}
+
+	void BatchRenderer3D::StartBatch()
+	{
+		s_IndexCount = 0;
+		s_VertexBufferPtr = s_VertexBufferBase.get();
+		s_TextureSlotIndex = 1;
+	}
+
+	void BatchRenderer3D::NextBatch()
+	{
+		Flush();
+		StartBatch();
+	}
+
+	void BatchRenderer3D::FlushAndReset()
+	{
+		EndScene();
+		StartBatch();
+	}
+
+	float BatchRenderer3D::GetTextureIndex(const Ref<Texture2D>& texture)
+	{
+		float textureIndex = 0.0f;
+		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)
+		{
+			if (s_TextureSlots[i] && texture && s_TextureSlots[i]->GetRendererID() == texture->GetRendererID())
+			{
+				textureIndex = (float)i;
+				break;
+			}
+		}
+
+		if (textureIndex == 0.0f)
+		{
+			if (s_TextureSlotIndex >= MaxTextureSlots)
+				NextBatch();
+
+			textureIndex = (float)s_TextureSlotIndex;
+			s_TextureSlots[s_TextureSlotIndex] = texture;
+			s_TextureSlotIndex++;
+		}
+
+		return textureIndex;
+	}
+
+	// Cube rendering
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color)
+	{
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), size);
+		DrawCubeInternal(position, size, transform, color);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), size);
+		DrawCubeInternal(position, size, transform, texture, tintColor);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const glm::vec4& color)
+	{
+		DrawCubeInternal(position, size, transform, color);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		DrawCubeInternal(position, size, transform, texture, tintColor);
+	}
+
+	void BatchRenderer3D::DrawCubeInternal(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const glm::vec4& color, int entityID)
+	{
+		if (s_IndexCount >= MaxIndices - 36) // 12 triangles * 3 indices
+			NextBatch();
+
+		float textureIndex = 0.0f; // White texture
+
+		// Cube vertices (8 vertices)
+		glm::vec3 vertices[8] = {
+			{ -0.5f, -0.5f, -0.5f }, // 0
+			{  0.5f, -0.5f, -0.5f }, // 1
+			{  0.5f,  0.5f, -0.5f }, // 2
+			{ -0.5f,  0.5f, -0.5f }, // 3
+			{ -0.5f, -0.5f,  0.5f }, // 4
+			{  0.5f, -0.5f,  0.5f }, // 5
+			{  0.5f,  0.5f,  0.5f }, // 6
+			{ -0.5f,  0.5f,  0.5f }  // 7
+		};
+
+		// Cube faces (6 faces, 2 triangles each)
+		uint32_t indices[36] = {
+			// Front face
+			0, 1, 2,  2, 3, 0,
+			// Back face
+			4, 7, 6,  6, 5, 4,
+			// Left face
+			0, 3, 7,  7, 4, 0,
+			// Right face
+			1, 5, 6,  6, 2, 1,
+			// Top face
+			3, 2, 6,  6, 7, 3,
+			// Bottom face
+			0, 4, 5,  5, 1, 0
+		};
+
+		// Add vertices to buffer
+		for (int i = 0; i < 8; i++)
+		{
+			s_VertexBufferPtr->Position = vertices[i];
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 0.0f, 1.0f); // Will be calculated per face
+			s_VertexBufferPtr->Color = color;
+			s_VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+
+		// Add indices
+		for (int i = 0; i < 36; i++)
+		{
+			s_IndexCount++;
+		}
+
+		// Upload transform matrix
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	void BatchRenderer3D::DrawCubeInternal(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
+	{
+		if (s_IndexCount >= MaxIndices - 36)
+			NextBatch();
+
+		float textureIndex = GetTextureIndex(texture);
+
+		// Same as above but with texture coordinates
+		glm::vec3 vertices[8] = {
+			{ -0.5f, -0.5f, -0.5f },
+			{  0.5f, -0.5f, -0.5f },
+			{  0.5f,  0.5f, -0.5f },
+			{ -0.5f,  0.5f, -0.5f },
+			{ -0.5f, -0.5f,  0.5f },
+			{  0.5f, -0.5f,  0.5f },
+			{  0.5f,  0.5f,  0.5f },
+			{ -0.5f,  0.5f,  0.5f }
+		};
+
+		glm::vec2 texCoords[8] = {
+			{ 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f },
+			{ 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f }
+		};
+
+		for (int i = 0; i < 8; i++)
+		{
+			s_VertexBufferPtr->Position = vertices[i];
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 0.0f, 1.0f);
+			s_VertexBufferPtr->Color = tintColor;
+			s_VertexBufferPtr->TexCoord = texCoords[i];
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+
+		for (int i = 0; i < 36; i++)
+		{
+			s_IndexCount++;
+		}
+
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	// Sphere rendering
+	void BatchRenderer3D::DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color, int segments)
+	{
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
+		DrawSphereInternal(position, radius, transform, color, segments);
+	}
+
+	void BatchRenderer3D::DrawSphere(const glm::vec3& position, float radius, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments)
+	{
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
+		DrawSphereInternal(position, radius, transform, texture, tintColor, segments);
+	}
+
+	void BatchRenderer3D::DrawSphereInternal(const glm::vec3& position, float radius, const glm::mat4& transform, const glm::vec4& color, int segments, int entityID)
+	{
+		segments = glm::clamp(segments, 8, 64);
+		
+		if (s_IndexCount >= MaxIndices - segments * segments * 6)
+			NextBatch();
+
+		float textureIndex = 0.0f;
+
+		// Generate sphere vertices
+		for (int i = 0; i <= segments; i++)
+		{
+			float lat = glm::pi<float>() * (-0.5f + (float)i / segments);
+			float y = sin(lat);
+			float radiusAtY = cos(lat);
+
+			for (int j = 0; j <= segments; j++)
+			{
+				float lng = 2.0f * glm::pi<float>() * (float)j / segments;
+				float x = cos(lng) * radiusAtY;
+				float z = sin(lng) * radiusAtY;
+
+				s_VertexBufferPtr->Position = glm::vec3(x, y, z);
+				s_VertexBufferPtr->Normal = glm::vec3(x, y, z);
+				s_VertexBufferPtr->Color = color;
+				s_VertexBufferPtr->TexCoord = { (float)j / segments, (float)i / segments };
+				s_VertexBufferPtr->TexIndex = textureIndex;
+				s_VertexBufferPtr++;
+			}
+		}
+
+		// Generate indices
+		for (int i = 0; i < segments; i++)
+		{
+			for (int j = 0; j < segments; j++)
+			{
+				int first = i * (segments + 1) + j;
+				int second = first + segments + 1;
+
+				s_IndexCount += 6; // Two triangles per quad
+			}
+		}
+
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	void BatchRenderer3D::DrawSphereInternal(const glm::vec3& position, float radius, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments, int entityID)
+	{
+		// Similar to above but with texture
+		segments = glm::clamp(segments, 8, 64);
+		
+		if (s_IndexCount >= MaxIndices - segments * segments * 6)
+			NextBatch();
+
+		float textureIndex = GetTextureIndex(texture);
+
+		for (int i = 0; i <= segments; i++)
+		{
+			float lat = glm::pi<float>() * (-0.5f + (float)i / segments);
+			float y = sin(lat);
+			float radiusAtY = cos(lat);
+
+			for (int j = 0; j <= segments; j++)
+			{
+				float lng = 2.0f * glm::pi<float>() * (float)j / segments;
+				float x = cos(lng) * radiusAtY;
+				float z = sin(lng) * radiusAtY;
+
+				s_VertexBufferPtr->Position = glm::vec3(x, y, z);
+				s_VertexBufferPtr->Normal = glm::vec3(x, y, z);
+				s_VertexBufferPtr->Color = tintColor;
+				s_VertexBufferPtr->TexCoord = { (float)j / segments, (float)i / segments };
+				s_VertexBufferPtr->TexIndex = textureIndex;
+				s_VertexBufferPtr++;
+			}
+		}
+
+		for (int i = 0; i < segments; i++)
+		{
+			for (int j = 0; j < segments; j++)
+			{
+				s_IndexCount += 6;
+			}
+		}
+
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	// Plane rendering
+	void BatchRenderer3D::DrawPlane(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
+	{
+		if (s_IndexCount >= MaxIndices - 6)
+			NextBatch();
+
+		float textureIndex = 0.0f;
+
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(size.x, 1.0f, size.y));
+
+		// Plane vertices
+		glm::vec3 vertices[4] = {
+			{ -0.5f, 0.0f, -0.5f },
+			{  0.5f, 0.0f, -0.5f },
+			{  0.5f, 0.0f,  0.5f },
+			{ -0.5f, 0.0f,  0.5f }
+		};
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_VertexBufferPtr->Position = vertices[i];
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			s_VertexBufferPtr->Color = color;
+			s_VertexBufferPtr->TexCoord = { (i % 2) == 0 ? 0.0f : 1.0f, (i < 2) ? 0.0f : 1.0f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+
+		s_IndexCount += 6;
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	void BatchRenderer3D::DrawPlane(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		if (s_IndexCount >= MaxIndices - 6)
+			NextBatch();
+
+		float textureIndex = GetTextureIndex(texture);
+
+		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(size.x, 1.0f, size.y));
+
+		glm::vec3 vertices[4] = {
+			{ -0.5f, 0.0f, -0.5f },
+			{  0.5f, 0.0f, -0.5f },
+			{  0.5f, 0.0f,  0.5f },
+			{ -0.5f, 0.0f,  0.5f }
+		};
+
+		for (int i = 0; i < 4; i++)
+		{
+			s_VertexBufferPtr->Position = vertices[i];
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			s_VertexBufferPtr->Color = tintColor;
+			s_VertexBufferPtr->TexCoord = { (i % 2) == 0 ? 0.0f : 1.0f, (i < 2) ? 0.0f : 1.0f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+
+		s_IndexCount += 6;
+		s_Shader->UploadUniformMat4("u_Transform", transform);
+	}
+
+	// Statistics
+	RenderStats3D BatchRenderer3D::GetStats()
+	{
+		return s_Stats;
+	}
+
+	void BatchRenderer3D::ResetStats()
+	{
+		memset(&s_Stats, 0, sizeof(RenderStats3D));
+	}
+
+}

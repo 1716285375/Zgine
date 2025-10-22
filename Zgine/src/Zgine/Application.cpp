@@ -22,12 +22,17 @@ namespace Zgine {
 
 		m_Window = Scope<Window>(Window::Create());
 		m_Window->SetEventCallback([this](Event& e) {OnEvent(e);});
+		
+		// Initialize renderer
+		Renderer::Init();
+		
 		m_ImGuiLayer = CreateScope<ImGuiLayer>();
 		PushOverlay(m_ImGuiLayer.get());
 	}
 
 	Application::~Application()
 	{
+		Renderer::Shutdown();
 	}
 
 	void Application::OnEvent(Event& e)

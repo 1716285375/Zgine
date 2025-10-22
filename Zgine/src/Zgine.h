@@ -18,8 +18,10 @@
 #include "Zgine/Renderer/Texture.h"
 #include "Zgine/Renderer/Material.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
+#include "Zgine/Renderer/BatchRenderer3D.h"
 #include "Zgine/Renderer/VertexArray.h"
 #include "Zgine/Renderer/OrthographicCamera.h"
+#include "Zgine/Renderer/PerspectiveCamera.h"
 
 
 

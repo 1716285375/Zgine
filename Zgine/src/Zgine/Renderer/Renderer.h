@@ -3,6 +3,7 @@
 #include "RenderCommand.h"
 #include "VertexArray.h"
 #include "OrthographicCamera.h"
+#include "PerspectiveCamera.h"
 #include "Shader.h"
 
 namespace Zgine {
@@ -11,7 +12,11 @@ namespace Zgine {
 	class Renderer
 	{
 	public:
+		static void Init();
+		static void Shutdown();
+
 		static void BeginScene(OrthographicCamera& camera);
+		static void BeginScene(PerspectiveCamera& camera);
 		static void EndScene();
 
 		static void Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray);

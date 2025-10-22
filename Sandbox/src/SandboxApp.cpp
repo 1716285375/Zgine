@@ -2,6 +2,7 @@
 #include <Zgine.h>
 
 #include "imgui.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 class PrimitiveTestLayer : public Zgine::Layer
 {
@@ -523,11 +524,186 @@ private:
 	bool m_AnimateCircles;
 };
 
+class Test3DLayer : public Zgine::Layer
+{
+public:
+	Test3DLayer()
+		: Layer("Test3D")
+		, m_Camera(45.0f, 16.0f / 9.0f, 0.1f, 1000.0f)
+		, m_CameraPosition(0.0f, 5.0f, 10.0f)
+		, m_CameraRotation(0.0f, 0.0f, 0.0f)
+		, m_CameraSpeed(5.0f)
+		, m_RotationSpeed(45.0f)
+		, m_Time(0.0f)
+		, m_ShowCubes(true)
+		, m_ShowSpheres(true)
+		, m_ShowPlanes(true)
+		, m_AnimateObjects(true)
+		, m_WireframeMode(false)
+	{
+		m_Camera.SetPosition(m_CameraPosition);
+		m_Camera.SetRotation(m_CameraRotation);
+	}
+
+	virtual void OnUpdate(Zgine::Timestep ts) override
+	{
+		// Update time for animations
+		m_Time += ts;
+
+		// Camera movement
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
+			m_Camera.MoveForward(m_CameraSpeed * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
+			m_Camera.MoveForward(-m_CameraSpeed * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
+			m_Camera.MoveRight(-m_CameraSpeed * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
+			m_Camera.MoveRight(m_CameraSpeed * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_Q))
+			m_Camera.MoveUp(m_CameraSpeed * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_E))
+			m_Camera.MoveUp(-m_CameraSpeed * ts);
+
+		// Camera rotation with mouse
+		if (Zgine::Input::IsMouseButtonPressed(ZG_MOUSE_BUTTON_RIGHT))
+		{
+			auto mousePos = Zgine::Input::GetMousePosition();
+			static glm::vec2 lastMousePos = mousePos;
+			
+			if (lastMousePos != glm::vec2(-1.0f))
+			{
+				float deltaX = mousePos.x - lastMousePos.x;
+				float deltaY = mousePos.y - lastMousePos.y;
+				
+				m_Camera.Rotate(deltaX * 0.1f, -deltaY * 0.1f);
+			}
+			
+			lastMousePos = mousePos;
+		}
+
+		// Render 3D scene
+		Zgine::BatchRenderer3D::BeginScene(m_Camera);
+
+		if (m_ShowCubes)
+		{
+			// Animated cubes
+			for (int i = 0; i < 5; i++)
+			{
+				float angle = m_Time * m_RotationSpeed + i * 72.0f;
+				glm::vec3 position = glm::vec3(
+					cos(glm::radians(angle)) * 3.0f,
+					sin(m_Time * 2.0f + i) * 0.5f,
+					sin(glm::radians(angle)) * 3.0f
+				);
+				
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * 
+									 glm::rotate(glm::mat4(1.0f), m_Time * glm::radians(m_RotationSpeed), glm::vec3(0.0f, 1.0f, 0.0f));
+				
+				Zgine::BatchRenderer3D::DrawCube(position, glm::vec3(0.5f), transform, 
+					glm::vec4(0.2f + i * 0.15f, 0.3f + i * 0.1f, 0.8f - i * 0.1f, 1.0f));
+			}
+		}
+
+		if (m_ShowSpheres)
+		{
+			// Animated spheres
+			for (int i = 0; i < 3; i++)
+			{
+				float angle = m_Time * m_RotationSpeed * 0.5f + i * 120.0f;
+				glm::vec3 position = glm::vec3(
+					cos(glm::radians(angle)) * 5.0f,
+					cos(m_Time * 1.5f + i) * 2.0f,
+					sin(glm::radians(angle)) * 5.0f
+				);
+				
+				Zgine::BatchRenderer3D::DrawSphere(position, 0.8f, 
+					glm::vec4(0.8f - i * 0.2f, 0.2f + i * 0.3f, 0.4f + i * 0.2f, 1.0f), 32);
+			}
+		}
+
+		if (m_ShowPlanes)
+		{
+			// Ground plane
+			Zgine::BatchRenderer3D::DrawPlane(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec2(20.0f, 20.0f), 
+				glm::vec4(0.3f, 0.3f, 0.3f, 1.0f));
+			
+			// Wall planes
+			Zgine::BatchRenderer3D::DrawPlane(glm::vec3(0.0f, 0.0f, -10.0f), glm::vec2(20.0f, 10.0f), 
+				glm::vec4(0.2f, 0.4f, 0.2f, 1.0f));
+		}
+
+		Zgine::BatchRenderer3D::EndScene();
+	}
+
+	virtual void OnImGuiRender() override
+	{
+		// 3D Controls Window
+		ImGui::Begin("3D Scene Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		
+		ImGui::Text("3D Rendering Controls");
+		ImGui::Separator();
+		
+		ImGui::Checkbox("Show Cubes", &m_ShowCubes);
+		ImGui::SameLine();
+		ImGui::Checkbox("Show Spheres", &m_ShowSpheres);
+		ImGui::SameLine();
+		ImGui::Checkbox("Show Planes", &m_ShowPlanes);
+		
+		ImGui::Checkbox("Animate Objects", &m_AnimateObjects);
+		ImGui::SameLine();
+		ImGui::Checkbox("Wireframe Mode", &m_WireframeMode);
+		
+		ImGui::Separator();
+		ImGui::Text("Camera Settings");
+		ImGui::SliderFloat("Camera Speed", &m_CameraSpeed, 1.0f, 20.0f);
+		ImGui::SliderFloat("Rotation Speed", &m_RotationSpeed, 10.0f, 180.0f);
+		
+		ImGui::Separator();
+		ImGui::Text("Controls:");
+		ImGui::Text("WASD - Move camera");
+		ImGui::Text("QE - Move up/down");
+		ImGui::Text("Right Mouse + Drag - Rotate camera");
+		
+		ImGui::End();
+
+		// 3D Performance Stats
+		ImGui::Begin("3D Performance Stats", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+		
+		auto stats = Zgine::BatchRenderer3D::GetStats();
+		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+		ImGui::Text("Triangles: %d", stats.TriangleCount);
+		ImGui::Text("Vertices: %d", stats.VertexCount);
+		ImGui::Text("Indices: %d", stats.IndexCount);
+		
+		if (ImGui::Button("Reset Stats", ImVec2(120, 30)))
+		{
+			Zgine::BatchRenderer3D::ResetStats();
+		}
+		
+		ImGui::End();
+	}
+
+private:
+	Zgine::PerspectiveCamera m_Camera;
+	glm::vec3 m_CameraPosition;
+	glm::vec3 m_CameraRotation;
+	float m_CameraSpeed;
+	float m_RotationSpeed;
+	float m_Time;
+	
+	bool m_ShowCubes;
+	bool m_ShowSpheres;
+	bool m_ShowPlanes;
+	bool m_AnimateObjects;
+	bool m_WireframeMode;
+};
+
 class Sandbox : public Zgine::Application {
 public:
 	Sandbox()
 	{
 		PushLayer(new PrimitiveTestLayer());
+		PushLayer(new Test3DLayer());
 	}
 	~Sandbox() {}
 };
