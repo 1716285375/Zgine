@@ -3,11 +3,11 @@
 
 #include "imgui.h"
 
-class TextureTestLayer : public Zgine::Layer
+class MaterialTestLayer : public Zgine::Layer
 {
 public:
-	TextureTestLayer()
-		: Layer("TextureTest")
+	MaterialTestLayer()
+		: Layer("MaterialTest")
 	{
 		// Create a simple colored texture
 		m_Texture = Zgine::Texture2D::Create(1, 1);
@@ -66,14 +66,27 @@ public:
 			in vec2 v_TexCoord;
 
 			uniform sampler2D u_Texture;
+			uniform vec4 u_Color;
+			uniform float u_Time;
 
 			void main()
 			{
-				color = texture(u_Texture, v_TexCoord);
+				vec4 texColor = texture(u_Texture, v_TexCoord);
+				color = texColor * u_Color;
+				
+				// Add some animation based on time
+				color.r += sin(u_Time) * 0.1;
+				color.g += cos(u_Time) * 0.1;
 			}
 		)";
 
-		m_TextureShader.reset(new Zgine::Shader(vertexSrc, fragmentSrc));
+		m_Shader.reset(new Zgine::Shader(vertexSrc, fragmentSrc));
+
+		// Create material
+		m_Material = std::make_shared<Zgine::Material>("TestMaterial", m_Shader);
+		m_Material->SetTexture("u_Texture", m_Texture);
+		m_Material->SetFloat4("u_Color", glm::vec4(1.0f, 0.5f, 0.2f, 1.0f));
+		m_Material->SetFloat("u_Time", 0.0f);
 	}
 
 	virtual void OnUpdate() override
@@ -89,45 +102,59 @@ public:
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
 			m_CameraPosition.y -= m_CameraSpeed;
 
-		// Render textured quad
+		// Update time uniform
+		m_Time += 0.016f; // Approximate 60 FPS
+		m_Material->SetFloat("u_Time", m_Time);
+
+		// Render textured quad with material
 		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		Zgine::RenderCommand::Clear();
 
 		m_Camera.SetPosition(m_CameraPosition);
 		Zgine::Renderer::BeginScene(m_Camera);
 
-		m_Texture->Bind();
-		m_TextureShader->Bind();
-		Zgine::Renderer::Submit(m_TextureShader, m_VertexArray);
+		m_Material->Bind();
+		Zgine::Renderer::Submit(m_Shader, m_VertexArray);
 
 		Zgine::Renderer::EndScene();
 	}
 
 	virtual void OnImGuiRender() override
 	{
-		ImGui::Begin("Texture Test");
-		ImGui::Text("Texture System Test");
+		ImGui::Begin("Material Test");
+		ImGui::Text("Material System Test");
 		ImGui::Text("Use WASD to move camera");
+		ImGui::Text("Material Name: %s", m_Material->GetName().c_str());
+		ImGui::Text("Shader ID: %d", m_Shader->GetRendererID());
 		ImGui::Text("Texture ID: %d", m_Texture->GetRendererID());
-		ImGui::Text("Texture Size: %dx%d", m_Texture->GetWidth(), m_Texture->GetHeight());
-		ImGui::Text("Texture Loaded: %s", m_Texture->IsLoaded() ? "Yes" : "No");
+		ImGui::Text("Time: %.2f", m_Time);
+		
+		// Material property controls
+		static glm::vec4 color = glm::vec4(1.0f, 0.5f, 0.2f, 1.0f);
+		if (ImGui::ColorEdit4("Material Color", &color.x))
+		{
+			m_Material->SetFloat4("u_Color", color);
+		}
+		
 		ImGui::End();
 	}
 
 private:
 	std::shared_ptr<Zgine::Texture2D> m_Texture;
 	std::shared_ptr<Zgine::VertexArray> m_VertexArray;
-	std::shared_ptr<Zgine::Shader> m_TextureShader;
+	std::shared_ptr<Zgine::Shader> m_Shader;
+	std::shared_ptr<Zgine::Material> m_Material;
 	Zgine::OrthographicCamera m_Camera{ -1.6f, 1.6f, -0.9f, 0.9f };
 	glm::vec3 m_CameraPosition{ 0.0f };
 	float m_CameraSpeed = 0.01f;
+	float m_Time = 0.0f;
 };
 
 class Sandbox : public Zgine::Application {
 public:
 	Sandbox()
 	{
-		PushLayer(new TextureTestLayer());
+		PushLayer(new MaterialTestLayer());
 	}
 	~Sandbox() {};
 };
