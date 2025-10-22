@@ -2,6 +2,9 @@
 
 #include "Zgine/Core.h"
 #include <spdlog/fmt/fmt.h>
+#include <functional>
+#include <string>
+#include <iostream>
 
 namespace Zgine {
 

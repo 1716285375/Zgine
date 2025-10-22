@@ -2,6 +2,7 @@
 
 #include <Zgine/Core.h>
 #include <Zgine/Events/Event.h>
+#include <string>
 
 
 namespace Zgine {
