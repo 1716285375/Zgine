@@ -735,29 +735,4 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
-	float BatchRenderer2D::GetTextureIndex(const Ref<Texture2D>& texture)
-	{
-		float textureIndex = 0.0f;
-		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)
-		{
-			if (s_TextureSlots[i] && texture && s_TextureSlots[i]->GetRendererID() == texture->GetRendererID())
-			{
-				textureIndex = (float)i;
-				break;
-			}
-		}
-
-		if (textureIndex == 0.0f)
-		{
-			if (s_TextureSlotIndex >= MaxTextureSlots)
-				NextBatch();
-
-			textureIndex = (float)s_TextureSlotIndex;
-			s_TextureSlots[s_TextureSlotIndex] = texture;
-			s_TextureSlotIndex++;
-		}
-
-		return textureIndex;
-	}
-
 }
