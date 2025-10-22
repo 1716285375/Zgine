@@ -71,6 +71,7 @@ namespace Zgine {
 			for (auto* layer : m_LayerStack) {
 				layer->OnImGuiRender();
 			}
+			m_ImGuiLayer->OnImGuiRender(); // Add this line to call ImGuiLayer's OnImGuiRender
 			m_ImGuiLayer->End();
 			
 			m_Window->OnUpdate();
