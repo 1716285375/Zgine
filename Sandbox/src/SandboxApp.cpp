@@ -1,6 +1,7 @@
 #include "zgpch.h"
 #include <Zgine.h>
 #include "MainControlLayer.h"
+#include "Zgine/Log.h"
 
 class SandboxApp : public Zgine::Application
 {

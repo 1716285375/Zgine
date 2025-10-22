@@ -61,8 +61,9 @@ namespace Zgine {
 
 	void ImGuiLayer::OnImGuiRender()
 	{
-		static bool show = true;
-		ImGui::ShowDemoWindow(&show);
+		// Removed ShowDemoWindow to allow custom UI
+		// static bool show = true;
+		// ImGui::ShowDemoWindow(&show);
 	}
 
 

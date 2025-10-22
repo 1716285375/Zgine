@@ -1,5 +1,6 @@
 #include "MainControlLayer.h"
 #include "Zgine/Renderer/Renderer.h"
+#include "Zgine/Log.h"
 
 namespace Sandbox {
 
