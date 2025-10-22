@@ -161,6 +161,12 @@ namespace Zgine {
 		glUniform4i(location, value.x, value.y, value.z, value.w);
 	}
 
+	void Shader::UploadUniformIntArray(const std::string& name, int* values, uint32_t count)
+	{
+		GLint location = GetUniformLocation(name);
+		glUniform1iv(location, count, values);
+	}
+
 	void Shader::UploadUniformMat3(const std::string& name, const glm::mat3& matrix)
 	{
 		GLint location = GetUniformLocation(name);
