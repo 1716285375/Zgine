@@ -63,6 +63,14 @@ namespace Sandbox {
 
 	void MainControlLayer::OnUpdate(Zgine::Timestep ts)
 	{
+		// Debug output
+		static int frameCount = 0;
+		frameCount++;
+		if (frameCount % 60 == 0) // Every 60 frames
+		{
+			ZG_CORE_INFO("MainControlLayer::OnUpdate called - Frame: {}", frameCount);
+		}
+
 		// Update time
 		m_Time += ts;
 
@@ -131,6 +139,14 @@ namespace Sandbox {
 
 	void MainControlLayer::OnImGuiRender()
 	{
+		// Debug output
+		static int imguiFrameCount = 0;
+		imguiFrameCount++;
+		if (imguiFrameCount % 60 == 0) // Every 60 frames
+		{
+			ZG_CORE_INFO("MainControlLayer::OnImGuiRender called - Frame: {}", imguiFrameCount);
+		}
+
 		// Main menu bar
 		RenderMainMenu();
 
@@ -152,6 +168,9 @@ namespace Sandbox {
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
+			// Debug info in menu bar
+			ImGui::Text("Debug: MainControlLayer Active");
+			
 			if (ImGui::BeginMenu("Windows"))
 			{
 				ImGui::MenuItem("2D Test Window", nullptr, &m_Show2DTestWindow);
@@ -188,6 +207,11 @@ namespace Sandbox {
 	void MainControlLayer::Render2DTestWindow()
 	{
 		ImGui::Begin("2D Rendering Test", &m_Show2DTestWindow);
+		
+		// Debug info
+		ImGui::Text("Debug: 2D Test Window is open");
+		ImGui::Text("Show2DTestWindow: %s", m_Show2DTestWindow ? "true" : "false");
+		ImGui::Text("ShowQuads: %s", m_2DShowQuads ? "true" : "false");
 		
 		// Basic shapes
 		ImGui::Text("Basic Shapes");

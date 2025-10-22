@@ -17,8 +17,10 @@ public:
 
 	virtual void OnApplicationStart() override
 	{
+		ZG_CORE_INFO("SandboxApp::OnApplicationStart called - Creating MainControlLayer");
 		// Push main control layer after Application and Renderer are fully initialized
 		PushLayer(new Sandbox::MainControlLayer());
+		ZG_CORE_INFO("MainControlLayer created and pushed to layer stack");
 	}
 };
 
