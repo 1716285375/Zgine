@@ -781,6 +781,110 @@ namespace Zgine {
 		s_Stats.PlaneCount++;
 	}
 
+	// Missing method implementations
+	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
+	{
+		s_Shader->Bind();
+		s_Shader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+		
+		StartBatch();
+	}
+
+	void BatchRenderer3D::EndScene()
+	{
+		Flush();
+	}
+
+	void BatchRenderer3D::StartBatch()
+	{
+		s_IndexCount = 0;
+		s_VertexBufferPtr = s_VertexBufferBase.get();
+		s_TextureSlotIndex = 1; // 0 = white texture
+	}
+
+	void BatchRenderer3D::NextBatch()
+	{
+		Flush();
+		StartBatch();
+	}
+
+	void BatchRenderer3D::FlushAndReset()
+	{
+		Flush();
+		StartBatch();
+	}
+
+	// Basic DrawCube implementations
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color)
+	{
+		DrawCubeInternal(position, size, glm::mat4(1.0f), color);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		DrawCubeInternal(position, size, glm::mat4(1.0f), texture, tintColor);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const glm::vec4& color)
+	{
+		DrawCubeInternal(position, size, transform, color);
+	}
+
+	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
+	{
+		DrawCubeInternal(position, size, transform, texture, tintColor);
+	}
+
+	// Sphere implementations
+	void BatchRenderer3D::DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color, int segments)
+	{
+		DrawSphereInternal(position, radius, glm::mat4(1.0f), color, segments);
+	}
+
+	void BatchRenderer3D::DrawSphere(const glm::vec3& position, float radius, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments)
+	{
+		DrawSphereInternal(position, radius, glm::mat4(1.0f), texture, tintColor, segments);
+	}
+
+	// Cylinder implementations
+	void BatchRenderer3D::DrawCylinder(const glm::vec3& position, float radius, float height, const glm::vec4& color, int segments)
+	{
+		// TODO: Implement cylinder drawing
+		ZG_CORE_WARN("DrawCylinder not implemented yet");
+	}
+
+	void BatchRenderer3D::DrawCylinder(const glm::vec3& position, float radius, float height, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments)
+	{
+		// TODO: Implement textured cylinder drawing
+		ZG_CORE_WARN("DrawCylinder with texture not implemented yet");
+	}
+
+	float BatchRenderer3D::GetTextureIndex(const Ref<Texture2D>& texture)
+	{
+		float textureIndex = 0.0f;
+		
+		for (uint32_t i = 1; i < s_TextureSlotIndex; i++)
+		{
+			if (*s_TextureSlots[i].get() == *texture.get())
+			{
+				textureIndex = (float)i;
+				break;
+			}
+		}
+
+		if (textureIndex == 0.0f)
+		{
+			if (s_TextureSlotIndex >= MaxTextureSlots)
+				NextBatch();
+
+			textureIndex = (float)s_TextureSlotIndex;
+			s_TextureSlots[s_TextureSlotIndex] = texture;
+			s_TextureSlotIndex++;
+		}
+
+		return textureIndex;
+	}
+
 	// Statistics
 	RenderStats3D BatchRenderer3D::GetStats()
 	{

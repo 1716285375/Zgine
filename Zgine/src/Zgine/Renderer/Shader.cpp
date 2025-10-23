@@ -59,7 +59,7 @@ namespace Zgine {
 			glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &maxLength);
 
 			std::vector<GLchar> infoLog(maxLength);
-			glGetShaderInfoLog(vertexShader, maxLength, &maxLength, &infoLog[0]);
+			glGetShaderInfoLog(fragmentShader, maxLength, &maxLength, &infoLog[0]);
 
 			glDeleteShader(fragmentShader);
 			glDeleteShader(vertexShader);
