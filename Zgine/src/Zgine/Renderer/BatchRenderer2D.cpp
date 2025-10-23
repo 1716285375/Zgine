@@ -797,13 +797,37 @@ namespace Zgine {
 		}
 		
 		// Debug: Check index buffer state
+		uint32_t indexBufferCount = s_QuadVertexArray->GetIndexBuffer()->GetCount();
 		ZG_CORE_TRACE("BatchRenderer2D::Flush - Index buffer count: {}, Drawing {} indices", 
-			s_QuadVertexArray->GetIndexBuffer()->GetCount(), s_QuadIndexCount);
+			indexBufferCount, s_QuadIndexCount);
+		
+		// Check if we're trying to draw more indices than available in the buffer
+		if (s_QuadIndexCount > indexBufferCount)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Trying to draw {} indices but buffer only has {}", 
+				s_QuadIndexCount, indexBufferCount);
+			return;
+		}
 		
 		// Debug: Check vertex array state
 		GLint currentVAO = 0;
 		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
 		ZG_CORE_TRACE("BatchRenderer2D::Flush - Current VAO: {}", currentVAO);
+		
+		// Debug: Check if vertex attributes are enabled
+		GLboolean attrib0Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY0);
+		GLboolean attrib1Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY1);
+		GLboolean attrib2Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY2);
+		GLboolean attrib3Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY3);
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Vertex attributes enabled: 0={}, 1={}, 2={}, 3={}", 
+			attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
+		
+		// Debug: Check if all required vertex attributes are enabled
+		if (!attrib0Enabled || !attrib1Enabled || !attrib2Enabled || !attrib3Enabled)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Some vertex attributes are not enabled!");
+			return;
+		}
 		
 		RenderCommand::DrawIndexed(s_QuadVertexArray, s_QuadIndexCount);
 		RenderCommand::CheckOpenGLError("BatchRenderer2D::Flush - DrawIndexed");
