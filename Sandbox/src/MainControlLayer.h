@@ -6,6 +6,9 @@
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/BatchRenderer3D.h"
 #include "Zgine/Renderer/ParticleSystem.h"
+// TODO: Re-enable performance monitoring once implementation is complete
+// #include "Zgine/Renderer/PerformanceMonitorUI.h"
+// #include "Zgine/Renderer/PerformanceBenchmark.h"
 #include "Zgine/Input.h"
 #include "Zgine/KeyCodes.h"
 #include "Zgine/MouseButtonCodes.h"

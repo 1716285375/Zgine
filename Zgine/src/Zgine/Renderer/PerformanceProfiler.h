@@ -60,11 +60,13 @@ namespace Zgine {
 	public:
 		explicit ScopedTimer(const std::string& name) : m_Name(name), m_Timer() {}
 		
-		~ScopedTimer()
-		{
-			double elapsed = m_Timer.GetElapsedMs();
-			PerformanceProfiler::RecordScope(m_Name, elapsed);
-		}
+	~ScopedTimer()
+	{
+		// TODO: Implement performance profiling backend
+		// For now, this is a placeholder
+		//double elapsed = m_Timer.GetElapsedMs();
+		//ZG_CORE_TRACE("{} took {} ms", m_Name, elapsed);
+	}
 
 	private:
 		std::string m_Name;
@@ -348,9 +350,7 @@ namespace Zgine {
 	};
 
 	// Convenience macros for profiling
-	#define ZG_PROFILE_SCOPE(name) ScopedTimer _timer(name)
-	#define ZG_PROFILE_FUNCTION() ScopedTimer _timer(__FUNCTION__)
-	#define ZG_PROFILE_START(name) auto _timer = PerformanceProfiler::StartScope(name)
-	#define ZG_PROFILE_END(timer) PerformanceProfiler::RecordScope(timer->GetName(), timer->GetElapsedMs())
+	#define ZG_PROFILE_SCOPE(name) Zgine::ScopedTimer _timer(name)
+	#define ZG_PROFILE_FUNCTION() Zgine::ScopedTimer _timer(__FUNCTION__)
 
 }
