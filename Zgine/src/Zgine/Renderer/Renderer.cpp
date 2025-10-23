@@ -76,7 +76,7 @@ namespace Zgine {
 	 * @param vertexArray The vertex array containing geometry data
 	 * @details Submits geometry to be rendered with the specified shader
 	 */
-	void Renderer::Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray)
+	void Renderer::Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray)
 	{
 		if (!m_SceneData)
 		{

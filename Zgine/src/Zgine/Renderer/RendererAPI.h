@@ -42,7 +42,7 @@ namespace Zgine {
 		 * @param vertexArray The vertex array containing the geometry to draw
 		 * @details Renders the geometry defined by the vertex array using indexed drawing
 		 */
-		virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray) = 0;
+		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray) = 0;
 		
 		/**
 		 * @brief Get the current rendering API

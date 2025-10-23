@@ -54,7 +54,7 @@ namespace Zgine {
 		 * @param vertexArray The vertex array containing geometry data
 		 * @details Submits geometry to be rendered with the specified shader
 		 */
-		static void Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray);
+		static void Submit(const Ref<Shader>& shader, const Ref<VertexArray>& vertexArray);
 
 		/**
 		 * @brief Get the current rendering API
