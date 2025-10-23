@@ -24,6 +24,8 @@ namespace Zgine {
 
 	void BatchRenderer3D::Init()
 	{
+		ZG_CORE_INFO("BatchRenderer3D::Init() called");
+		
 		s_VertexArray.reset(VertexArray::Create());
 
 		s_VertexBuffer.reset(VertexBuffer::Create(nullptr, MaxVertices * sizeof(Vertex3D)));
@@ -37,6 +39,7 @@ namespace Zgine {
 		s_VertexArray->AddVertexBuffer(s_VertexBuffer);
 
 		s_VertexBufferBase = CreateScopeArray<Vertex3D>(MaxVertices);
+		ZG_CORE_INFO("Created 3D vertex buffer base with {} vertices", MaxVertices);
 
 		// Create indices array
 		std::vector<uint32_t> indices(MaxIndices);
@@ -131,6 +134,13 @@ namespace Zgine {
 
 		// Set all texture slots to 0
 		s_TextureSlots[0] = s_WhiteTexture;
+		
+		// Initialize other static members
+		s_IndexCount = 0;
+		s_VertexBufferPtr = s_VertexBufferBase.get();
+		s_TextureSlotIndex = 1;
+		
+		ZG_CORE_INFO("BatchRenderer3D::Init() completed successfully");
 	}
 
 	void BatchRenderer3D::Shutdown()
@@ -140,6 +150,12 @@ namespace Zgine {
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
+		if (!s_Shader)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::BeginScene called but shader is not initialized!");
+			return;
+		}
+		
 		s_Shader->Bind();
 		s_Shader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
@@ -156,13 +172,32 @@ namespace Zgine {
 		if (s_IndexCount == 0)
 			return; // Nothing to draw
 
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::Flush called but vertex buffer is not initialized!");
+			return;
+		}
+
+		if (!s_VertexBuffer)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::Flush called but vertex buffer object is not initialized!");
+			return;
+		}
+
+		if (!s_VertexArray)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::Flush called but vertex array is not initialized!");
+			return;
+		}
+
 		uint32_t dataSize = (uint32_t)((uint8_t*)s_VertexBufferPtr - (uint8_t*)s_VertexBufferBase.get());
 		s_VertexBuffer->SetData(s_VertexBufferBase.get(), dataSize);
 
 		// Bind textures
 		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
 		{
-			s_TextureSlots[i]->Bind(i);
+			if (s_TextureSlots[i])
+				s_TextureSlots[i]->Bind(i);
 		}
 
 		RenderCommand::DrawIndexed(s_VertexArray);
@@ -176,6 +211,12 @@ namespace Zgine {
 
 	void BatchRenderer3D::StartBatch()
 	{
+		if (!s_VertexBufferBase)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::StartBatch called but vertex buffer is not initialized!");
+			return;
+		}
+		
 		s_IndexCount = 0;
 		s_VertexBufferPtr = s_VertexBufferBase.get();
 		s_TextureSlotIndex = 1;
@@ -243,6 +284,12 @@ namespace Zgine {
 
 	void BatchRenderer3D::DrawCubeInternal(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const glm::vec4& color, int entityID)
 	{
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawCubeInternal called but vertex buffer is not initialized!");
+			return;
+		}
+
 		if (s_IndexCount >= MaxIndices - 36) // 12 triangles * 3 indices
 			NextBatch();
 
@@ -260,7 +307,7 @@ namespace Zgine {
 			{ -0.5f,  0.5f,  0.5f }  // 7
 		};
 
-		// Cube faces (6 faces, 2 triangles each)
+		// Cube faces (6 faces, 2 triangles each) - 36 indices total
 		uint32_t indices[36] = {
 			// Front face
 			0, 1, 2,  2, 3, 0,
@@ -287,18 +334,25 @@ namespace Zgine {
 			s_VertexBufferPtr++;
 		}
 
-		// Add indices
-		for (int i = 0; i < 36; i++)
-		{
-			s_IndexCount++;
-		}
+		// Add indices (36 indices for 12 triangles)
+		s_IndexCount += 36;
 
 		// Upload transform matrix
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
+
+		// Update statistics
+		s_Stats.CubeCount++;
 	}
 
 	void BatchRenderer3D::DrawCubeInternal(const glm::vec3& position, const glm::vec3& size, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int entityID)
 	{
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawCubeInternal called but vertex buffer is not initialized!");
+			return;
+		}
+
 		if (s_IndexCount >= MaxIndices - 36)
 			NextBatch();
 
@@ -331,12 +385,15 @@ namespace Zgine {
 			s_VertexBufferPtr++;
 		}
 
-		for (int i = 0; i < 36; i++)
-		{
-			s_IndexCount++;
-		}
+		// Add indices (36 indices for 12 triangles)
+		s_IndexCount += 36;
 
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		// Upload transform matrix
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
+
+		// Update statistics
+		s_Stats.CubeCount++;
 	}
 
 	// Sphere rendering
@@ -354,9 +411,18 @@ namespace Zgine {
 
 	void BatchRenderer3D::DrawSphereInternal(const glm::vec3& position, float radius, const glm::mat4& transform, const glm::vec4& color, int segments, int entityID)
 	{
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawSphereInternal called but vertex buffer is not initialized!");
+			return;
+		}
+
 		segments = glm::clamp(segments, 8, 64);
 		
-		if (s_IndexCount >= MaxIndices - segments * segments * 6)
+		uint32_t vertexCount = (segments + 1) * (segments + 1);
+		uint32_t indexCount = segments * segments * 6;
+		
+		if (s_IndexCount >= MaxIndices - indexCount)
 			NextBatch();
 
 		float textureIndex = 0.0f;
@@ -383,27 +449,31 @@ namespace Zgine {
 			}
 		}
 
-		// Generate indices
-		for (int i = 0; i < segments; i++)
-		{
-			for (int j = 0; j < segments; j++)
-			{
-				int first = i * (segments + 1) + j;
-				int second = first + segments + 1;
+		// Add indices
+		s_IndexCount += indexCount;
 
-				s_IndexCount += 6; // Two triangles per quad
-			}
-		}
+		// Upload transform matrix
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
 
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		// Update statistics
+		s_Stats.SphereCount++;
 	}
 
 	void BatchRenderer3D::DrawSphereInternal(const glm::vec3& position, float radius, const glm::mat4& transform, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments, int entityID)
 	{
-		// Similar to above but with texture
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawSphereInternal called but vertex buffer is not initialized!");
+			return;
+		}
+
 		segments = glm::clamp(segments, 8, 64);
 		
-		if (s_IndexCount >= MaxIndices - segments * segments * 6)
+		uint32_t vertexCount = (segments + 1) * (segments + 1);
+		uint32_t indexCount = segments * segments * 6;
+		
+		if (s_IndexCount >= MaxIndices - indexCount)
 			NextBatch();
 
 		float textureIndex = GetTextureIndex(texture);
@@ -429,20 +499,26 @@ namespace Zgine {
 			}
 		}
 
-		for (int i = 0; i < segments; i++)
-		{
-			for (int j = 0; j < segments; j++)
-			{
-				s_IndexCount += 6;
-			}
-		}
+		// Add indices
+		s_IndexCount += indexCount;
 
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		// Upload transform matrix
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
+
+		// Update statistics
+		s_Stats.SphereCount++;
 	}
 
 	// Plane rendering
 	void BatchRenderer3D::DrawPlane(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawPlane called but vertex buffer is not initialized!");
+			return;
+		}
+
 		if (s_IndexCount >= MaxIndices - 6)
 			NextBatch();
 
@@ -469,11 +545,23 @@ namespace Zgine {
 		}
 
 		s_IndexCount += 6;
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		
+		// Upload transform matrix
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
+
+		// Update statistics
+		s_Stats.PlaneCount++;
 	}
 
 	void BatchRenderer3D::DrawPlane(const glm::vec3& position, const glm::vec2& size, const Ref<Texture2D>& texture, const glm::vec4& tintColor)
 	{
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawPlane called but vertex buffer is not initialized!");
+			return;
+		}
+
 		if (s_IndexCount >= MaxIndices - 6)
 			NextBatch();
 
@@ -499,7 +587,13 @@ namespace Zgine {
 		}
 
 		s_IndexCount += 6;
-		s_Shader->UploadUniformMat4("u_Transform", transform);
+		
+		// Upload transform matrix
+		if (s_Shader)
+			s_Shader->UploadUniformMat4("u_Transform", transform);
+
+		// Update statistics
+		s_Stats.PlaneCount++;
 	}
 
 	// Statistics
