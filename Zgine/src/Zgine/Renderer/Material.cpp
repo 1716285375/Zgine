@@ -1,233 +1,104 @@
 #include "zgpch.h"
 #include "Material.h"
-
-#include <cstring>
+#include "Shader.h"
+#include "Texture.h"
 
 namespace Zgine {
 
-	Material::Material(const std::shared_ptr<Shader>& shader)
-		: m_Name("Unnamed Material"), m_Shader(shader)
+	void Material::UploadToShader(Shader* shader)
 	{
+		if (!shader)
+			return;
+
+		// Upload material properties
+		shader->UploadUniformFloat3("u_Material.albedo", m_Properties.Albedo);
+		shader->UploadUniformFloat("u_Material.metallic", m_Properties.Metallic);
+		shader->UploadUniformFloat("u_Material.roughness", m_Properties.Roughness);
+		shader->UploadUniformFloat("u_Material.emissive", m_Properties.Emissive);
+		shader->UploadUniformFloat3("u_Material.emissiveColor", m_Properties.EmissiveColor);
+		shader->UploadUniformFloat("u_Material.transparency", m_Properties.Transparency);
+		shader->UploadUniformFloat("u_Material.refractionIndex", m_Properties.RefractionIndex);
+
+		// Upload texture indices
+		shader->UploadUniformInt("u_Material.hasAlbedoTexture", m_AlbedoTexture ? 1 : 0);
+		shader->UploadUniformInt("u_Material.hasNormalTexture", m_NormalTexture ? 1 : 0);
+		shader->UploadUniformInt("u_Material.hasMetallicTexture", m_MetallicTexture ? 1 : 0);
+		shader->UploadUniformInt("u_Material.hasRoughnessTexture", m_RoughnessTexture ? 1 : 0);
+		shader->UploadUniformInt("u_Material.hasEmissiveTexture", m_EmissiveTexture ? 1 : 0);
 	}
 
-	Material::Material(const std::string& name, const std::shared_ptr<Shader>& shader)
-		: m_Name(name), m_Shader(shader)
+	// MaterialLibrary implementation
+	void MaterialLibrary::AddMaterial(const std::string& name, std::shared_ptr<Material> material)
 	{
+		m_Materials[name] = material;
 	}
 
-	Material::~Material()
+	std::shared_ptr<Material> MaterialLibrary::GetMaterial(const std::string& name)
 	{
-		for (auto& [name, property] : m_Properties)
-		{
-			CleanupProperty(property);
-		}
+		auto it = m_Materials.find(name);
+		return (it != m_Materials.end()) ? it->second : nullptr;
 	}
 
-	void Material::SetFloat(const std::string& name, float value)
+	void MaterialLibrary::RemoveMaterial(const std::string& name)
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		float* data = new float(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Float, name, data, sizeof(float));
+		m_Materials.erase(name);
 	}
 
-	void Material::SetFloat2(const std::string& name, const glm::vec2& value)
+	void MaterialLibrary::ClearMaterials()
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::vec2* data = new glm::vec2(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Float2, name, data, sizeof(glm::vec2));
+		m_Materials.clear();
 	}
 
-	void Material::SetFloat3(const std::string& name, const glm::vec3& value)
+	std::shared_ptr<Material> MaterialLibrary::CreateDefaultMaterial()
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::vec3* data = new glm::vec3(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Float3, name, data, sizeof(glm::vec3));
+		auto material = std::make_shared<Material>("DefaultMaterial");
+		material->SetAlbedo({0.8f, 0.8f, 0.8f});
+		material->SetMetallic(0.0f);
+		material->SetRoughness(0.5f);
+		material->SetEmissive(0.0f);
+		return material;
 	}
 
-	void Material::SetFloat4(const std::string& name, const glm::vec4& value)
+	std::shared_ptr<Material> MaterialLibrary::CreateMetallicMaterial()
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::vec4* data = new glm::vec4(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Float4, name, data, sizeof(glm::vec4));
+		auto material = std::make_shared<Material>("MetallicMaterial");
+		material->SetAlbedo({0.7f, 0.7f, 0.7f});
+		material->SetMetallic(1.0f);
+		material->SetRoughness(0.1f);
+		material->SetEmissive(0.0f);
+		return material;
 	}
 
-	void Material::SetInt(const std::string& name, int value)
+	std::shared_ptr<Material> MaterialLibrary::CreateGlassMaterial()
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		int* data = new int(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Int, name, data, sizeof(int));
+		auto material = std::make_shared<Material>("GlassMaterial");
+		material->SetAlbedo({0.9f, 0.9f, 0.9f});
+		material->SetMetallic(0.0f);
+		material->SetRoughness(0.0f);
+		material->SetTransparency(0.3f);
+		material->SetRefractionIndex(1.5f);
+		return material;
 	}
 
-	void Material::SetInt2(const std::string& name, const glm::ivec2& value)
+	std::shared_ptr<Material> MaterialLibrary::CreateEmissiveMaterial()
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::ivec2* data = new glm::ivec2(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Int2, name, data, sizeof(glm::ivec2));
+		auto material = std::make_shared<Material>("EmissiveMaterial");
+		material->SetAlbedo({0.1f, 0.1f, 0.1f});
+		material->SetMetallic(0.0f);
+		material->SetRoughness(0.8f);
+		material->SetEmissive(2.0f);
+		material->SetEmissiveColor({1.0f, 0.5f, 0.2f});
+		return material;
 	}
 
-	void Material::SetInt3(const std::string& name, const glm::ivec3& value)
+	std::shared_ptr<Material> MaterialLibrary::CreatePBRMaterial(const glm::vec3& albedo, float metallic, float roughness)
 	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::ivec3* data = new glm::ivec3(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Int3, name, data, sizeof(glm::ivec3));
-	}
-
-	void Material::SetInt4(const std::string& name, const glm::ivec4& value)
-	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::ivec4* data = new glm::ivec4(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Int4, name, data, sizeof(glm::ivec4));
-	}
-
-	void Material::SetMat3(const std::string& name, const glm::mat3& value)
-	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::mat3* data = new glm::mat3(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Mat3, name, data, sizeof(glm::mat3));
-	}
-
-	void Material::SetMat4(const std::string& name, const glm::mat4& value)
-	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		glm::mat4* data = new glm::mat4(value);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Mat4, name, data, sizeof(glm::mat4));
-	}
-
-	void Material::SetTexture(const std::string& name, const std::shared_ptr<Texture2D>& texture)
-	{
-		auto it = m_Properties.find(name);
-		if (it != m_Properties.end())
-		{
-			CleanupProperty(it->second);
-		}
-
-		std::shared_ptr<Texture2D>* data = new std::shared_ptr<Texture2D>(texture);
-		m_Properties[name] = MaterialProperty(ShaderUniformType::Texture2D, name, data, sizeof(std::shared_ptr<Texture2D>));
-	}
-
-	void Material::Bind() const
-	{
-		m_Shader->Bind();
-		UploadUniforms();
-	}
-
-	void Material::Unbind() const
-	{
-		m_Shader->Unbind();
-	}
-
-	void Material::UploadUniforms() const
-	{
-		uint32_t textureSlot = 0;
-		for (const auto& [name, property] : m_Properties)
-		{
-			switch (property.Type)
-			{
-				case ShaderUniformType::Float:
-					m_Shader->UploadUniformFloat(property.Name, *(float*)property.Data);
-					break;
-				case ShaderUniformType::Float2:
-					m_Shader->UploadUniformFloat2(property.Name, *(glm::vec2*)property.Data);
-					break;
-				case ShaderUniformType::Float3:
-					m_Shader->UploadUniformFloat3(property.Name, *(glm::vec3*)property.Data);
-					break;
-				case ShaderUniformType::Float4:
-					m_Shader->UploadUniformFloat4(property.Name, *(glm::vec4*)property.Data);
-					break;
-				case ShaderUniformType::Int:
-					m_Shader->UploadUniformInt(property.Name, *(int*)property.Data);
-					break;
-				case ShaderUniformType::Int2:
-					m_Shader->UploadUniformInt2(property.Name, *(glm::ivec2*)property.Data);
-					break;
-				case ShaderUniformType::Int3:
-					m_Shader->UploadUniformInt3(property.Name, *(glm::ivec3*)property.Data);
-					break;
-				case ShaderUniformType::Int4:
-					m_Shader->UploadUniformInt4(property.Name, *(glm::ivec4*)property.Data);
-					break;
-				case ShaderUniformType::Mat3:
-					m_Shader->UploadUniformMat3(property.Name, *(glm::mat3*)property.Data);
-					break;
-				case ShaderUniformType::Mat4:
-					m_Shader->UploadUniformMat4(property.Name, *(glm::mat4*)property.Data);
-					break;
-				case ShaderUniformType::Texture2D:
-				{
-					std::shared_ptr<Texture2D>* texture = (std::shared_ptr<Texture2D>*)property.Data;
-					if (*texture)
-					{
-						(*texture)->Bind(textureSlot);
-						m_Shader->UploadUniformInt(property.Name, textureSlot);
-						textureSlot++;
-					}
-					break;
-				}
-			}
-		}
-	}
-
-	void Material::CleanupProperty(MaterialProperty& property)
-	{
-		if (property.Type == ShaderUniformType::Texture2D)
-		{
-			delete (std::shared_ptr<Texture2D>*)property.Data;
-		}
-		else
-		{
-			delete[] (char*)property.Data;
-		}
+		auto material = std::make_shared<Material>("PBRMaterial");
+		material->SetAlbedo(albedo);
+		material->SetMetallic(metallic);
+		material->SetRoughness(roughness);
+		material->SetEmissive(0.0f);
+		return material;
 	}
 
 }

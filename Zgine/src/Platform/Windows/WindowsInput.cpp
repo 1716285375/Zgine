@@ -30,17 +30,15 @@ namespace Zgine {
 		return { (float)xpos, (float)ypos };
 	}
 
-	bool WindowsInput::GetMouseXImpl()
+	float WindowsInput::GetMouseXImpl()
 	{
 		auto [x, y] = GetMousePositionImpl();
-
 		return x;
 	}
 
-	bool WindowsInput::GetMouseYImpl()
+	float WindowsInput::GetMouseYImpl()
 	{
 		auto [x, y] = GetMousePositionImpl();
-
 		return y;
 	}
 

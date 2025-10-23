@@ -17,6 +17,8 @@
 #include "Zgine/Renderer/Shader.h"
 #include "Zgine/Renderer/Texture.h"
 #include "Zgine/Renderer/Material.h"
+#include "Zgine/Renderer/Lighting.h"
+#include "Zgine/Renderer/ResourceManager.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/BatchRenderer3D.h"
 #include "Zgine/Renderer/VertexArray.h"

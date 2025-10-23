@@ -12,9 +12,9 @@ namespace Zgine {
 
 		virtual std::pair<float, float> GetMousePositionImpl() override;
 
-		virtual bool GetMouseXImpl() override;
+		virtual float GetMouseXImpl() override;
 
-		virtual bool GetMouseYImpl() override;
+		virtual float GetMouseYImpl() override;
 
 
 

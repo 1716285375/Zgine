@@ -1,5 +1,8 @@
 #include "MainControlLayer.h"
 #include "Zgine/Renderer/Renderer.h"
+#include "Zgine/Renderer/Lighting.h"
+#include "Zgine/Renderer/Material.h"
+#include "Zgine/Renderer/ResourceManager.h"
 #include "Zgine/Log.h"
 #include "Zgine/Events/ApplicationEvent.h"
 
@@ -63,10 +66,63 @@ namespace Sandbox {
 		m_3DCamera.SetPosition(m_3DCameraPosition);
 		m_3DCamera.SetRotation(m_3DCameraRotation);
 		
+		// Setup lighting system
+		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
+		
+		// Add directional light (sun)
+		auto sunLight = std::make_shared<Zgine::DirectionalLight>(
+			glm::vec3(-0.5f, -1.0f, -0.3f), // Direction
+			glm::vec3(1.0f, 0.95f, 0.8f),   // Warm sunlight color
+			1.2f                             // Intensity
+		);
+		lightingSystem.AddLight(sunLight);
+		
+		// Add point lights
+		auto pointLight1 = std::make_shared<Zgine::PointLight>(
+			glm::vec3(2.0f, 2.0f, 2.0f),    // Position
+			glm::vec3(1.0f, 0.8f, 0.6f),    // Warm color
+			1.5f,                           // Intensity
+			8.0f                            // Range
+		);
+		lightingSystem.AddLight(pointLight1);
+		
+		auto pointLight2 = std::make_shared<Zgine::PointLight>(
+			glm::vec3(-3.0f, 1.0f, -2.0f),  // Position
+			glm::vec3(0.6f, 0.8f, 1.0f),    // Cool color
+			1.0f,                           // Intensity
+			6.0f                            // Range
+		);
+		lightingSystem.AddLight(pointLight2);
+		
+		// Add spot light
+		auto spotLight = std::make_shared<Zgine::SpotLight>(
+			glm::vec3(0.0f, 5.0f, 0.0f),    // Position
+			glm::vec3(0.0f, -1.0f, 0.0f),   // Direction (down)
+			glm::vec3(1.0f, 1.0f, 0.9f),    // Color
+			2.0f,                           // Intensity
+			10.0f,                          // Range
+			15.0f,                          // Inner cone angle
+			25.0f                           // Outer cone angle
+		);
+		lightingSystem.AddLight(spotLight);
+		
+		// Set ambient lighting
+		lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), 0.2f);
+		
+		// Setup materials
+		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
+		
+		// Create default materials
+		auto defaultMaterial = materialLibrary.CreateDefaultMaterial();
+		auto metallicMaterial = materialLibrary.CreateMetallicMaterial();
+		auto glassMaterial = materialLibrary.CreateGlassMaterial();
+		auto emissiveMaterial = materialLibrary.CreateEmissiveMaterial();
+		
 		ZG_CORE_INFO("MainControlLayer attached - 2D Camera: ({}, {}, {})", 
 			m_2DCameraPosition.x, m_2DCameraPosition.y, m_2DCameraPosition.z);
-		ZG_CORE_INFO("MainControlLayer attached - 3D Camera: ({}, {}, {})", 
+		ZG_CORE_INFO("MainControlLayer attached - 3D Camera: ({}, {}, {})",
 			m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
+		ZG_CORE_INFO("Lighting system initialized with {} lights", lightingSystem.GetLightCount());
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
