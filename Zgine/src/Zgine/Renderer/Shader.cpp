@@ -265,7 +265,11 @@ namespace Zgine {
 		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
 		if (location == -1)
 		{
-			ZG_CORE_WARN("Uniform '{0}' not found!", name);
+			// Only warn for non-material uniforms to reduce noise
+			if (name.find("u_Material.") == std::string::npos)
+			{
+				ZG_CORE_WARN("Uniform '{0}' not found!", name);
+			}
 		}
 		return location;
 	}
