@@ -56,6 +56,13 @@ namespace Zgine {
 	void OpenGLVertexArray::Bind() const
 	{
 		glBindVertexArray(m_RendererID);
+		
+		// Re-enable vertex attributes for this VAO
+		// This ensures that vertex attributes are properly enabled when the VAO is bound
+		for (int i = 0; i < 4; i++)
+		{
+			glEnableVertexAttribArray(i);
+		}
 	}
 
 	/**
