@@ -173,10 +173,10 @@ namespace Sandbox {
 		// Debug output
 		static int imguiFrameCount = 0;
 		imguiFrameCount++;
-		if (imguiFrameCount % 60 == 0) // Every 60 frames
-		{
-			ZG_CORE_INFO("MainControlLayer::OnImGuiRender called - Frame: {}", imguiFrameCount);
-		}
+		// if (imguiFrameCount % 60 == 0) // Every 60 frames
+		// {
+		//	ZG_CORE_INFO("MainControlLayer::OnImGuiRender called - Frame: {}", imguiFrameCount);
+		// }
 
 		// Main menu bar
 		RenderMainMenu();

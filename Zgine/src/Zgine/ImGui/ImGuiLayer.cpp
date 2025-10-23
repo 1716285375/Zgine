@@ -73,6 +73,12 @@ namespace Zgine {
 		// ImGui::ShowDemoWindow(&show);
 	}
 
+	void ImGuiLayer::OnEvent(Event& e)
+	{
+		// ImGui handles its own input events through GLFW callbacks
+		// No need to manually dispatch events here
+	}
+
 
 	void ImGuiLayer::Begin()
 	{
