@@ -66,63 +66,83 @@ namespace Sandbox {
 		m_3DCamera.SetPosition(m_3DCameraPosition);
 		m_3DCamera.SetRotation(m_3DCameraRotation);
 		
-		// Setup lighting system
+		// ===== 测试完整的光照系统 =====
 		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
 		
-		// Add directional light (sun)
+		// 1. 方向光 (太阳光) - 模拟太阳
 		auto sunLight = std::make_shared<Zgine::DirectionalLight>(
-			glm::vec3(-0.5f, -1.0f, -0.3f), // Direction
-			glm::vec3(1.0f, 0.95f, 0.8f),   // Warm sunlight color
-			1.2f                             // Intensity
+			glm::vec3(-0.5f, -1.0f, -0.3f), // 方向 (从右上角照射)
+			glm::vec3(1.0f, 0.95f, 0.8f),   // 暖阳光颜色
+			1.2f                             // 强度
 		);
 		lightingSystem.AddLight(sunLight);
 		
-		// Add point lights
+		// 2. 点光源 - 模拟灯泡
 		auto pointLight1 = std::make_shared<Zgine::PointLight>(
-			glm::vec3(2.0f, 2.0f, 2.0f),    // Position
-			glm::vec3(1.0f, 0.8f, 0.6f),    // Warm color
-			1.5f,                           // Intensity
-			8.0f                            // Range
+			glm::vec3(2.0f, 2.0f, 2.0f),    // 位置
+			glm::vec3(1.0f, 0.8f, 0.6f),    // 暖色
+			1.5f,                           // 强度
+			8.0f                            // 范围
 		);
 		lightingSystem.AddLight(pointLight1);
 		
 		auto pointLight2 = std::make_shared<Zgine::PointLight>(
-			glm::vec3(-3.0f, 1.0f, -2.0f),  // Position
-			glm::vec3(0.6f, 0.8f, 1.0f),    // Cool color
-			1.0f,                           // Intensity
-			6.0f                            // Range
+			glm::vec3(-3.0f, 1.0f, -2.0f),  // 位置
+			glm::vec3(0.6f, 0.8f, 1.0f),    // 冷色
+			1.0f,                           // 强度
+			6.0f                            // 范围
 		);
 		lightingSystem.AddLight(pointLight2);
 		
-		// Add spot light
+		// 3. 聚光灯 - 模拟手电筒
 		auto spotLight = std::make_shared<Zgine::SpotLight>(
-			glm::vec3(0.0f, 5.0f, 0.0f),    // Position
-			glm::vec3(0.0f, -1.0f, 0.0f),   // Direction (down)
-			glm::vec3(1.0f, 1.0f, 0.9f),    // Color
-			2.0f,                           // Intensity
-			10.0f,                          // Range
-			15.0f,                          // Inner cone angle
-			25.0f                           // Outer cone angle
+			glm::vec3(0.0f, 5.0f, 0.0f),    // 位置
+			glm::vec3(0.0f, -1.0f, 0.0f),   // 方向 (向下)
+			glm::vec3(1.0f, 1.0f, 0.9f),    // 颜色
+			2.0f,                           // 强度
+			10.0f,                          // 范围
+			15.0f,                          // 内锥角
+			25.0f                           // 外锥角
 		);
 		lightingSystem.AddLight(spotLight);
 		
-		// Set ambient lighting
+		// 设置环境光
 		lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), 0.2f);
 		
-		// Setup materials
+		// ===== 测试高级材质系统 =====
 		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
 		
-		// Create default materials
+		// 创建不同类型的材质
 		auto defaultMaterial = materialLibrary.CreateDefaultMaterial();
 		auto metallicMaterial = materialLibrary.CreateMetallicMaterial();
 		auto glassMaterial = materialLibrary.CreateGlassMaterial();
 		auto emissiveMaterial = materialLibrary.CreateEmissiveMaterial();
 		
-		ZG_CORE_INFO("MainControlLayer attached - 2D Camera: ({}, {}, {})", 
+		// ===== 测试资源管理系统 =====
+		auto& resourceManager = Zgine::ResourceManager::GetInstance();
+		
+		// 创建一些测试材质
+		auto testMaterial1 = resourceManager.CreateMaterial("TestMaterial1");
+		testMaterial1->SetAlbedo(glm::vec3(0.8f, 0.2f, 0.3f));
+		testMaterial1->SetMetallic(0.8f);
+		testMaterial1->SetRoughness(0.2f);
+		
+		auto testMaterial2 = resourceManager.CreateMaterial("TestMaterial2");
+		testMaterial2->SetAlbedo(glm::vec3(0.2f, 0.8f, 0.3f));
+		testMaterial2->SetMetallic(0.1f);
+		testMaterial2->SetRoughness(0.8f);
+		testMaterial2->SetEmissive(0.5f);
+		testMaterial2->SetEmissiveColor(glm::vec3(0.0f, 1.0f, 0.0f));
+		
+		ZG_CORE_INFO("=== Zgine 引擎核心系统测试初始化完成 ===");
+		ZG_CORE_INFO("2D 相机位置: ({}, {}, {})", 
 			m_2DCameraPosition.x, m_2DCameraPosition.y, m_2DCameraPosition.z);
-		ZG_CORE_INFO("MainControlLayer attached - 3D Camera: ({}, {}, {})",
+		ZG_CORE_INFO("3D 相机位置: ({}, {}, {})",
 			m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
-		ZG_CORE_INFO("Lighting system initialized with {} lights", lightingSystem.GetLightCount());
+		ZG_CORE_INFO("光照系统: {} 个光源", lightingSystem.GetLightCount());
+		ZG_CORE_INFO("材质库: {} 个材质", materialLibrary.GetMaterialCount());
+		ZG_CORE_INFO("资源管理器: {} 个材质", resourceManager.GetMaterialCount());
+		ZG_CORE_INFO("=== 开始渲染测试 ===");
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
@@ -432,20 +452,70 @@ namespace Sandbox {
 
 	void MainControlLayer::RenderPerformanceWindow()
 	{
-		ImGui::Begin("Performance", &m_ShowPerformanceWindow);
+		ImGui::Begin("Zgine 引擎核心系统测试", &m_ShowPerformanceWindow);
 		
-		// FPS
+		// ===== 系统状态监控 =====
+		ImGui::Text("=== 系统状态监控 ===");
+		ImGui::Separator();
+		
+		// 渲染器状态
+		ImGui::Text("渲染器状态:");
+		ImGui::Text("  2D 渲染器: %s", Zgine::BatchRenderer2D::IsInitialized() ? "✓ 已初始化" : "✗ 未初始化");
+		ImGui::Text("  3D 渲染器: %s", Zgine::BatchRenderer3D::IsInitialized() ? "✓ 已初始化" : "✗ 未初始化");
+		
+		// 光照系统状态
+		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
+		ImGui::Text("光照系统:");
+		ImGui::Text("  光源数量: %d", lightingSystem.GetLightCount());
+		ImGui::Text("  环境光强度: %.2f", lightingSystem.GetAmbientIntensity());
+		
+		// 材质系统状态
+		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
+		ImGui::Text("材质系统:");
+		ImGui::Text("  材质数量: %d", materialLibrary.GetMaterialCount());
+		
+		// 资源管理器状态
+		auto& resourceManager = Zgine::ResourceManager::GetInstance();
+		ImGui::Text("资源管理器:");
+		ImGui::Text("  材质数量: %d", resourceManager.GetMaterialCount());
+		ImGui::Text("  纹理数量: %d", resourceManager.GetTextureCount());
+		ImGui::Text("  着色器数量: %d", resourceManager.GetShaderCount());
+		
+		ImGui::Separator();
+		
+		// ===== PBR 渲染测试控制 =====
+		ImGui::Text("=== PBR 渲染测试 ===");
+		ImGui::Checkbox("启用 PBR 材质测试", &m_3DAnimateObjects);
+		ImGui::Checkbox("显示金属材质立方体", &m_3DShowCubes);
+		ImGui::Checkbox("显示玻璃材质球体", &m_3DShowSpheres);
+		ImGui::Checkbox("显示环境平面", &m_3DShowPlanes);
+		
+		ImGui::Separator();
+		
+		// ===== 光照测试控制 =====
+		ImGui::Text("=== 光照测试 ===");
+		static float ambientIntensity = 0.2f;
+		if (ImGui::SliderFloat("环境光强度", &ambientIntensity, 0.0f, 1.0f))
+		{
+			lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), ambientIntensity);
+		}
+		
+		ImGui::Separator();
+		
+		// ===== 性能监控 =====
+		ImGui::Text("=== 性能监控 ===");
 		ImGui::Text("FPS: %.1f", m_FPS);
+		ImGui::Text("运行时间: %.2f 秒", m_Time);
 		
 		// 2D Stats
 		if (m_Show2DTestWindow)
 		{
 			auto stats2D = Zgine::BatchRenderer2D::GetStats();
-			ImGui::Text("2D Render Stats:");
-			ImGui::Text("  Draw Calls: %d", stats2D.DrawCalls);
-			ImGui::Text("  Quads: %d", stats2D.QuadCount);
-			ImGui::Text("  Vertices: %d", stats2D.GetTotalVertexCount());
-			ImGui::Text("  Indices: %d", stats2D.GetTotalIndexCount());
+			ImGui::Text("2D 渲染统计:");
+			ImGui::Text("  绘制调用: %d", stats2D.DrawCalls);
+			ImGui::Text("  四边形: %d", stats2D.QuadCount);
+			ImGui::Text("  顶点: %d", stats2D.GetTotalVertexCount());
+			ImGui::Text("  索引: %d", stats2D.GetTotalIndexCount());
 		}
 		
 		ImGui::Separator();
@@ -454,21 +524,21 @@ namespace Sandbox {
 		if (m_Show3DTestWindow)
 		{
 			auto stats3D = Zgine::BatchRenderer3D::GetStats();
-			ImGui::Text("3D Render Stats:");
-			ImGui::Text("  Draw Calls: %d", stats3D.DrawCalls);
-			ImGui::Text("  Cubes: %d", stats3D.CubeCount);
-			ImGui::Text("  Spheres: %d", stats3D.SphereCount);
-			ImGui::Text("  Planes: %d", stats3D.PlaneCount);
+			ImGui::Text("3D 渲染统计:");
+			ImGui::Text("  绘制调用: %d", stats3D.DrawCalls);
+			ImGui::Text("  立方体: %d", stats3D.CubeCount);
+			ImGui::Text("  球体: %d", stats3D.SphereCount);
+			ImGui::Text("  平面: %d", stats3D.PlaneCount);
 		}
 		
 		ImGui::Separator();
 		
 		// Reset buttons
-		if (ImGui::Button("Reset 2D Stats"))
+		if (ImGui::Button("重置 2D 统计"))
 			Zgine::BatchRenderer2D::ResetStats();
 		
 		ImGui::SameLine();
-		if (ImGui::Button("Reset 3D Stats"))
+		if (ImGui::Button("重置 3D 统计"))
 			Zgine::BatchRenderer3D::ResetStats();
 		
 		ImGui::End();
@@ -845,69 +915,91 @@ namespace Sandbox {
 
 		float time = m_Time;
 
-		// Advanced rotating cube with complex transformations
+		// ===== PBR 材质测试 - 不同材质的立方体 =====
 		if (m_3DShowCubes)
 		{
-			// Main rotating cube with multiple rotation axes
-			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f)) *
-								 glm::rotate(glm::mat4(1.0f), time * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f)) *
-								 glm::rotate(glm::mat4(1.0f), time * 0.3f, glm::vec3(0.0f, 0.0f, 1.0f));
+			// 1. 金属材质立方体 - 高反射
+			glm::mat4 metallicRotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::mat4 metallicTransform = glm::translate(glm::mat4(1.0f), { -2.0f, 2.0f, 0.0f }) * metallicRotation;
+			Zgine::BatchRenderer3D::DrawCube({ -2.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, metallicTransform, { 0.8f, 0.8f, 0.9f, 1.0f });
 			
-			glm::mat4 transform = glm::translate(glm::mat4(1.0f), { 0.0f, 3.0f, 0.0f }) * rotation;
-			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 3.0f, 0.0f }, { 0.8f, 0.8f, 0.8f }, transform, { 1.0f, 0.5f, 0.0f, 1.0f });
+			// 2. 玻璃材质立方体 - 透明
+			glm::mat4 glassRotation = glm::rotate(glm::mat4(1.0f), time * 0.7f, glm::vec3(1.0f, 0.0f, 1.0f));
+			glm::mat4 glassTransform = glm::translate(glm::mat4(1.0f), { 0.0f, 2.0f, 0.0f }) * glassRotation;
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, glassTransform, { 0.2f, 0.8f, 0.9f, 0.6f });
 			
-			// Pulsing cube with scale animation
-			float scale = 0.5f + 0.3f * sin(time * 2.0f);
-			glm::mat4 scaleTransform = glm::translate(glm::mat4(1.0f), { 4.0f, 2.0f, 0.0f }) * 
-									   glm::scale(glm::mat4(1.0f), { scale, scale, scale });
-			Zgine::BatchRenderer3D::DrawCube({ 4.0f, 2.0f, 0.0f }, { scale, scale, scale }, scaleTransform, { 0.0f, 1.0f, 0.5f, 1.0f });
+			// 3. 发光材质立方体 - 自发光
+			glm::mat4 emissiveRotation = glm::rotate(glm::mat4(1.0f), time * 1.3f, glm::vec3(0.0f, 0.0f, 1.0f));
+			glm::mat4 emissiveTransform = glm::translate(glm::mat4(1.0f), { 2.0f, 2.0f, 0.0f }) * emissiveRotation;
+			Zgine::BatchRenderer3D::DrawCube({ 2.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, emissiveTransform, { 1.0f, 0.3f, 0.3f, 1.0f });
+			
+			// 4. 动态材质变化测试
+			float materialTime = time * 0.5f;
+			for (int i = 0; i < 3; i++)
+			{
+				float x = -4.0f + i * 4.0f;
+				float y = 0.5f + 0.3f * sin(materialTime + i * 2.0f);
+				
+				// 动态改变材质属性
+				float metallic = 0.5f + 0.5f * sin(materialTime + i);
+				float roughness = 0.5f + 0.5f * cos(materialTime + i * 1.3f);
+				
+				glm::vec4 color = {
+					0.5f + 0.5f * sin(materialTime + i),
+					0.5f + 0.5f * cos(materialTime + i * 1.2f),
+					0.5f + 0.5f * sin(materialTime + i * 0.8f),
+					1.0f
+				};
+				
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), { x, y, 0.0f });
+				Zgine::BatchRenderer3D::DrawCube({ x, y, 0.0f }, { 0.4f, 0.4f, 0.4f }, transform, color);
+			}
 		}
 
-		// Advanced sphere animations
+		// ===== 光照效果测试 - 不同材质的球体 =====
 		if (m_3DShowSpheres)
 		{
-			// Orbiting spheres with complex paths
-			for (int i = 0; i < 4; i++)
+			// 1. 金属球体 - 高反射
+			float metallicAngle = time * 0.4f;
+			float metallicX = 3.0f * cos(metallicAngle);
+			float metallicZ = 3.0f * sin(metallicAngle);
+			Zgine::BatchRenderer3D::DrawSphere({ metallicX, 1.5f, metallicZ }, 0.5f, { 0.9f, 0.9f, 0.95f, 1.0f }, 20);
+			
+			// 2. 玻璃球体 - 透明
+			float glassAngle = time * 0.6f + 2.0f;
+			float glassX = 3.0f * cos(glassAngle);
+			float glassZ = 3.0f * sin(glassAngle);
+			Zgine::BatchRenderer3D::DrawSphere({ glassX, 1.5f, glassZ }, 0.4f, { 0.1f, 0.8f, 0.9f, 0.7f }, 18);
+			
+			// 3. 发光球体 - 自发光
+			float emissiveAngle = time * 0.8f + 4.0f;
+			float emissiveX = 3.0f * cos(emissiveAngle);
+			float emissiveZ = 3.0f * sin(emissiveAngle);
+			Zgine::BatchRenderer3D::DrawSphere({ emissiveX, 1.5f, emissiveZ }, 0.3f, { 1.0f, 0.2f, 0.2f, 1.0f }, 16);
+			
+			// 4. 动态光照响应球体
+			for (int i = 0; i < 6; i++)
 			{
-				float orbitRadius = 3.0f + i * 0.5f;
+				float orbitRadius = 2.0f;
 				float orbitSpeed = 0.3f + i * 0.1f;
-				float orbitAngle = time * orbitSpeed + i * 1.57f; // 90 degrees apart
+				float orbitAngle = time * orbitSpeed + i * 1.047f; // 60 degrees apart
 				
 				float x = orbitRadius * cos(orbitAngle);
 				float z = orbitRadius * sin(orbitAngle);
-				float y = 2.0f + 1.0f * sin(time * 1.5f + i * 0.8f);
+				float y = 0.5f + 0.5f * sin(time * 1.5f + i * 0.8f);
 				
-				// Add rotation to spheres
-				glm::mat4 sphereRotation = glm::rotate(glm::mat4(1.0f), time * 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
-				glm::mat4 sphereTransform = glm::translate(glm::mat4(1.0f), { x, y, z }) * sphereRotation;
-				
-				glm::vec4 color = {
-					0.4f + 0.6f * sin(time + i),
-					0.4f + 0.6f * cos(time + i * 1.3f),
-					0.4f + 0.6f * sin(time + i * 0.7f),
-					1.0f
-				};
-				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.4f, color, 16);
-			}
-			
-			// Spiral spheres
-			for (int i = 0; i < 8; i++)
-			{
-				float spiralRadius = 2.0f;
-				float spiralHeight = i * 0.3f;
-				float spiralAngle = time * 0.8f + i * 0.5f;
-				
-				float x = spiralRadius * cos(spiralAngle);
-				float z = spiralRadius * sin(spiralAngle);
-				float y = -1.0f + spiralHeight + 0.5f * sin(time * 2.0f + i);
+				// 根据位置动态改变材质属性
+				float distanceFromCenter = sqrt(x * x + z * z);
+				float metallic = 0.1f + 0.9f * (distanceFromCenter / 2.0f);
+				float roughness = 0.1f + 0.9f * (1.0f - distanceFromCenter / 2.0f);
 				
 				glm::vec4 color = {
-					0.6f + 0.4f * sin(time * 1.5f + i),
-					0.6f + 0.4f * cos(time * 1.2f + i),
-					0.6f + 0.4f * sin(time * 0.8f + i),
+					0.3f + 0.7f * sin(time + i),
+					0.3f + 0.7f * cos(time + i * 1.3f),
+					0.3f + 0.7f * sin(time + i * 0.7f),
 					1.0f
 				};
-				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.2f, color, 12);
+				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.25f, color, 14);
 			}
 		}
 	}

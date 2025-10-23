@@ -91,6 +91,7 @@ namespace Zgine {
 		std::shared_ptr<Material> GetMaterial(const std::string& name);
 		void RemoveMaterial(const std::string& name);
 		void ClearMaterials();
+		size_t GetMaterialCount() const { return m_Materials.size(); }
 
 		// Predefined materials
 		std::shared_ptr<Material> CreateDefaultMaterial();
