@@ -85,7 +85,7 @@ namespace Zgine {
 	 */
 	bool WindowsWindow::IsVSync() const
 	{
-		return false;
+		return m_Data.VSync;
 	}
 
 	/**
