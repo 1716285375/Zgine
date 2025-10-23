@@ -1,3 +1,4 @@
+#include "zgpch.h"
 #include "ObjectPool.h"
 #include "BatchRenderer2D.h"
 #include "../Core.h"

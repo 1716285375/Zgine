@@ -1,3 +1,4 @@
+#include "zgpch.h"
 #include "MemoryManager.h"
 
 namespace Zgine {

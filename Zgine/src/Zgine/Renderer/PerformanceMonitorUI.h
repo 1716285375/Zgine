@@ -250,6 +250,11 @@ namespace Zgine {
 		 */
 		static void UpdateData(const PerformanceMonitorUI::PerformanceData& data);
 
+		/**
+		 * @brief Format bytes into human-readable string
+		 */
+		static std::string FormatBytes(size_t bytes);
+
 	private:
 		static bool s_Initialized;
 		static bool s_ShowOverlay;

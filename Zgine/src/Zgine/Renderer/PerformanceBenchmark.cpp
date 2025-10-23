@@ -6,6 +6,7 @@
 #include "ResourceManager.h"
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 #include <algorithm>
 #include <numeric>
 #include <thread>
@@ -487,7 +488,8 @@ namespace Zgine {
 				"Basic 2D Rendering",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[]() {
 					// Render some basic quads
@@ -541,7 +543,8 @@ namespace Zgine {
 				"High Quad Count 2D (" + std::to_string(quadCount) + " quads)",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[quadCount]() {
 					// Render many quads
@@ -595,7 +598,8 @@ namespace Zgine {
 				"Texture Switching (" + std::to_string(textureCount) + " textures)",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[textureCount]() {
 					// Simulate texture switching
@@ -623,7 +627,8 @@ namespace Zgine {
 				"Shader Switching (" + std::to_string(shaderCount) + " shaders)",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[shaderCount]() {
 					// Simulate shader switching
@@ -650,7 +655,8 @@ namespace Zgine {
 				"Memory Stress Test",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[]() {
 					// Create and destroy many objects to stress memory management
@@ -677,7 +683,8 @@ namespace Zgine {
 				"Particle System Stress (" + std::to_string(particleCount) + " particles)",
 				[]() {
 					BatchRenderer2D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 				},
 				[particleCount]() {
 					// Simulate particle system rendering
@@ -705,7 +712,8 @@ namespace Zgine {
 				[]() {
 					BatchRenderer2D::Init();
 					BatchRenderer3D::Init();
-					BatchRenderer2D::BeginScene({});
+					OrthographicCamera camera(-1.0f, 1.0f, -1.0f, 1.0f);
+					BatchRenderer2D::BeginScene(camera);
 					BatchRenderer3D::BeginScene({});
 				},
 				[]() {

@@ -1,3 +1,4 @@
+#include "zgpch.h"
 #include "PerformanceProfiler.h"
 #include "../Core.h"
 #include <algorithm>

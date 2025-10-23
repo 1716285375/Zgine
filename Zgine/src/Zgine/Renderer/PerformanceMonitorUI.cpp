@@ -393,45 +393,50 @@ namespace Zgine {
 		}
 
 		ImGui::SameLine();
-		if (ImGui::Button("Run Stress Test"))
-		{
-			auto baseScenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
-			auto results = PerformanceBenchmark::RunStressTest(baseScenario, 5.0f, 1.5f);
-			ProcessBenchmarkResults(results);
-		}
+		// TODO: Fix BenchmarkScenarios namespace access
+		// if (ImGui::Button("Run Stress Test"))
+		// {
+		// 	auto baseScenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
+		// 	auto results = PerformanceBenchmark::RunStressTest(baseScenario, 5.0f, 1.5f);
+		// 	ProcessBenchmarkResults(results);
+		// }
 
 		ImGui::Separator();
 
 		// Individual test buttons
-		if (ImGui::Button("Basic 2D Test"))
-		{
-			auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
-			auto result = PerformanceBenchmark::RunBenchmark(scenario);
-			ProcessBenchmarkResults({result});
-		}
+		// TODO: Fix BenchmarkScenarios namespace access
+		// if (ImGui::Button("Basic 2D Test"))
+		// {
+		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
+		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
+		// 	ProcessBenchmarkResults({result});
+		// }
 
 		ImGui::SameLine();
-		if (ImGui::Button("Basic 3D Test"))
-		{
-			auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic3DRendering();
-			auto result = PerformanceBenchmark::RunBenchmark(scenario);
-			ProcessBenchmarkResults({result});
-		}
+		// TODO: Fix BenchmarkScenarios namespace access
+		// if (ImGui::Button("Basic 3D Test"))
+		// {
+		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic3DRendering();
+		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
+		// 	ProcessBenchmarkResults({result});
+		// }
 
-		if (ImGui::Button("High Quad Count"))
-		{
-			auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighQuadCount2D(10000);
-			auto result = PerformanceBenchmark::RunBenchmark(scenario);
-			ProcessBenchmarkResults({result});
-		}
+		// TODO: Fix BenchmarkScenarios namespace access
+		// if (ImGui::Button("High Quad Count"))
+		// {
+		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighQuadCount2D(10000);
+		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
+		// 	ProcessBenchmarkResults({result});
+		// }
 
 		ImGui::SameLine();
-		if (ImGui::Button("High Object Count"))
-		{
-			auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighObjectCount3D(5000);
-			auto result = PerformanceBenchmark::RunBenchmark(scenario);
-			ProcessBenchmarkResults({result});
-		}
+		// TODO: Fix BenchmarkScenarios namespace access
+		// if (ImGui::Button("High Object Count"))
+		// {
+		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighObjectCount3D(5000);
+		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
+		// 	ProcessBenchmarkResults({result});
+		// }
 
 		ImGui::End();
 	}
@@ -873,6 +878,23 @@ namespace Zgine {
 		{
 			return ImVec4(1.0f, 0.0f, 0.0f, 1.0f); // Red
 		}
+	}
+
+	std::string PerformanceMonitorUI::FormatBytes(size_t bytes)
+	{
+		const char* units[] = { "B", "KB", "MB", "GB", "TB" };
+		int unit = 0;
+		double size = static_cast<double>(bytes);
+		
+		while (size >= 1024.0 && unit < 4)
+		{
+			size /= 1024.0;
+			unit++;
+		}
+		
+		char buffer[32];
+		snprintf(buffer, sizeof(buffer), "%.1f %s", size, units[unit]);
+		return std::string(buffer);
 	}
 
 }

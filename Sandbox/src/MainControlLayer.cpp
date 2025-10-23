@@ -61,13 +61,13 @@ namespace Sandbox {
 	{
 	}
 
-MainControlLayer::~MainControlLayer()
-{
-	// Cleanup performance monitoring
-	// TODO: Re-enable performance monitoring once implementation is complete
-	// Zgine::PerformanceMonitorUI::Shutdown();
-	// Zgine::PerformanceBenchmark::Shutdown();
-}
+	MainControlLayer::~MainControlLayer()
+	{
+		// Cleanup performance monitoring
+		// TODO: Re-enable performance monitoring once implementation is complete
+		// Zgine::PerformanceMonitorUI::Shutdown();
+		// Zgine::PerformanceBenchmark::Shutdown();
+	}
 
 	void MainControlLayer::OnAttach()
 	{
@@ -145,11 +145,11 @@ MainControlLayer::~MainControlLayer()
 		// Initialize particle systems
 		InitializeParticleSystems();
 
-		// ===== Initialize Performance Monitoring =====
-		// TODO: Re-enable performance monitoring once implementation is complete
-		// Zgine::PerformanceMonitorUI::Init();
-		// Zgine::PerformanceBenchmark::Init();
-		// ZG_CORE_INFO("Performance monitoring systems initialized");
+	// ===== Initialize Performance Monitoring =====
+	// TODO: Re-enable performance monitoring once implementation is complete
+	// Zgine::PerformanceMonitorUI::Init();
+	// Zgine::PerformanceBenchmark::Init();
+	// ZG_CORE_INFO("Performance monitoring systems initialized");
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
@@ -291,6 +291,10 @@ MainControlLayer::~MainControlLayer()
 
 		// Render particle systems
 		RenderParticleSystems();
+
+		// Update performance monitoring
+		// TODO: Re-enable performance monitoring once implementation is complete
+		// Zgine::PerformanceMonitorUI::Update(ts);
 	}
 
 	void MainControlLayer::OnImGuiRender()

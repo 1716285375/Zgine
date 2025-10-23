@@ -1,3 +1,4 @@
+#include "zgpch.h"
 #include "CullingSystem.h"
 #include "../Core.h"
 #include <algorithm>
