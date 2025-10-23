@@ -2,6 +2,9 @@
 
 #include "Zgine/Core/SmartPointers.h"
 
+// Global application state
+extern bool g_ApplicationShuttingDown;
+
 namespace Zgine {
 	// Time types
 	using Timestep = float;

@@ -14,6 +14,9 @@
 namespace Zgine {
 	
 	Application* Application::s_Instance = nullptr;
+	
+	// Global application shutdown flag
+	bool g_ApplicationShuttingDown = false;
 
 	Application::Application()
 	{
@@ -34,6 +37,10 @@ namespace Zgine {
 
 	Application::~Application()
 	{
+		// Set global shutdown flag before shutting down renderer
+		extern bool g_ApplicationShuttingDown;
+		g_ApplicationShuttingDown = true;
+		
 		Renderer::Shutdown();
 	}
 

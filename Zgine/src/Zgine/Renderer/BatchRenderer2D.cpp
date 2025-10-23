@@ -174,7 +174,14 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-		// Check RendererManager state first
+		// Check global application shutdown flag first
+		if (g_ApplicationShuttingDown)
+		{
+			ZG_CORE_WARN("BatchRenderer2D::BeginScene called during application shutdown, ignoring");
+			return;
+		}
+		
+		// Check RendererManager state
 		if (RendererManager::GetInstance().IsShuttingDown())
 		{
 			ZG_CORE_WARN("BatchRenderer2D::BeginScene called during shutdown, ignoring");

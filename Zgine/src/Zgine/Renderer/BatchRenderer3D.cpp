@@ -185,7 +185,14 @@ namespace Zgine {
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
-		// Check RendererManager state first
+		// Check global application shutdown flag first
+		if (g_ApplicationShuttingDown)
+		{
+			ZG_CORE_WARN("BatchRenderer3D::BeginScene called during application shutdown, ignoring");
+			return;
+		}
+		
+		// Check RendererManager state
 		if (RendererManager::GetInstance().IsShuttingDown())
 		{
 			ZG_CORE_WARN("BatchRenderer3D::BeginScene called during shutdown, ignoring");
