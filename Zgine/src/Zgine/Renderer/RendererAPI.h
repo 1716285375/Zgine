@@ -43,6 +43,14 @@ namespace Zgine {
 		 * @details Renders the geometry defined by the vertex array using indexed drawing
 		 */
 		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray) = 0;
+
+		/**
+		 * @brief Draw indexed geometry with specified count
+		 * @param vertexArray The vertex array containing the geometry to draw
+		 * @param indexCount The number of indices to draw
+		 * @details Renders the geometry defined by the vertex array using indexed drawing with specified count
+		 */
+		virtual void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount) = 0;
 		
 		/**
 		 * @brief Get the current rendering API

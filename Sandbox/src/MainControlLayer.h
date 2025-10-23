@@ -58,6 +58,9 @@ namespace Sandbox {
 		void Render3DAnimatedShapes();
 		void Render3DEnvironment();
 
+		// Utility functions
+		int GetTotalObjectCount() const;
+
 	private:
 		// Cameras
 		Zgine::OrthographicCamera m_2DCamera;

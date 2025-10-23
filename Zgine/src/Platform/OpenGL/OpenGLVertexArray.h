@@ -68,6 +68,15 @@ namespace Zgine {
 		uint32_t m_RendererID;                           ///< OpenGL vertex array object ID
 		std::vector<Ref<VertexBuffer>> m_VertexBuffers;  ///< Vector of vertex buffers
 		Ref<IndexBuffer> m_IndexBuffer;                  ///< Index buffer reference
+		
+		/**
+		 * @brief Get the attribute location based on attribute name and layout
+		 * @param name The name of the attribute
+		 * @param layout The vertex buffer layout to determine renderer type
+		 * @return uint32_t The location index
+		 * @details Maps attribute names to their layout locations based on renderer type
+		 */
+		uint32_t GetAttributeLocation(const std::string& name, const BufferLayout& layout);
 	};
 
 }

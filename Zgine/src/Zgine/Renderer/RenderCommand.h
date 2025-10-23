@@ -41,6 +41,24 @@ namespace Zgine {
 			s_RendererAPI->DrawIndexed(vertexArray);
 		}
 
+		/**
+		 * @brief Draw indexed geometry with specified count
+		 * @param vertexArray The vertex array containing the geometry to draw
+		 * @param indexCount The number of indices to draw
+		 * @details Renders the geometry defined by the vertex array using indexed drawing with specified count
+		 */
+		inline static void DrawIndexed(const Ref<VertexArray>& vertexArray, uint32_t indexCount)
+		{
+			s_RendererAPI->DrawIndexed(vertexArray, indexCount);
+		}
+
+		/**
+		 * @brief Check for OpenGL errors and log them
+		 * @param context The context where the error check is performed
+		 * @details Checks for OpenGL errors and logs them with context information
+		 */
+		static void CheckOpenGLError(const std::string& context);
+
 	private:
 		static RendererAPI* s_RendererAPI;  ///< Pointer to the current renderer API implementation
 	};

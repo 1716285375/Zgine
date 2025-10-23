@@ -60,6 +60,13 @@ namespace Zgine {
 		 */
 		virtual void SetData(const void* data, uint32_t size) override;
 
+		/**
+		 * @brief Get the OpenGL renderer ID
+		 * @return uint32_t The OpenGL buffer ID
+		 * @details Returns the OpenGL buffer object ID for modern vertex binding
+		 */
+		virtual uint32_t GetRendererID() const override { return m_RendererID; }
+
 	private:
 		uint32_t m_RendererID;    ///< OpenGL vertex buffer ID
 		BufferLayout m_Layout;    ///< Buffer layout for vertex attributes
@@ -105,6 +112,13 @@ namespace Zgine {
 		 * @details Returns the count of indices in this buffer
 		 */
 		virtual uint32_t GetCount() const override { return m_Count; }
+
+		/**
+		 * @brief Get the OpenGL renderer ID
+		 * @return uint32_t The OpenGL buffer ID
+		 * @details Returns the OpenGL buffer object ID for modern vertex binding
+		 */
+		virtual uint32_t GetRendererID() const override { return m_RendererID; }
 
 	private:
 		uint32_t m_RendererID;    ///< OpenGL index buffer ID

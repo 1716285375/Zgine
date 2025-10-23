@@ -14,10 +14,10 @@ namespace Zgine {
 	struct Vertex3D
 	{
 		glm::vec3 Position;
-		glm::vec3 Normal;
 		glm::vec4 Color;
 		glm::vec2 TexCoord;
 		float TexIndex;
+		glm::vec3 Normal;
 	};
 
 	struct RenderStats3D

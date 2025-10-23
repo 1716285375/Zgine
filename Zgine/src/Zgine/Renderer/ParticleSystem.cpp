@@ -41,7 +41,7 @@ namespace Zgine {
 
 		// Create vertex buffer for particle quads
 		// Each particle is rendered as a quad with 4 vertices
-		m_VertexBuffer.reset(VertexBuffer::Create(nullptr, m_Config.MaxParticles * 4 * sizeof(QuadVertex)));
+		m_VertexBuffer.reset(VertexBuffer::Create(nullptr, static_cast<uint32_t>(static_cast<size_t>(m_Config.MaxParticles) * 4 * sizeof(QuadVertex))));
 		m_VertexBuffer->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float4, "a_Color" },
@@ -51,24 +51,24 @@ namespace Zgine {
 		m_VertexArray->AddVertexBuffer(m_VertexBuffer);
 
 		// Create indices for particle quads
-		std::vector<uint32_t> indices(m_Config.MaxParticles * 6);
+		std::vector<uint32_t> indices(static_cast<size_t>(m_Config.MaxParticles) * 6);
 		uint32_t offset = 0;
-		for (uint32_t i = 0; i < m_Config.MaxParticles; i++)
+		for (int i = 0; i < m_Config.MaxParticles; i++)
 		{
 			// Each particle quad uses 6 indices (2 triangles)
-			indices[i * 6 + 0] = offset + 0;
-			indices[i * 6 + 1] = offset + 1;
-			indices[i * 6 + 2] = offset + 2;
+			indices[static_cast<size_t>(i) * 6 + 0] = offset + 0;
+			indices[static_cast<size_t>(i) * 6 + 1] = offset + 1;
+			indices[static_cast<size_t>(i) * 6 + 2] = offset + 2;
 
-			indices[i * 6 + 3] = offset + 2;
-			indices[i * 6 + 4] = offset + 3;
-			indices[i * 6 + 5] = offset + 0;
+			indices[static_cast<size_t>(i) * 6 + 3] = offset + 2;
+			indices[static_cast<size_t>(i) * 6 + 4] = offset + 3;
+			indices[static_cast<size_t>(i) * 6 + 5] = offset + 0;
 
 			offset += 4; // Each quad has 4 vertices
 		}
 
 		Ref<IndexBuffer> indexBuffer;
-		indexBuffer.reset(IndexBuffer::Create(indices.data(), indices.size()));
+		indexBuffer.reset(IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size())));
 		m_VertexArray->SetIndexBuffer(indexBuffer);
 
 		// Create particle shader
@@ -117,9 +117,9 @@ namespace Zgine {
 		m_Shader->Bind();
 
 		// Set up texture samplers
-		int32_t samplers[32];
+		int32_t samplers[32] = {};
 		for (uint32_t i = 0; i < 32; i++)
-			samplers[i] = i;
+			samplers[i] = static_cast<int32_t>(i);
 		m_Shader->UploadUniformIntArray("u_Textures", samplers, 32);
 	}
 
@@ -221,7 +221,7 @@ namespace Zgine {
 		}
 
 		// Update vertex buffer
-		m_VertexBuffer->SetData(vertexBuffer, m_ActiveParticleCount * 4 * sizeof(QuadVertex));
+		m_VertexBuffer->SetData(vertexBuffer, static_cast<uint32_t>(static_cast<size_t>(m_ActiveParticleCount) * 4 * sizeof(QuadVertex)));
 
 		// Render
 		m_VertexArray->Bind();

@@ -10,21 +10,16 @@ namespace Zgine {
 		if (!shader)
 			return;
 
-		// Upload material properties
-		shader->UploadUniformFloat3("u_Material.albedo", m_Properties.Albedo);
-		shader->UploadUniformFloat("u_Material.metallic", m_Properties.Metallic);
-		shader->UploadUniformFloat("u_Material.roughness", m_Properties.Roughness);
-		shader->UploadUniformFloat("u_Material.emissive", m_Properties.Emissive);
-		shader->UploadUniformFloat3("u_Material.emissiveColor", m_Properties.EmissiveColor);
-		shader->UploadUniformFloat("u_Material.transparency", m_Properties.Transparency);
-		shader->UploadUniformFloat("u_Material.refractionIndex", m_Properties.RefractionIndex);
+		// Upload material properties (only what we actually use)
+		shader->UploadUniformFloat3("u_Material_albedo", m_Properties.Albedo);
+		shader->UploadUniformFloat("u_Material_metallic", m_Properties.Metallic);
+		shader->UploadUniformFloat("u_Material_roughness", m_Properties.Roughness);
+		shader->UploadUniformFloat("u_Material_emissive", m_Properties.Emissive);
+		shader->UploadUniformFloat3("u_Material_emissiveColor", m_Properties.EmissiveColor);
+		shader->UploadUniformFloat("u_Material_transparency", m_Properties.Transparency);
 
-		// Upload texture indices
-		shader->UploadUniformInt("u_Material.hasAlbedoTexture", m_AlbedoTexture ? 1 : 0);
-		shader->UploadUniformInt("u_Material.hasNormalTexture", m_NormalTexture ? 1 : 0);
-		shader->UploadUniformInt("u_Material.hasMetallicTexture", m_MetallicTexture ? 1 : 0);
-		shader->UploadUniformInt("u_Material.hasRoughnessTexture", m_RoughnessTexture ? 1 : 0);
-		shader->UploadUniformInt("u_Material.hasEmissiveTexture", m_EmissiveTexture ? 1 : 0);
+		// Upload texture indices (only what we actually use)
+		shader->UploadUniformInt("u_Material_hasAlbedoTexture", m_AlbedoTexture ? 1 : 0);
 	}
 
 	// MaterialLibrary implementation

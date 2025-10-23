@@ -225,6 +225,13 @@ namespace Zgine {
 		virtual void SetData(const void* data, uint32_t size) = 0;
 
 		/**
+		 * @brief Get the OpenGL renderer ID
+		 * @return uint32_t The OpenGL buffer ID
+		 * @details Returns the OpenGL buffer object ID for modern vertex binding
+		 */
+		virtual uint32_t GetRendererID() const = 0;
+
+		/**
 		 * @brief Create a new vertex buffer
 		 * @param vertices Pointer to vertex data
 		 * @param size Size of the data in bytes
@@ -264,6 +271,13 @@ namespace Zgine {
 		 * @details Returns the count of indices in this buffer
 		 */
 		virtual uint32_t GetCount() const = 0;
+
+		/**
+		 * @brief Get the OpenGL renderer ID
+		 * @return uint32_t The OpenGL buffer ID
+		 * @details Returns the OpenGL buffer object ID for modern vertex binding
+		 */
+		virtual uint32_t GetRendererID() const = 0;
 
 		/**
 		 * @brief Create a new index buffer

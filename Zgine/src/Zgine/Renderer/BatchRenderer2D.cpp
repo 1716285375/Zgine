@@ -76,9 +76,9 @@ namespace Zgine {
 		uint32_t whiteTextureData = 0xffffffff;
 		s_WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
-		int32_t samplers[MaxTextureSlots];
+		int32_t samplers[MaxTextureSlots] = {};
 		for (uint32_t i = 0; i < MaxTextureSlots; i++)
-			samplers[i] = i;
+			samplers[i] = static_cast<int32_t>(i);
 
 		// Create shader
 		std::string vertexSrc = R"(
@@ -173,128 +173,8 @@ namespace Zgine {
 		ZG_CORE_INFO("BatchRenderer2D::Shutdown() completed");
 	}
 
-	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
-	{
-		// Check global application shutdown flag first
-		if (g_ApplicationShuttingDown)
-		{
-			ZG_CORE_WARN("BatchRenderer2D::BeginScene called during application shutdown, ignoring");
-			return;
-		}
-		
-		// Check RendererManager state
-		if (RendererManager::GetInstance().IsShuttingDown())
-		{
-			ZG_CORE_WARN("BatchRenderer2D::BeginScene called during shutdown, ignoring");
-			return;
-		}
-		
-		if (!RendererManager::GetInstance().IsInitialized())
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but renderer manager is not initialized!");
-			return;
-		}
-		
-		if (s_ShuttingDown)
-		{
-			ZG_CORE_WARN("BatchRenderer2D::BeginScene called during shutdown, ignoring");
-			return;
-		}
-		
-		if (!s_Initialized)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but renderer is not initialized!");
-			return;
-		}
-		
-		if (!s_TextureShader)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but shader is not initialized!");
-			return;
-		}
-		
-		s_TextureShader->Bind();
-		s_TextureShader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
-		StartBatch();
-	}
 
-	void BatchRenderer2D::EndScene()
-	{
-		Flush();
-	}
-
-	void BatchRenderer2D::Flush()
-	{
-		if (s_QuadIndexCount == 0)
-			return; // Nothing to draw
-
-		if (!s_QuadVertexBufferBase || !s_QuadVertexBufferPtr)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex buffer is not initialized!");
-			return;
-		}
-
-		if (!s_QuadVertexBuffer)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex buffer object is not initialized!");
-			return;
-		}
-
-		if (!s_QuadVertexArray)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex array is not initialized!");
-			return;
-		}
-
-		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase.get());
-		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase.get(), dataSize);
-
-		// Bind textures
-		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
-		{
-			if (s_TextureSlots[i])
-				s_TextureSlots[i]->Bind(i);
-		}
-
-		RenderCommand::DrawIndexed(s_QuadVertexArray);
-		
-		// Update statistics
-		s_Stats.DrawCalls++;
-		s_Stats.VertexCount += s_QuadIndexCount * 4 / 6; // Each quad has 4 vertices, 6 indices
-		s_Stats.IndexCount += s_QuadIndexCount;          // s_QuadIndexCount is the number of indices
-	}
-
-	void BatchRenderer2D::StartBatch()
-	{
-		if (!s_Initialized)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::StartBatch called but renderer is not initialized!");
-			return;
-		}
-		
-		if (!s_QuadVertexBufferBase)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::StartBatch called but vertex buffer is not initialized!");
-			return;
-		}
-		
-		s_QuadIndexCount = 0;
-		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
-		s_TextureSlotIndex = 1;
-	}
-
-	void BatchRenderer2D::NextBatch()
-	{
-		Flush();
-		StartBatch();
-	}
-
-	void BatchRenderer2D::FlushAndReset()
-	{
-		EndScene();
-		StartBatch();
-	}
 
 	void BatchRenderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const glm::vec4& color)
 	{
@@ -303,6 +183,8 @@ namespace Zgine {
 
 	void BatchRenderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
+		ZG_CORE_TRACE("BatchRenderer2D::DrawQuad called - Position: ({}, {}, {}), Size: ({}, {}), Color: ({}, {}, {}, {})", 
+			position.x, position.y, position.z, size.x, size.y, color.r, color.g, color.b, color.a);
 		DrawQuadInternal(position, size, color, -1);
 	}
 
@@ -848,6 +730,117 @@ namespace Zgine {
 		s_QuadIndexCount += 6;
 
 		s_Stats.QuadCount++;
+	}
+
+	void BatchRenderer2D::Flush()
+	{
+		if (s_QuadIndexCount == 0)
+			return; // Nothing to draw
+
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Rendering {} quads ({} indices)", s_QuadIndexCount / 6, s_QuadIndexCount);
+
+		// Debug: Check if index count is valid
+		if (s_QuadIndexCount > MaxIndices)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Index count {} exceeds MaxIndices {}", s_QuadIndexCount, MaxIndices);
+			return;
+		}
+
+		// Debug: Check if we have enough vertices
+		uint32_t requiredVertices = (s_QuadIndexCount / 6) * 4;
+		if (requiredVertices > MaxVertices)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Required vertices {} exceeds MaxVertices {}", requiredVertices, MaxVertices);
+			return;
+		}
+		
+		// Debug: Check vertex buffer state
+		uint32_t actualVertices = (uint32_t)(s_QuadVertexBufferPtr - s_QuadVertexBufferBase.get());
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Required vertices: {}, Actual vertices: {}", requiredVertices, actualVertices);
+		
+		// Debug: Check if vertex count matches index count
+		if (actualVertices != requiredVertices)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Vertex count mismatch: actual={}, required={}", actualVertices, requiredVertices);
+			return;
+		}
+		
+		// Debug: Validate the batch state
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Vertices: {}, Indices: {}", actualVertices, s_QuadIndexCount);
+		
+		// Debug: Check if the maximum index value is within range
+		// The maximum index should be actualVertices - 1
+		uint32_t maxValidIndex = actualVertices - 1;
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Max valid index: {}", maxValidIndex);
+		
+		// Check if we're trying to access indices beyond the vertex range
+		// For 352 quads, the last quad will have indices: 1404, 1405, 1406, 1406, 1407, 1404
+		// So the maximum index should be 1407, which is actualVertices - 1
+		if (maxValidIndex < 1407)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush - Max valid index {} < 1407, but we need indices up to 1407", maxValidIndex);
+			return;
+		}
+
+		// Bind vertex array FIRST
+		s_QuadVertexArray->Bind();
+		
+		// Upload vertex data
+		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase.get());
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Uploading {} bytes of vertex data ({} vertices)", dataSize, actualVertices);
+		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase.get(), dataSize);
+
+		// Bind textures
+		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
+		{
+			s_TextureSlots[i]->Bind(i);
+		}
+		
+		// Debug: Check index buffer state
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Index buffer count: {}, Drawing {} indices", 
+			s_QuadVertexArray->GetIndexBuffer()->GetCount(), s_QuadIndexCount);
+		
+		// Debug: Check vertex array state
+		GLint currentVAO = 0;
+		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - Current VAO: {}", currentVAO);
+		
+		RenderCommand::DrawIndexed(s_QuadVertexArray, s_QuadIndexCount);
+		RenderCommand::CheckOpenGLError("BatchRenderer2D::Flush - DrawIndexed");
+
+		s_Stats.DrawCalls++;
+	}
+
+	void BatchRenderer2D::FlushAndReset()
+	{
+		Flush();
+		StartBatch();
+	}
+
+	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
+	{
+		s_TextureShader->Bind();
+		s_TextureShader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+		
+		StartBatch();
+	}
+
+	void BatchRenderer2D::EndScene()
+	{
+		Flush();
+	}
+
+	void BatchRenderer2D::StartBatch()
+	{
+		s_QuadIndexCount = 0;
+		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
+		s_TextureSlotIndex = 1; // 0 = white texture
+	}
+
+	void BatchRenderer2D::NextBatch()
+	{
+		Flush();
+		StartBatch();
 	}
 
 }

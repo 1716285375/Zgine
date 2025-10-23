@@ -15,6 +15,9 @@ namespace Zgine {
 	Shader::Shader(const std::string& vertexSrc, const std::string& fragmentSrc)
 		: m_RendererID(0)
 	{
+		// Ensure clean OpenGL state before creating shader
+		glUseProgram(0);
+		
 		// Create an empty vertex shader handle
 		GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
@@ -73,6 +76,15 @@ namespace Zgine {
 		m_RendererID = glCreateProgram();
 		GLuint program = m_RendererID;
 
+		// Ensure no other shader program is bound during linking
+		glUseProgram(0);
+		
+		// Clear any potential vertex attribute state
+		for (int i = 0; i < 16; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+
 		glAttachShader(program, vertexShader);
 		glAttachShader(program, fragmentShader);
 
@@ -94,7 +106,7 @@ namespace Zgine {
 			glDeleteShader(vertexShader);
 			glDeleteShader(fragmentShader);
 
-			ZG_CORE_ERROR("{0}", infoLog.data());
+			ZG_CORE_ERROR("Shader link failure: {0}", infoLog.data());
 			ZG_CORE_ASSERT(false, "Shader link failure!");
 
 			return;
@@ -120,6 +132,16 @@ namespace Zgine {
 	 */
 	void Shader::Bind() const
 	{
+		// Ensure clean state before binding
+		glUseProgram(0);
+		
+		// Clear all vertex attribute arrays to prevent conflicts
+		for (int i = 0; i < 32; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+		
+		// Bind the shader program
 		glUseProgram(m_RendererID);
 	}
 	
@@ -265,10 +287,30 @@ namespace Zgine {
 		GLint location = glGetUniformLocation(m_RendererID, name.c_str());
 		if (location == -1)
 		{
-			// Only warn for non-material uniforms to reduce noise
-			if (name.find("u_Material.") == std::string::npos)
+			// Debug: Check if shader program is valid
+			GLint programStatus;
+			glGetProgramiv(m_RendererID, GL_LINK_STATUS, &programStatus);
+			if (programStatus != GL_TRUE)
+			{
+				ZG_CORE_ERROR("Shader program is not properly linked! Program ID: {}", m_RendererID);
+				return -1;
+			}
+			
+			// Only warn for non-material and non-lighting uniforms to reduce noise
+			if (name.find("u_Material_") == std::string::npos &&
+				name.find("u_DirectionalLights") == std::string::npos &&
+				name.find("u_PointLights") == std::string::npos &&
+				name.find("u_SpotLights") == std::string::npos &&
+				name.find("u_DirectionalLightCount") == std::string::npos &&
+				name.find("u_PointLightCount") == std::string::npos &&
+				name.find("u_SpotLightCount") == std::string::npos)
 			{
 				ZG_CORE_WARN("Uniform '{0}' not found!", name);
+			}
+			else
+			{
+				// Debug: Log material and lighting uniform issues
+				ZG_CORE_INFO("Material/Lighting uniform '{0}' not found in shader program {}", name, m_RendererID);
 			}
 		}
 		return location;

@@ -36,10 +36,10 @@ namespace Zgine {
 		s_VertexBuffer.reset(VertexBuffer::Create(nullptr, MaxVertices * sizeof(Vertex3D)));
 		s_VertexBuffer->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
-			{ ShaderDataType::Float3, "a_Normal" },
 			{ ShaderDataType::Float4, "a_Color" },
 			{ ShaderDataType::Float2, "a_TexCoord" },
-			{ ShaderDataType::Float, "a_TexIndex" }
+			{ ShaderDataType::Float, "a_TexIndex" },
+			{ ShaderDataType::Float3, "a_Normal" }
 		});
 		s_VertexArray->AddVertexBuffer(s_VertexBuffer);
 
@@ -81,10 +81,10 @@ namespace Zgine {
 			#version 330 core
 			
 			layout(location = 0) in vec3 a_Position;
-			layout(location = 1) in vec3 a_Normal;
-			layout(location = 2) in vec4 a_Color;
-			layout(location = 3) in vec2 a_TexCoord;
-			layout(location = 4) in float a_TexIndex;
+			layout(location = 1) in vec4 a_Color;
+			layout(location = 2) in vec2 a_TexCoord;
+			layout(location = 3) in float a_TexIndex;
+			layout(location = 4) in vec3 a_Normal;
 
 			uniform mat4 u_ViewProjection;
 			uniform mat4 u_Transform;
@@ -120,186 +120,58 @@ namespace Zgine {
 
 			uniform sampler2D u_Textures[32];
 			
-			// Material properties
-			struct Material {
-				vec3 albedo;
-				float metallic;
-				float roughness;
-				float emissive;
-				vec3 emissiveColor;
-				float transparency;
-				float refractionIndex;
-				int hasAlbedoTexture;
-				int hasNormalTexture;
-				int hasMetallicTexture;
-				int hasRoughnessTexture;
-				int hasEmissiveTexture;
-			};
-			uniform Material u_Material;
+			// Only declare uniforms that are actually used
+			uniform vec3 u_Material_albedo;
+			uniform int u_Material_hasAlbedoTexture;
 			
-			// Lighting
+			// Basic lighting
 			uniform vec3 u_AmbientColor;
 			uniform float u_AmbientIntensity;
-			
-			struct DirectionalLight {
-				vec3 direction;
-				vec3 color;
-				float intensity;
-			};
-			uniform DirectionalLight u_DirectionalLights[4];
-			uniform int u_DirectionalLightCount;
-			
-			struct PointLight {
-				vec3 position;
-				vec3 color;
-				float intensity;
-				float range;
-			};
-			uniform PointLight u_PointLights[8];
-			uniform int u_PointLightCount;
-			
-			struct SpotLight {
-				vec3 position;
-				vec3 direction;
-				vec3 color;
-				float intensity;
-				float range;
-				float innerConeAngle;
-				float outerConeAngle;
-			};
-			uniform SpotLight u_SpotLights[4];
-			uniform int u_SpotLightCount;
-
-			// PBR lighting calculation
-			vec3 CalculatePBR(vec3 albedo, float metallic, float roughness, vec3 normal, vec3 viewDir, vec3 lightDir, vec3 lightColor, float lightIntensity)
-			{
-				vec3 halfVector = normalize(viewDir + lightDir);
-				float NdotL = max(dot(normal, lightDir), 0.0);
-				float NdotV = max(dot(normal, viewDir), 0.0);
-				float NdotH = max(dot(normal, halfVector), 0.0);
-				float VdotH = max(dot(viewDir, halfVector), 0.0);
-				
-				// Fresnel
-				vec3 F0 = mix(vec3(0.04), albedo, metallic);
-				vec3 F = F0 + (1.0 - F0) * pow(1.0 - VdotH, 5.0);
-				
-				// Normal Distribution Function (GGX)
-				float alpha = roughness * roughness;
-				float alpha2 = alpha * alpha;
-				float denom = NdotH * NdotH * (alpha2 - 1.0) + 1.0;
-				float D = alpha2 / (3.14159 * denom * denom);
-				
-				// Geometry Function
-				float k = (roughness + 1.0) * (roughness + 1.0) / 8.0;
-				float G1L = NdotL / (NdotL * (1.0 - k) + k);
-				float G1V = NdotV / (NdotV * (1.0 - k) + k);
-				float G = G1L * G1V;
-				
-				// Cook-Torrance BRDF
-				vec3 numerator = D * G * F;
-				float denominator = 4.0 * NdotV * NdotL + 0.0001;
-				vec3 specular = numerator / denominator;
-				
-				// Energy conservation
-				vec3 kS = F;
-				vec3 kD = vec3(1.0) - kS;
-				kD *= 1.0 - metallic;
-				
-				// Final color
-				return (kD * albedo / 3.14159 + specular) * lightColor * lightIntensity * NdotL;
-			}
 
 			void main()
 			{
 				vec4 texColor = texture(u_Textures[int(v_TexIndex)], v_TexCoord);
-				vec3 albedo = u_Material.hasAlbedoTexture > 0 ? texColor.rgb * u_Material.albedo : u_Material.albedo;
-				float metallic = u_Material.metallic;
-				float roughness = u_Material.roughness;
+				vec3 albedo = u_Material_hasAlbedoTexture > 0 ? texColor.rgb * u_Material_albedo : u_Material_albedo;
 				
 				vec3 normal = normalize(v_Normal);
-				vec3 viewDir = normalize(-v_WorldPos);
 				
 				vec3 finalColor = vec3(0.0);
 				
 				// Ambient lighting
 				finalColor += u_AmbientColor * u_AmbientIntensity * albedo;
 				
-				// Directional lights
-				for (int i = 0; i < u_DirectionalLightCount; i++)
-				{
-					vec3 lightDir = normalize(-u_DirectionalLights[i].direction);
-					finalColor += CalculatePBR(albedo, metallic, roughness, normal, viewDir, lightDir, 
-											   u_DirectionalLights[i].color, u_DirectionalLights[i].intensity);
-				}
-				
-				// Point lights
-				for (int i = 0; i < u_PointLightCount; i++)
-				{
-					vec3 lightDir = normalize(u_PointLights[i].position - v_WorldPos);
-					float distance = length(u_PointLights[i].position - v_WorldPos);
-					float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
-					
-					if (distance <= u_PointLights[i].range)
-					{
-						finalColor += CalculatePBR(albedo, metallic, roughness, normal, viewDir, lightDir,
-												   u_PointLights[i].color, u_PointLights[i].intensity) * attenuation;
-					}
-				}
-				
-				// Spot lights
-				for (int i = 0; i < u_SpotLightCount; i++)
-				{
-					vec3 lightDir = normalize(u_SpotLights[i].position - v_WorldPos);
-					float distance = length(u_SpotLights[i].position - v_WorldPos);
-					float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance * distance);
-					
-					float theta = dot(lightDir, normalize(-u_SpotLights[i].direction));
-					float epsilon = u_SpotLights[i].innerConeAngle - u_SpotLights[i].outerConeAngle;
-					float intensity = clamp((theta - u_SpotLights[i].outerConeAngle) / epsilon, 0.0, 1.0);
-					
-					if (distance <= u_SpotLights[i].range && theta > u_SpotLights[i].outerConeAngle)
-					{
-						finalColor += CalculatePBR(albedo, metallic, roughness, normal, viewDir, lightDir,
-												   u_SpotLights[i].color, u_SpotLights[i].intensity) * attenuation * intensity;
-					}
-				}
-				
-				// Emissive
-				finalColor += u_Material.emissiveColor * u_Material.emissive;
+				// Simple directional light
+				vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+				float NdotL = max(dot(normal, lightDir), 0.0);
+				finalColor += albedo * NdotL * 0.5;
 				
 				// Apply vertex color tint
 				finalColor *= v_Color.rgb;
 				
-				color = vec4(finalColor, v_Color.a * texColor.a * u_Material.transparency);
+				color = vec4(finalColor, v_Color.a * texColor.a);
 			}
 		)";
 
 		s_Shader = CreateRef<Shader>(vertexSrc, fragmentSrc);
 		s_Shader->Bind();
+		
+		// Debug: Check shader compilation
+		ZG_CORE_INFO("BatchRenderer3D shader created with ID: {}", s_Shader->GetRendererID());
+		
 		s_Shader->UploadUniformIntArray("u_Textures", samplers, MaxTextureSlots);
 		
-		// Set default material
-		s_Shader->UploadUniformFloat3("u_Material.albedo", { 0.8f, 0.8f, 0.8f });
-		s_Shader->UploadUniformFloat("u_Material.metallic", 0.0f);
-		s_Shader->UploadUniformFloat("u_Material.roughness", 0.5f);
-		s_Shader->UploadUniformFloat("u_Material.emissive", 0.0f);
-		s_Shader->UploadUniformFloat3("u_Material.emissiveColor", { 1.0f, 1.0f, 1.0f });
-		s_Shader->UploadUniformFloat("u_Material.transparency", 1.0f);
-		s_Shader->UploadUniformFloat("u_Material.refractionIndex", 1.0f);
-		s_Shader->UploadUniformInt("u_Material.hasAlbedoTexture", 0);
-		s_Shader->UploadUniformInt("u_Material.hasNormalTexture", 0);
-		s_Shader->UploadUniformInt("u_Material.hasMetallicTexture", 0);
-		s_Shader->UploadUniformInt("u_Material.hasRoughnessTexture", 0);
-		s_Shader->UploadUniformInt("u_Material.hasEmissiveTexture", 0);
+		// Set default material (only what we actually use)
+		s_Shader->UploadUniformFloat3("u_Material_albedo", { 0.8f, 0.8f, 0.8f });
+		s_Shader->UploadUniformFloat("u_Material_metallic", 0.0f);
+		s_Shader->UploadUniformFloat("u_Material_roughness", 0.5f);
+		s_Shader->UploadUniformFloat("u_Material_emissive", 0.0f);
+		s_Shader->UploadUniformFloat3("u_Material_emissiveColor", { 1.0f, 1.0f, 1.0f });
+		s_Shader->UploadUniformFloat("u_Material_transparency", 1.0f);
+		s_Shader->UploadUniformInt("u_Material_hasAlbedoTexture", 0);
 		
 		// Set default lighting
 		s_Shader->UploadUniformFloat3("u_AmbientColor", { 0.1f, 0.1f, 0.1f });
 		s_Shader->UploadUniformFloat("u_AmbientIntensity", 0.3f);
-		
-		// Initialize light counts
-		s_Shader->UploadUniformInt("u_DirectionalLightCount", 0);
-		s_Shader->UploadUniformInt("u_PointLightCount", 0);
-		s_Shader->UploadUniformInt("u_SpotLightCount", 0);
 
 		// Set all texture slots to 0
 		s_TextureSlots[0] = s_WhiteTexture;
@@ -584,10 +456,10 @@ namespace Zgine {
 		for (int i = 0; i < 24; i++)
 		{
 			s_VertexBufferPtr->Position = faceVertices[i];
-			s_VertexBufferPtr->Normal = faceNormals[i / 4];
 			s_VertexBufferPtr->Color = color;
 			s_VertexBufferPtr->TexCoord = { (i % 2) == 0 ? 0.0f : 1.0f, (i % 4) < 2 ? 0.0f : 1.0f };
 			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr->Normal = faceNormals[i / 4];
 			s_VertexBufferPtr++;
 		}
 

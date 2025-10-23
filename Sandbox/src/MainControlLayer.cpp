@@ -5,6 +5,7 @@
 #include "Zgine/Renderer/ResourceManager.h"
 #include "Zgine/Log.h"
 #include "Zgine/Events/ApplicationEvent.h"
+#include "Zgine/Application.h"
 
 namespace Sandbox {
 
@@ -69,77 +70,77 @@ namespace Sandbox {
 		m_2DCamera.SetPosition(m_2DCameraPosition);
 		m_3DCamera.SetPosition(m_3DCameraPosition);
 		m_3DCamera.SetRotation(m_3DCameraRotation);
-		
-		// ===== 测试完整的光照系统 =====
+
+		// ===== Test Complete Lighting System =====
 		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
-		
-		// 1. 方向光 (太阳光) - 模拟太阳
+
+		// 1. Directional Light (Sun) - Simulate sunlight
 		auto sunLight = std::make_shared<Zgine::DirectionalLight>(
-			glm::vec3(-0.5f, -1.0f, -0.3f), // 方向 (从右上角照射)
-			glm::vec3(1.0f, 0.95f, 0.8f),   // 暖阳光颜色
-			1.2f                             // 强度
+			glm::vec3(-0.5f, -1.0f, -0.3f), // Direction (from top-right)
+			glm::vec3(1.0f, 0.95f, 0.8f),   // Warm sunlight color
+			1.2f                             // Intensity
 		);
 		lightingSystem.AddLight(sunLight);
-		
-		// 2. 点光源 - 模拟灯泡
+
+		// 2. Point Light - Simulate light bulb
 		auto pointLight1 = std::make_shared<Zgine::PointLight>(
-			glm::vec3(2.0f, 2.0f, 2.0f),    // 位置
-			glm::vec3(1.0f, 0.8f, 0.6f),    // 暖色
-			1.5f,                           // 强度
-			8.0f                            // 范围
+			glm::vec3(2.0f, 2.0f, 2.0f),    // Position
+			glm::vec3(1.0f, 0.8f, 0.6f),    // Warm color
+			1.5f,                           // Intensity
+			8.0f                            // Range
 		);
 		lightingSystem.AddLight(pointLight1);
-		
+
 		auto pointLight2 = std::make_shared<Zgine::PointLight>(
-			glm::vec3(-3.0f, 1.0f, -2.0f),  // 位置
-			glm::vec3(0.6f, 0.8f, 1.0f),    // 冷色
-			1.0f,                           // 强度
-			6.0f                            // 范围
+			glm::vec3(-3.0f, 1.0f, -2.0f),  // Position
+			glm::vec3(0.6f, 0.8f, 1.0f),    // Cool color
+			1.0f,                           // Intensity
+			6.0f                            // Range
 		);
 		lightingSystem.AddLight(pointLight2);
-		
-		// 3. 聚光灯 - 模拟手电筒
+
+		// 3. Spot Light - Simulate flashlight
 		auto spotLight = std::make_shared<Zgine::SpotLight>(
-			glm::vec3(0.0f, 5.0f, 0.0f),    // 位置
-			glm::vec3(0.0f, -1.0f, 0.0f),   // 方向 (向下)
-			glm::vec3(1.0f, 1.0f, 0.9f),    // 颜色
-			2.0f,                           // 强度
-			10.0f,                          // 范围
-			15.0f,                          // 内锥角
-			25.0f                           // 外锥角
+			glm::vec3(0.0f, 5.0f, 0.0f),    // Position
+			glm::vec3(0.0f, -1.0f, 0.0f),   // Direction (downward)
+			glm::vec3(1.0f, 1.0f, 0.9f),    // Color
+			2.0f,                           // Intensity
+			10.0f,                          // Range
+			15.0f,                          // Inner cone angle
+			25.0f                           // Outer cone angle
 		);
 		lightingSystem.AddLight(spotLight);
-		
-		// 设置环境光
+
+		// Set ambient light
 		lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), 0.2f);
-		
-		// ===== 测试高级材质系统 =====
+
+		// ===== Test Advanced Material System =====
 		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
-		
-		// 创建不同类型的材质
+
+		// Create different types of materials
 		auto defaultMaterial = materialLibrary.CreateDefaultMaterial();
 		auto metallicMaterial = materialLibrary.CreateMetallicMaterial();
 		auto glassMaterial = materialLibrary.CreateGlassMaterial();
 		auto emissiveMaterial = materialLibrary.CreateEmissiveMaterial();
-		
-		// ===== 测试资源管理系统 =====
+
+		// ===== Test Resource Management System =====
 		auto& resourceManager = Zgine::ResourceManager::GetInstance();
-		
-		// 创建一些测试材质
+
+		// Create some test materials
 		auto testMaterial1 = resourceManager.CreateMaterial("TestMaterial1");
 		testMaterial1->SetAlbedo(glm::vec3(0.8f, 0.2f, 0.3f));
 		testMaterial1->SetMetallic(0.8f);
 		testMaterial1->SetRoughness(0.2f);
-		
+
 		auto testMaterial2 = resourceManager.CreateMaterial("TestMaterial2");
 		testMaterial2->SetAlbedo(glm::vec3(0.2f, 0.8f, 0.3f));
 		testMaterial2->SetMetallic(0.1f);
 		testMaterial2->SetRoughness(0.8f);
 		testMaterial2->SetEmissive(0.5f);
 		testMaterial2->SetEmissiveColor(glm::vec3(0.0f, 1.0f, 0.0f));
-		
+
 		ZG_CORE_INFO("=== Zgine Engine Core Systems Test Initialization Complete ===");
-		ZG_CORE_INFO("2D Camera Position: ({}, {}, {})", 
+		ZG_CORE_INFO("2D Camera Position: ({}, {}, {})",
 			m_2DCameraPosition.x, m_2DCameraPosition.y, m_2DCameraPosition.z);
 		ZG_CORE_INFO("3D Camera Position: ({}, {}, {})",
 			m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
@@ -147,7 +148,7 @@ namespace Sandbox {
 		ZG_CORE_INFO("Material Library: {} materials", materialLibrary.GetMaterialCount());
 		ZG_CORE_INFO("Resource Manager: {} materials", resourceManager.GetMaterialCount());
 		ZG_CORE_INFO("=== Starting Rendering Tests ===");
-		
+
 		// Initialize particle systems
 		InitializeParticleSystems();
 	}
@@ -163,20 +164,20 @@ namespace Sandbox {
 		// Update 3D camera aspect ratio when window is resized
 		float aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
 		m_3DCamera.SetAspectRatio(aspectRatio);
-		
+
 		// Update 2D camera projection to maintain aspect ratio
 		float width = (float)e.GetWidth();
 		float height = (float)e.GetHeight();
 		float aspect = width / height;
-		
+
 		// Maintain the same scale but adjust for aspect ratio
 		float left = -aspect;
 		float right = aspect;
 		float bottom = -1.0f;
 		float top = 1.0f;
-		
+
 		m_2DCamera.SetProjection(left, right, bottom, top);
-		
+
 		ZG_CORE_INFO("Window resized to {}x{}, aspect ratio: {}", e.GetWidth(), e.GetHeight(), aspectRatio);
 		return false; // Don't mark as handled, let other layers process it too
 	}
@@ -186,10 +187,10 @@ namespace Sandbox {
 		// Debug output
 		static int frameCount = 0;
 		frameCount++;
-		// if (frameCount % 60 == 0) // Every 60 frames
-		// {
-		//	ZG_CORE_INFO("MainControlLayer::OnUpdate called - Frame: {}", frameCount);
-		// }
+		if (frameCount % 60 == 0) // Every 60 frames
+		{
+			ZG_CORE_INFO("MainControlLayer::OnUpdate called - Frame: {}", frameCount);
+		}
 
 		// Update time
 		m_Time += ts;
@@ -207,7 +208,7 @@ namespace Sandbox {
 		// Update cameras
 		Update2DCamera(ts);
 		Update3DCamera(ts);
-		
+
 		// Update particle systems
 		UpdateParticleSystems(ts);
 
@@ -221,18 +222,27 @@ namespace Sandbox {
 					ZG_CORE_ERROR("BatchRenderer2D is not initialized!");
 					return;
 				}
-				
+
+				ZG_CORE_TRACE("MainControlLayer::OnUpdate - Starting 2D rendering");
 				Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
-				
+
 				// Render basic shapes based on UI state
+				ZG_CORE_TRACE("MainControlLayer::OnUpdate - Rendering 2D basic shapes");
 				Render2DBasicShapes();
-				
+
 				if (m_2DShowAdvanced)
+				{
+					ZG_CORE_TRACE("MainControlLayer::OnUpdate - Rendering 2D advanced shapes");
 					Render2DAdvancedShapes();
-				
+				}
+
 				if (m_2DAnimateCircles || m_2DAnimateQuads)
+				{
+					ZG_CORE_TRACE("MainControlLayer::OnUpdate - Rendering 2D animated shapes");
 					Render2DAnimatedShapes();
-				
+				}
+
+				ZG_CORE_TRACE("MainControlLayer::OnUpdate - Ending 2D rendering");
 				Zgine::BatchRenderer2D::EndScene();
 			}
 			catch (const std::exception& e)
@@ -255,19 +265,19 @@ namespace Sandbox {
 					ZG_CORE_ERROR("BatchRenderer3D is not initialized!");
 					return;
 				}
-				
+
 				Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
-				
+
 				// Render basic shapes based on UI state
 				if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
 					Render3DBasicShapes();
-				
+
 				if (m_3DAnimateObjects)
 					Render3DAnimatedShapes();
-				
+
 				if (m_3DShowEnvironment)
 					Render3DEnvironment();
-				
+
 				Zgine::BatchRenderer3D::EndScene();
 			}
 			catch (const std::exception& e)
@@ -279,7 +289,7 @@ namespace Sandbox {
 				ZG_CORE_ERROR("Unknown 3D rendering error");
 			}
 		}
-		
+
 		// Render particle systems
 		RenderParticleSystems();
 	}
@@ -300,16 +310,16 @@ namespace Sandbox {
 		// Test windows
 		if (m_Show2DTestWindow)
 			Render2DTestWindow();
-		
+
 		if (m_Show3DTestWindow)
 			Render3DTestWindow();
-		
+
 		if (m_ShowParticleSystem)
 			RenderParticleSystemWindow();
-		
+
 		if (m_ShowPerformanceWindow)
 			RenderPerformanceWindow();
-		
+
 		if (m_ShowSettingsWindow)
 			RenderSettingsWindow();
 	}
@@ -318,53 +328,129 @@ namespace Sandbox {
 	{
 		if (ImGui::BeginMainMenuBar())
 		{
-			// Debug info in menu bar
-			ImGui::Text("Debug: MainControlLayer Active");
-			
-			if (ImGui::BeginMenu("Windows"))
+			// File Menu
+			if (ImGui::BeginMenu("File"))
 			{
-				ImGui::MenuItem("2D Test Window", nullptr, &m_Show2DTestWindow);
-				ImGui::MenuItem("3D Test Window", nullptr, &m_Show3DTestWindow);
-				ImGui::MenuItem("Particle System", nullptr, &m_ShowParticleSystem);
-				ImGui::MenuItem("Performance", nullptr, &m_ShowPerformanceWindow);
+				if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+				{
+					// TODO: Implement new scene
+				}
+				if (ImGui::MenuItem("Open Scene", "Ctrl+O"))
+				{
+					// TODO: Implement open scene
+				}
+				if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+				{
+					// TODO: Implement save scene
+				}
+				ImGui::Separator();
+				if (ImGui::MenuItem("Exit", "Alt+F4"))
+				{
+					// Close the application by posting a window close event
+					// This will be handled by the application's event system
+					Zgine::WindowCloseEvent closeEvent;
+					Zgine::Application::Get().OnEvent(closeEvent);
+				}
+				ImGui::EndMenu();
+			}
+
+			// View Menu
+			if (ImGui::BeginMenu("View"))
+			{
+				ImGui::MenuItem("2D Rendering Test", nullptr, &m_Show2DTestWindow);
+				ImGui::MenuItem("3D Rendering Test", nullptr, &m_Show3DTestWindow);
+				ImGui::MenuItem("Particle Systems", nullptr, &m_ShowParticleSystem);
+				ImGui::MenuItem("Performance Monitor", nullptr, &m_ShowPerformanceWindow);
 				ImGui::MenuItem("Settings", nullptr, &m_ShowSettingsWindow);
 				ImGui::EndMenu();
 			}
-			
-			if (ImGui::BeginMenu("Presets"))
+
+			// Tools Menu
+			if (ImGui::BeginMenu("Tools"))
 			{
-				if (ImGui::MenuItem("2D Only"))
+				if (ImGui::MenuItem("Reset Camera"))
 				{
-					m_Show2DTestWindow = true;
-					m_Show3DTestWindow = false;
+					// Reset cameras to default positions
+					m_2DCameraPosition = { 0.0f, 0.0f, 0.0f };
+					m_3DCameraPosition = { 0.0f, 2.0f, 5.0f };
+					m_3DCameraRotation = { 0.0f, 0.0f, 0.0f };
+					m_2DCamera.SetPosition(m_2DCameraPosition);
+					m_3DCamera.SetPosition(m_3DCameraPosition);
+					m_3DCamera.SetRotation(m_3DCameraRotation);
 				}
-				if (ImGui::MenuItem("3D Only"))
+				if (ImGui::MenuItem("Clear All Particles"))
 				{
-					m_Show2DTestWindow = false;
-					m_Show3DTestWindow = true;
-				}
-				if (ImGui::MenuItem("Both Windows"))
-				{
-					m_Show2DTestWindow = true;
-					m_Show3DTestWindow = true;
+					Zgine::ParticleSystemManager::ClearAll();
 				}
 				ImGui::EndMenu();
 			}
+
+			// Help Menu
+			if (ImGui::BeginMenu("Help"))
+			{
+				if (ImGui::MenuItem("About Zgine Engine"))
+				{
+					// TODO: Show about dialog
+				}
+				if (ImGui::MenuItem("Documentation"))
+				{
+					// TODO: Open documentation
+				}
+				ImGui::EndMenu();
+			}
+
+			// Status Bar
+			ImGui::SameLine(ImGui::GetWindowWidth() - 200);
+			ImGui::Text("FPS: %.1f | Objects: %d", m_FPS, GetTotalObjectCount());
 
 			ImGui::EndMainMenuBar();
 		}
 	}
 
+	int MainControlLayer::GetTotalObjectCount() const
+	{
+		int count = 0;
+
+		// Count 2D objects
+		if (m_2DShowQuads) count += 7; // Main quad + rotated quad + 5 small quads
+		if (m_2DShowLines) count += 10; // Grid pattern
+		if (m_2DShowCircles) count += 3; // Basic circles
+		if (m_2DShowAdvanced)
+		{
+			if (m_2DShowTriangles) count += 1;
+			if (m_2DShowEllipses) count += 1;
+			if (m_2DShowArcs) count += 1;
+			if (m_2DShowGradients) count += 2;
+		}
+		if (m_2DAnimateCircles) count += 5; // Animated circles
+		if (m_2DAnimateQuads) count += 3; // Animated quads
+
+		// Count 3D objects
+		if (m_3DShowCubes) count += 8; // Main cube + tall cube + small cube + 5 floating cubes
+		if (m_3DShowSpheres) count += 6; // Main sphere + 5 floating spheres
+		if (m_3DShowPlanes) count += 3; // Environment planes
+
+		// Count particle systems
+		if (m_ParticleSystemEnabled)
+		{
+			if (m_FireParticleSystem) count += m_FireParticleSystem->GetActiveParticleCount();
+			if (m_SmokeParticleSystem) count += m_SmokeParticleSystem->GetActiveParticleCount();
+			if (m_ExplosionParticleSystem) count += m_ExplosionParticleSystem->GetActiveParticleCount();
+		}
+
+		return count;
+	}
+
 	void MainControlLayer::Render2DTestWindow()
 	{
 		ImGui::Begin("2D Rendering Test", &m_Show2DTestWindow);
-		
+
 		// Debug info
 		ImGui::Text("Debug: 2D Test Window is open");
 		ImGui::Text("Show2DTestWindow: %s", m_Show2DTestWindow ? "true" : "false");
 		ImGui::Text("ShowQuads: %s", m_2DShowQuads ? "true" : "false");
 		ImGui::Text("Renderer2D Initialized: %s", Zgine::BatchRenderer2D::IsInitialized() ? "true" : "false");
-		
+
 		// Basic shapes
 		ImGui::Text("Basic Shapes");
 		ImGui::Checkbox("Quads", &m_2DShowQuads);
@@ -372,9 +458,9 @@ namespace Sandbox {
 		ImGui::Checkbox("Lines", &m_2DShowLines);
 		ImGui::SameLine();
 		ImGui::Checkbox("Circles", &m_2DShowCircles);
-		
+
 		ImGui::Separator();
-		
+
 		// Advanced shapes
 		ImGui::Text("Advanced Shapes");
 		ImGui::Checkbox("Show Advanced", &m_2DShowAdvanced);
@@ -389,44 +475,44 @@ namespace Sandbox {
 			ImGui::Checkbox("Gradients", &m_2DShowGradients);
 			ImGui::Unindent();
 		}
-		
+
 		ImGui::Separator();
-		
+
 		// Animation
 		ImGui::Text("Animation");
 		ImGui::Checkbox("Animate Circles", &m_2DAnimateCircles);
 		ImGui::SameLine();
 		ImGui::Checkbox("Animate Quads", &m_2DAnimateQuads);
 		ImGui::SliderFloat("Animation Speed", &m_2DAnimationSpeed, 0.1f, 5.0f);
-		
+
 		ImGui::Separator();
-		
+
 		// Settings
 		ImGui::Text("Settings");
 		ImGui::SliderFloat("Line Thickness", &m_2DLineThickness, 0.001f, 0.1f);
 		ImGui::SliderFloat("Circle Radius", &m_2DCircleRadius, 0.1f, 2.0f);
 		ImGui::SliderInt("Circle Segments", &m_2DCircleSegments, 8, 64);
-		
+
 		ImGui::Separator();
-		
+
 		// Camera controls
 		ImGui::Text("Camera Controls");
 		ImGui::SliderFloat("Camera Speed", &m_2DCameraSpeed, 0.1f, 10.0f);
 		ImGui::Text("Use WASD to move camera");
-		
+
 		ImGui::End();
 	}
 
 	void MainControlLayer::Render3DTestWindow()
 	{
 		ImGui::Begin("3D Rendering Test", &m_Show3DTestWindow);
-		
+
 		// Debug info
 		ImGui::Text("Debug: 3D Test Window is open");
 		ImGui::Text("Show3DTestWindow: %s", m_Show3DTestWindow ? "true" : "false");
 		ImGui::Text("Renderer3D Initialized: %s", Zgine::BatchRenderer3D::IsInitialized() ? "true" : "false");
 		ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
-		
+
 		// Basic shapes
 		ImGui::Text("Basic Shapes");
 		ImGui::Checkbox("Cubes", &m_3DShowCubes);
@@ -434,96 +520,96 @@ namespace Sandbox {
 		ImGui::Checkbox("Spheres", &m_3DShowSpheres);
 		ImGui::SameLine();
 		ImGui::Checkbox("Planes", &m_3DShowPlanes);
-		
+
 		ImGui::Separator();
-		
+
 		// Environment
 		ImGui::Text("Environment");
 		ImGui::Checkbox("Show Environment", &m_3DShowEnvironment);
 		ImGui::Checkbox("Wireframe Mode", &m_3DWireframeMode);
-		
+
 		ImGui::Separator();
-		
+
 		// Animation
 		ImGui::Text("Animation");
 		ImGui::Checkbox("Animate Objects", &m_3DAnimateObjects);
-		
+
 		ImGui::Separator();
-		
+
 		// Lighting
 		ImGui::Text("Lighting");
 		ImGui::SliderFloat("Light Intensity", &m_3DLightIntensity, 0.1f, 3.0f);
 		ImGui::SliderFloat3("Light Position", &m_3DLightPosition.x, -5.0f, 5.0f);
 		ImGui::ColorEdit3("Light Color", &m_3DLightColor.x);
-		
+
 		ImGui::Separator();
-		
+
 		// Camera controls
 		ImGui::Text("Camera Controls");
 		ImGui::SliderFloat("Camera Speed", &m_3DCameraSpeed, 0.1f, 20.0f);
 		ImGui::SliderFloat("Rotation Speed", &m_3DRotationSpeed, 0.1f, 5.0f);
 		ImGui::Text("Use WASD to move, Mouse to look around");
-		
+
 		ImGui::End();
 	}
 
 	void MainControlLayer::RenderPerformanceWindow()
 	{
 		ImGui::Begin("Zgine Engine Core Systems Test", &m_ShowPerformanceWindow);
-		
-		// ===== 系统状态监控 =====
+
+		// ===== System Status Monitor =====
 		ImGui::Text("=== System Status Monitor ===");
 		ImGui::Separator();
-		
-		// 渲染器状态
+
+		// Renderer status
 		ImGui::Text("Renderer Status:");
 		ImGui::Text("  2D Renderer: %s", Zgine::BatchRenderer2D::IsInitialized() ? "✓ Initialized" : "✗ Not Initialized");
 		ImGui::Text("  3D Renderer: %s", Zgine::BatchRenderer3D::IsInitialized() ? "✓ Initialized" : "✗ Not Initialized");
-		
-		// 光照系统状态
+
+		// Lighting system status
 		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
 		ImGui::Text("Lighting System:");
 		ImGui::Text("  Light Count: %d", lightingSystem.GetLightCount());
 		ImGui::Text("  Ambient Intensity: %.2f", lightingSystem.GetAmbientIntensity());
-		
-		// 材质系统状态
+
+		// Material system status
 		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
 		ImGui::Text("Material System:");
 		ImGui::Text("  Material Count: %d", materialLibrary.GetMaterialCount());
-		
-		// 资源管理器状态
+
+		// Resource manager status
 		auto& resourceManager = Zgine::ResourceManager::GetInstance();
 		ImGui::Text("Resource Manager:");
 		ImGui::Text("  Material Count: %d", resourceManager.GetMaterialCount());
 		ImGui::Text("  Texture Count: %d", resourceManager.GetTextureCount());
 		ImGui::Text("  Shader Count: %d", resourceManager.GetShaderCount());
-		
+
 		ImGui::Separator();
-		
-		// ===== PBR 渲染测试控制 =====
+
+		// ===== PBR Rendering Test Controls =====
 		ImGui::Text("=== PBR Rendering Test ===");
 		ImGui::Checkbox("Enable PBR Material Test", &m_3DAnimateObjects);
 		ImGui::Checkbox("Show Metallic Cubes", &m_3DShowCubes);
 		ImGui::Checkbox("Show Glass Spheres", &m_3DShowSpheres);
 		ImGui::Checkbox("Show Environment Planes", &m_3DShowPlanes);
-		
+
 		ImGui::Separator();
-		
-		// ===== 光照测试控制 =====
+
+		// ===== Lighting Test Controls =====
 		ImGui::Text("=== Lighting Test ===");
 		static float ambientIntensity = 0.2f;
 		if (ImGui::SliderFloat("Ambient Intensity", &ambientIntensity, 0.0f, 1.0f))
 		{
 			lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), ambientIntensity);
 		}
-		
+
 		ImGui::Separator();
-		
-		// ===== 性能监控 =====
+
+		// ===== Performance Monitor =====
 		ImGui::Text("=== Performance Monitor ===");
 		ImGui::Text("FPS: %.1f", m_FPS);
 		ImGui::Text("Runtime: %.2f seconds", m_Time);
-		
+
 		// 2D Stats
 		if (m_Show2DTestWindow)
 		{
@@ -534,9 +620,9 @@ namespace Sandbox {
 			ImGui::Text("  Vertices: %d", stats2D.GetTotalVertexCount());
 			ImGui::Text("  Indices: %d", stats2D.GetTotalIndexCount());
 		}
-		
+
 		ImGui::Separator();
-		
+
 		// 3D Stats
 		if (m_Show3DTestWindow)
 		{
@@ -547,27 +633,27 @@ namespace Sandbox {
 			ImGui::Text("  Spheres: %d", stats3D.SphereCount);
 			ImGui::Text("  Planes: %d", stats3D.PlaneCount);
 		}
-		
+
 		ImGui::Separator();
-		
+
 		// Reset buttons
 		if (ImGui::Button("Reset 2D Stats"))
 			Zgine::BatchRenderer2D::ResetStats();
-		
+
 		ImGui::SameLine();
 		if (ImGui::Button("Reset 3D Stats"))
 			Zgine::BatchRenderer3D::ResetStats();
-		
+
 		ImGui::End();
 	}
 
 	void MainControlLayer::RenderSettingsWindow()
 	{
 		ImGui::Begin("Settings", &m_ShowSettingsWindow);
-		
+
 		ImGui::Text("Application Settings");
 		ImGui::Separator();
-		
+
 		// Window management
 		ImGui::Text("Window Management");
 		if (ImGui::Button("Open All Windows"))
@@ -583,9 +669,9 @@ namespace Sandbox {
 			m_Show3DTestWindow = false;
 			m_ShowPerformanceWindow = false;
 		}
-		
+
 		ImGui::Separator();
-		
+
 		// Default settings
 		ImGui::Text("Default Settings");
 		if (ImGui::Button("Reset to Defaults"))
@@ -601,7 +687,7 @@ namespace Sandbox {
 			m_2DLineThickness = 0.02f;
 			m_2DCircleRadius = 0.5f;
 			m_2DCircleSegments = 32;
-			
+
 			// Reset 3D settings
 			m_3DShowCubes = true;
 			m_3DShowSpheres = true;
@@ -613,7 +699,7 @@ namespace Sandbox {
 			m_3DLightPosition = glm::vec3(2.0f, 2.0f, 2.0f);
 			m_3DLightColor = glm::vec3(1.0f, 1.0f, 1.0f);
 		}
-		
+
 		ImGui::End();
 	}
 
@@ -654,23 +740,27 @@ namespace Sandbox {
 			auto mousePos = Zgine::Input::GetMousePosition();
 			static glm::vec2 lastMousePos = glm::vec2(mousePos.first, mousePos.second);
 			glm::vec2 currentMousePos = glm::vec2(mousePos.first, mousePos.second);
-			
+
 			float deltaX = currentMousePos.x - lastMousePos.x;
 			float deltaY = lastMousePos.y - currentMousePos.y; // Reversed for natural look
-			
+
 			m_3DCamera.Rotate(deltaX * m_3DRotationSpeed * ts, deltaY * m_3DRotationSpeed * ts);
-			
+
 			lastMousePos = currentMousePos;
 		}
 	}
 
 	void MainControlLayer::Render2DBasicShapes()
 	{
+		ZG_CORE_TRACE("MainControlLayer::Render2DBasicShapes - Starting 2D basic shapes rendering");
+
 		// Enhanced 2D rendering with Godot4-style effects
-		
+
 		// Basic quads with different colors and effects
 		if (m_2DShowQuads)
 		{
+			ZG_CORE_TRACE("MainControlLayer::Render2DBasicShapes - Rendering quads");
+
 			// Main quad with gradient effect
 			Zgine::BatchRenderer2D::DrawQuadGradient(
 				{ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f },
@@ -679,14 +769,14 @@ namespace Sandbox {
 				{ 0.2f, 0.3f, 0.8f, 1.0f }, // Bottom-left: Blue
 				{ 0.8f, 0.8f, 0.2f, 1.0f }  // Bottom-right: Yellow
 			);
-			
+
 			// Rotated quad with smooth rotation
 			float rotation = m_Time * 0.5f; // Slow rotation
 			Zgine::BatchRenderer2D::DrawRotatedQuad(
-				{ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, 
+				{ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f },
 				rotation, { 0.2f, 0.3f, 0.8f, 1.0f }
 			);
-			
+
 			// Multiple small quads with different effects
 			for (int i = 0; i < 5; i++)
 			{
@@ -718,7 +808,7 @@ namespace Sandbox {
 					{ 0.3f, 0.3f, 0.3f, 0.5f }, 0.02f
 				);
 			}
-			
+
 			// Animated lines
 			for (int i = 0; i < 8; i++)
 			{
@@ -727,7 +817,7 @@ namespace Sandbox {
 				float y1 = 0.5f * sin(angle);
 				float x2 = 1.0f * cos(angle + 0.5f);
 				float y2 = 1.0f * sin(angle + 0.5f);
-				
+
 				glm::vec4 color = {
 					0.8f + 0.2f * sin(m_Time + i),
 					0.8f + 0.2f * cos(m_Time + i),
@@ -750,14 +840,14 @@ namespace Sandbox {
 				{ 0.0f, 0.0f, 0.0f }, m_2DCircleRadius * pulse,
 				{ 0.8f, 0.2f, 0.8f, 1.0f }, m_2DCircleSegments
 			);
-			
+
 			// Circle outline with rotation
 			float outlineRadius = 0.8f + 0.2f * sin(m_Time * 1.5f);
 			Zgine::BatchRenderer2D::DrawCircleOutline(
 				{ 0.0f, 0.0f, 0.0f }, outlineRadius,
 				{ 0.2f, 0.8f, 0.8f, 1.0f }, 0.05f, 32
 			);
-			
+
 			// Multiple small circles
 			for (int i = 0; i < 6; i++)
 			{
@@ -766,7 +856,7 @@ namespace Sandbox {
 				float x = radius * cos(angle);
 				float y = radius * sin(angle);
 				float size = 0.1f + 0.05f * sin(m_Time * 3.0f + i);
-				
+
 				glm::vec4 color = {
 					0.5f + 0.5f * sin(m_Time + i),
 					0.5f + 0.5f * cos(m_Time + i * 1.3f),
@@ -801,12 +891,12 @@ namespace Sandbox {
 		// Gradients
 		if (m_2DShowGradients)
 		{
-			Zgine::BatchRenderer2D::DrawQuadGradient(glm::vec3(-1.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 
-				glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 
+			Zgine::BatchRenderer2D::DrawQuadGradient(glm::vec3(-1.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f),
+				glm::vec4(1.0f, 0.0f, 0.0f, 1.0f), glm::vec4(0.0f, 1.0f, 0.0f, 1.0f),
 				glm::vec4(0.0f, 0.0f, 1.0f, 1.0f), glm::vec4(1.0f, 1.0f, 0.0f, 1.0f));
-			
+
 			Zgine::BatchRenderer2D::DrawRotatedQuadGradient(glm::vec3(0.0f, 1.5f, 0.0f), glm::vec2(0.4f, 0.4f), 45.0f,
-				glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f), 
+				glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), glm::vec4(0.0f, 1.0f, 1.0f, 1.0f),
 				glm::vec4(1.0f, 1.0f, 0.0f, 1.0f), glm::vec4(0.5f, 0.5f, 0.5f, 1.0f));
 		}
 	}
@@ -842,35 +932,35 @@ namespace Sandbox {
 	void MainControlLayer::Render3DBasicShapes()
 	{
 		// Enhanced 3D rendering with Unreal Engine4-style effects
-		
+
 		// Cubes with advanced materials and lighting
 		if (m_3DShowCubes)
 		{
 			// Main cube with metallic material
-			glm::mat4 transform1 = glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, 0.0f }) * 
-								   glm::scale(glm::mat4(1.0f), { 1.0f, 1.0f, 1.0f });
+			glm::mat4 transform1 = glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, 0.0f }) *
+				glm::scale(glm::mat4(1.0f), { 1.0f, 1.0f, 1.0f });
 			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, transform1, { 0.8f, 0.2f, 0.3f, 1.0f });
-			
+
 			// Tall cube with glass-like material
-			glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), { 3.0f, 0.0f, 0.0f }) * 
-								   glm::scale(glm::mat4(1.0f), { 0.8f, 1.5f, 0.8f });
+			glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), { 3.0f, 0.0f, 0.0f }) *
+				glm::scale(glm::mat4(1.0f), { 0.8f, 1.5f, 0.8f });
 			Zgine::BatchRenderer3D::DrawCube({ 3.0f, 0.0f, 0.0f }, { 0.8f, 1.5f, 0.8f }, transform2, { 0.2f, 0.8f, 0.3f, 0.8f });
-			
+
 			// Small cube with emissive material
-			glm::mat4 transform3 = glm::translate(glm::mat4(1.0f), { -3.0f, 0.0f, 0.0f }) * 
-								   glm::scale(glm::mat4(1.0f), { 0.6f, 0.6f, 0.6f });
+			glm::mat4 transform3 = glm::translate(glm::mat4(1.0f), { -3.0f, 0.0f, 0.0f }) *
+				glm::scale(glm::mat4(1.0f), { 0.6f, 0.6f, 0.6f });
 			Zgine::BatchRenderer3D::DrawCube({ -3.0f, 0.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, transform3, { 1.0f, 0.8f, 0.2f, 1.0f });
-			
+
 			// Floating cubes with different materials
 			for (int i = 0; i < 4; i++)
 			{
 				float x = -6.0f + i * 4.0f;
 				float y = 2.0f + 0.5f * sin(m_Time + i * 0.8f);
 				float z = 2.0f * cos(m_Time + i * 0.6f);
-				
-				glm::mat4 transform = glm::translate(glm::mat4(1.0f), { x, y, z }) * 
-									  glm::scale(glm::mat4(1.0f), { 0.4f, 0.4f, 0.4f });
-				
+
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), { x, y, z }) *
+					glm::scale(glm::mat4(1.0f), { 0.4f, 0.4f, 0.4f });
+
 				glm::vec4 color = {
 					0.5f + 0.5f * sin(m_Time + i),
 					0.5f + 0.5f * cos(m_Time + i * 1.2f),
@@ -886,13 +976,13 @@ namespace Sandbox {
 		{
 			// Main sphere with metallic finish
 			Zgine::BatchRenderer3D::DrawSphere({ 0.0f, 2.0f, 0.0f }, 0.8f, { 0.7f, 0.7f, 0.8f, 1.0f }, 24);
-			
+
 			// Glass sphere
 			Zgine::BatchRenderer3D::DrawSphere({ 2.0f, 1.0f, 2.0f }, 0.6f, { 0.2f, 0.8f, 0.9f, 0.6f }, 20);
-			
+
 			// Emissive sphere
 			Zgine::BatchRenderer3D::DrawSphere({ -2.0f, 1.0f, -2.0f }, 0.5f, { 1.0f, 0.3f, 0.3f, 1.0f }, 16);
-			
+
 			// Orbiting spheres
 			for (int i = 0; i < 6; i++)
 			{
@@ -901,7 +991,7 @@ namespace Sandbox {
 				float x = radius * cos(angle);
 				float z = radius * sin(angle);
 				float y = 1.0f + 0.3f * sin(m_Time * 2.0f + i);
-				
+
 				glm::vec4 color = {
 					0.3f + 0.7f * sin(m_Time + i),
 					0.3f + 0.7f * cos(m_Time + i * 1.3f),
@@ -917,7 +1007,7 @@ namespace Sandbox {
 		{
 			// Main ground plane
 			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -2.0f, 0.0f }, { 20.0f, 20.0f }, { 0.2f, 0.2f, 0.2f, 1.0f });
-			
+
 			// Additional planes for environment
 			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, 5.0f, 0.0f }, { 20.0f, 20.0f }, { 0.1f, 0.1f, 0.2f, 0.8f }); // Sky
 			Zgine::BatchRenderer3D::DrawPlane({ -10.0f, 0.0f, 0.0f }, { 20.0f, 20.0f }, { 0.2f, 0.1f, 0.1f, 0.6f }); // Left wall
@@ -932,84 +1022,84 @@ namespace Sandbox {
 
 		float time = m_Time;
 
-		// ===== PBR 材质测试 - 不同材质的立方体 =====
+		// ===== PBR Material Test - Different Material Cubes =====
 		if (m_3DShowCubes)
 		{
-			// 1. 金属材质立方体 - 高反射
+			// 1. Metallic material cube - High reflection
 			glm::mat4 metallicRotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
 			glm::mat4 metallicTransform = glm::translate(glm::mat4(1.0f), { -2.0f, 2.0f, 0.0f }) * metallicRotation;
 			Zgine::BatchRenderer3D::DrawCube({ -2.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, metallicTransform, { 0.8f, 0.8f, 0.9f, 1.0f });
-			
-			// 2. 玻璃材质立方体 - 透明
+
+			// 2. Glass material cube - Transparent
 			glm::mat4 glassRotation = glm::rotate(glm::mat4(1.0f), time * 0.7f, glm::vec3(1.0f, 0.0f, 1.0f));
 			glm::mat4 glassTransform = glm::translate(glm::mat4(1.0f), { 0.0f, 2.0f, 0.0f }) * glassRotation;
 			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, glassTransform, { 0.2f, 0.8f, 0.9f, 0.6f });
-			
-			// 3. 发光材质立方体 - 自发光
+
+			// 3. Emissive material cube - Self-illuminated
 			glm::mat4 emissiveRotation = glm::rotate(glm::mat4(1.0f), time * 1.3f, glm::vec3(0.0f, 0.0f, 1.0f));
 			glm::mat4 emissiveTransform = glm::translate(glm::mat4(1.0f), { 2.0f, 2.0f, 0.0f }) * emissiveRotation;
 			Zgine::BatchRenderer3D::DrawCube({ 2.0f, 2.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, emissiveTransform, { 1.0f, 0.3f, 0.3f, 1.0f });
-			
-			// 4. 动态材质变化测试
+
+			// 4. Dynamic material change test
 			float materialTime = time * 0.5f;
 			for (int i = 0; i < 3; i++)
 			{
 				float x = -4.0f + i * 4.0f;
 				float y = 0.5f + 0.3f * sin(materialTime + i * 2.0f);
-				
-				// 动态改变材质属性
+
+				// Dynamically change material properties
 				float metallic = 0.5f + 0.5f * sin(materialTime + i);
 				float roughness = 0.5f + 0.5f * cos(materialTime + i * 1.3f);
-				
+
 				glm::vec4 color = {
 					0.5f + 0.5f * sin(materialTime + i),
 					0.5f + 0.5f * cos(materialTime + i * 1.2f),
 					0.5f + 0.5f * sin(materialTime + i * 0.8f),
 					1.0f
 				};
-				
+
 				glm::mat4 transform = glm::translate(glm::mat4(1.0f), { x, y, 0.0f });
 				Zgine::BatchRenderer3D::DrawCube({ x, y, 0.0f }, { 0.4f, 0.4f, 0.4f }, transform, color);
 			}
 		}
 
-		// ===== 光照效果测试 - 不同材质的球体 =====
+		// ===== Lighting Effect Test - Different Material Spheres =====
 		if (m_3DShowSpheres)
 		{
-			// 1. 金属球体 - 高反射
+			// 1. Metallic sphere - High reflection
 			float metallicAngle = time * 0.4f;
 			float metallicX = 3.0f * cos(metallicAngle);
 			float metallicZ = 3.0f * sin(metallicAngle);
 			Zgine::BatchRenderer3D::DrawSphere({ metallicX, 1.5f, metallicZ }, 0.5f, { 0.9f, 0.9f, 0.95f, 1.0f }, 20);
-			
-			// 2. 玻璃球体 - 透明
+
+			// 2. Glass sphere - Transparent
 			float glassAngle = time * 0.6f + 2.0f;
 			float glassX = 3.0f * cos(glassAngle);
 			float glassZ = 3.0f * sin(glassAngle);
 			Zgine::BatchRenderer3D::DrawSphere({ glassX, 1.5f, glassZ }, 0.4f, { 0.1f, 0.8f, 0.9f, 0.7f }, 18);
-			
-			// 3. 发光球体 - 自发光
+
+			// 3. Emissive sphere - Self-illuminated
 			float emissiveAngle = time * 0.8f + 4.0f;
 			float emissiveX = 3.0f * cos(emissiveAngle);
 			float emissiveZ = 3.0f * sin(emissiveAngle);
 			Zgine::BatchRenderer3D::DrawSphere({ emissiveX, 1.5f, emissiveZ }, 0.3f, { 1.0f, 0.2f, 0.2f, 1.0f }, 16);
-			
-			// 4. 动态光照响应球体
+
+			// 4. Dynamic lighting response sphere
 			for (int i = 0; i < 6; i++)
 			{
 				float orbitRadius = 2.0f;
 				float orbitSpeed = 0.3f + i * 0.1f;
 				float orbitAngle = time * orbitSpeed + i * 1.047f; // 60 degrees apart
-				
+
 				float x = orbitRadius * cos(orbitAngle);
 				float z = orbitRadius * sin(orbitAngle);
 				float y = 0.5f + 0.5f * sin(time * 1.5f + i * 0.8f);
-				
-				// 根据位置动态改变材质属性
+
+				// Dynamically change material properties based on position
 				float distanceFromCenter = sqrt(x * x + z * z);
 				float metallic = 0.1f + 0.9f * (distanceFromCenter / 2.0f);
 				float roughness = 0.1f + 0.9f * (1.0f - distanceFromCenter / 2.0f);
-				
+
 				glm::vec4 color = {
 					0.3f + 0.7f * sin(time + i),
 					0.3f + 0.7f * cos(time + i * 1.3f),
@@ -1038,12 +1128,12 @@ namespace Sandbox {
 	}
 
 	// ===== Particle System Implementation =====
-	
+
 	void MainControlLayer::InitializeParticleSystems()
 	{
 		// Initialize ParticleSystemManager
 		Zgine::ParticleSystemManager::Init();
-		
+
 		// Create Fire Particle System
 		Zgine::ParticleEmitterConfig fireConfig;
 		fireConfig.Position = { 0.0f, -1.0f, 0.0f };
@@ -1059,11 +1149,11 @@ namespace Sandbox {
 		fireConfig.LifeMax = 2.0f;
 		fireConfig.EmissionRate = 50.0f;
 		fireConfig.MaxParticles = 500;
-		
+
 		m_FireParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(fireConfig);
 		m_FireParticleSystem->StartEmission();
 		Zgine::ParticleSystemManager::AddParticleSystem(m_FireParticleSystem);
-		
+
 		// Create Smoke Particle System
 		Zgine::ParticleEmitterConfig smokeConfig;
 		smokeConfig.Position = { 0.0f, -0.5f, 0.0f };
@@ -1079,11 +1169,11 @@ namespace Sandbox {
 		smokeConfig.LifeMax = 4.0f;
 		smokeConfig.EmissionRate = 20.0f;
 		smokeConfig.MaxParticles = 200;
-		
+
 		m_SmokeParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(smokeConfig);
 		m_SmokeParticleSystem->StartEmission();
 		Zgine::ParticleSystemManager::AddParticleSystem(m_SmokeParticleSystem);
-		
+
 		// Create Explosion Particle System (initially inactive)
 		Zgine::ParticleEmitterConfig explosionConfig;
 		explosionConfig.Position = { 2.0f, 0.0f, 0.0f };
@@ -1099,10 +1189,10 @@ namespace Sandbox {
 		explosionConfig.LifeMax = 1.0f;
 		explosionConfig.EmissionRate = 100.0f;
 		explosionConfig.MaxParticles = 100;
-		
+
 		m_ExplosionParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(explosionConfig);
 		// Don't start emission immediately - will be triggered by UI
-		
+
 		ZG_CORE_INFO("Particle systems initialized successfully");
 		ZG_CORE_INFO("Fire particles: {} max", fireConfig.MaxParticles);
 		ZG_CORE_INFO("Smoke particles: {} max", smokeConfig.MaxParticles);
@@ -1113,10 +1203,10 @@ namespace Sandbox {
 	{
 		if (!m_ParticleSystemEnabled)
 			return;
-			
+
 		// Update all particle systems
 		Zgine::ParticleSystemManager::OnUpdate(ts);
-		
+
 		// Update fire position based on time
 		if (m_FireParticleSystem)
 		{
@@ -1124,7 +1214,7 @@ namespace Sandbox {
 			float fireZ = 0.3f * cos(m_Time * 0.3f);
 			m_FireParticleSystem->SetPosition({ fireX, -1.0f, fireZ });
 		}
-		
+
 		// Update smoke position to follow fire
 		if (m_SmokeParticleSystem && m_FireParticleSystem)
 		{
@@ -1137,7 +1227,7 @@ namespace Sandbox {
 	{
 		if (!m_ParticleSystemEnabled)
 			return;
-			
+
 		// Render all particle systems using 2D camera for now
 		Zgine::ParticleSystemManager::OnRender(m_2DCamera.GetViewProjectionMatrix());
 	}
@@ -1145,38 +1235,38 @@ namespace Sandbox {
 	void MainControlLayer::RenderParticleSystemWindow()
 	{
 		ImGui::Begin("Particle System", &m_ShowParticleSystem);
-		
+
 		// Debug info
 		ImGui::Text("Particle System Debug Info");
 		ImGui::Text("System Enabled: %s", m_ParticleSystemEnabled ? "true" : "false");
 		ImGui::Text("Total Active Particles: %d", Zgine::ParticleSystemManager::GetTotalActiveParticleCount());
-		
+
 		if (m_FireParticleSystem)
 			ImGui::Text("Fire Particles: %d", m_FireParticleSystem->GetActiveParticleCount());
 		if (m_SmokeParticleSystem)
 			ImGui::Text("Smoke Particles: %d", m_SmokeParticleSystem->GetActiveParticleCount());
 		if (m_ExplosionParticleSystem)
 			ImGui::Text("Explosion Particles: %d", m_ExplosionParticleSystem->GetActiveParticleCount());
-		
+
 		ImGui::Separator();
-		
+
 		// Controls
 		ImGui::Checkbox("Enable Particle Systems", &m_ParticleSystemEnabled);
 		ImGui::SliderFloat("Intensity", &m_ParticleSystemIntensity, 0.1f, 3.0f);
-		
+
 		ImGui::Separator();
-		
+
 		// Fire system controls
 		if (ImGui::CollapsingHeader("Fire System"))
 		{
 			if (m_FireParticleSystem)
 			{
 				auto& config = m_FireParticleSystem->GetConfig();
-				
+
 				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
 				ImGui::Text("Max Particles: %d", config.MaxParticles);
 				ImGui::Text("Emitting: %s", m_FireParticleSystem->IsEmitting() ? "Yes" : "No");
-				
+
 				if (ImGui::Button("Toggle Fire"))
 				{
 					if (m_FireParticleSystem->IsEmitting())
@@ -1184,25 +1274,25 @@ namespace Sandbox {
 					else
 						m_FireParticleSystem->StartEmission();
 				}
-				
+
 				if (ImGui::Button("Fire Burst"))
 				{
 					m_FireParticleSystem->EmitBurst(50);
 				}
 			}
 		}
-		
+
 		// Smoke system controls
 		if (ImGui::CollapsingHeader("Smoke System"))
 		{
 			if (m_SmokeParticleSystem)
 			{
 				auto& config = m_SmokeParticleSystem->GetConfig();
-				
+
 				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
 				ImGui::Text("Max Particles: %d", config.MaxParticles);
 				ImGui::Text("Emitting: %s", m_SmokeParticleSystem->IsEmitting() ? "Yes" : "No");
-				
+
 				if (ImGui::Button("Toggle Smoke"))
 				{
 					if (m_SmokeParticleSystem->IsEmitting())
@@ -1212,23 +1302,23 @@ namespace Sandbox {
 				}
 			}
 		}
-		
+
 		// Explosion system controls
 		if (ImGui::CollapsingHeader("Explosion System"))
 		{
 			if (m_ExplosionParticleSystem)
 			{
 				auto& config = m_ExplosionParticleSystem->GetConfig();
-				
+
 				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
 				ImGui::Text("Max Particles: %d", config.MaxParticles);
 				ImGui::Text("Emitting: %s", m_ExplosionParticleSystem->IsEmitting() ? "Yes" : "No");
-				
+
 				if (ImGui::Button("Trigger Explosion"))
 				{
 					m_ExplosionParticleSystem->EmitBurst(100);
 				}
-				
+
 				if (ImGui::Button("Toggle Continuous Explosion"))
 				{
 					if (m_ExplosionParticleSystem->IsEmitting())
@@ -1238,16 +1328,17 @@ namespace Sandbox {
 				}
 			}
 		}
-		
+
 		ImGui::Separator();
-		
+
 		// Global controls
 		if (ImGui::Button("Clear All Particles"))
 		{
 			Zgine::ParticleSystemManager::ClearAll();
 		}
-		
+
 		ImGui::End();
 	}
+
 
 }
