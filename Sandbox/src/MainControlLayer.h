@@ -40,6 +40,9 @@ namespace Sandbox {
 		void RenderParticleSystemWindow();
 		void RenderPerformanceWindow();
 		void RenderSettingsWindow();
+		void RenderStressTestWindow();
+		void RenderExampleScenesWindow();
+		void StartStressTest();
 
 		// Event handling
 		bool OnWindowResize(Zgine::WindowResizeEvent& e);
@@ -87,6 +90,8 @@ namespace Sandbox {
 		bool m_Show3DTestWindow;
 		bool m_ShowPerformanceWindow;
 		bool m_ShowSettingsWindow;
+		bool m_ShowStressTestWindow;
+		bool m_ShowExampleScenesWindow;
 
 		// 2D Render options
 		bool m_2DShowQuads;
@@ -128,6 +133,18 @@ namespace Sandbox {
 		float m_FPS;
 		int m_FrameCount;
 		float m_FPSTimer;
+
+		// Stress Test
+		bool m_StressTestRunning;
+		int m_StressTestObjectCount;
+		float m_StressTestDuration;
+		float m_StressTestStartTime;
+		std::vector<glm::vec3> m_StressTestPositions;
+		std::vector<glm::vec4> m_StressTestColors;
+
+		// Example Scenes
+		int m_CurrentExampleScene;
+		bool m_ExampleSceneRunning;
 	};
 
 }

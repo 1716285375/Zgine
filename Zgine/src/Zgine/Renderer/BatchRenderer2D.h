@@ -1,5 +1,22 @@
 #pragma once
 
+/**
+ * @file BatchRenderer2D.h
+ * @brief High-performance 2D batch renderer with memory optimization
+ * 
+ * This file contains the BatchRenderer2D class which provides efficient 2D rendering
+ * capabilities with the following features:
+ * - Batch rendering of quads, circles, lines, and other 2D primitives
+ * - Dynamic buffer sizing and memory management
+ * - Texture batching and caching
+ * - Performance monitoring and statistics
+ * - Memory pool and ring buffer optimization
+ * 
+ * @author Zgine Engine Team
+ * @version 1.0.0
+ * @date 2024
+ */
+
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -18,18 +35,18 @@ namespace Zgine {
 
 	struct QuadVertex
 	{
-		glm::vec3 Position;
-		glm::vec4 Color;
-		glm::vec2 TexCoord;
-		float TexIndex;
+		glm::vec3 Position;  ///< 3D position of the vertex
+		glm::vec4 Color;     ///< RGBA color of the vertex
+		glm::vec2 TexCoord;  ///< UV texture coordinates
+		float TexIndex;      ///< Texture slot index for batching
 	};
 
 	struct RenderStats
 	{
-		uint32_t DrawCalls = 0;
-		uint32_t QuadCount = 0;
-		uint32_t VertexCount = 0;
-		uint32_t IndexCount = 0;
+		uint32_t DrawCalls = 0;    ///< Number of draw calls made
+		uint32_t QuadCount = 0;    ///< Number of quads rendered
+		uint32_t VertexCount = 0;  ///< Total number of vertices processed
+		uint32_t IndexCount = 0;   ///< Total number of indices processed
 		
 		uint32_t GetTotalVertexCount() const { return VertexCount; }
 		uint32_t GetTotalIndexCount() const { return IndexCount; }
@@ -38,14 +55,53 @@ namespace Zgine {
 	class BatchRenderer2D
 	{
 	public:
+		/**
+		 * @brief Initialize the batch renderer
+		 * 
+		 * Sets up all necessary OpenGL resources including vertex buffers,
+		 * index buffers, shaders, and texture slots. Must be called before
+		 * any rendering operations.
+		 */
 		static void Init();
+		
+		/**
+		 * @brief Shutdown the batch renderer
+		 * 
+		 * Cleans up all OpenGL resources and memory allocations.
+		 * Should be called when the renderer is no longer needed.
+		 */
 		static void Shutdown();
 		
-		// Check if renderer is initialized
+		/**
+		 * @brief Check if renderer is initialized
+		 * @return true if initialized, false otherwise
+		 */
 		static bool IsInitialized() { return s_Initialized; }
 
+		/**
+		 * @brief Begin a new rendering scene
+		 * @param camera The orthographic camera to use for rendering
+		 * 
+		 * Sets up the camera matrix and prepares the renderer for
+		 * drawing operations. Must be called before any Draw* methods.
+		 */
 		static void BeginScene(const OrthographicCamera& camera);
+		
+		/**
+		 * @brief End the current rendering scene
+		 * 
+		 * Flushes any remaining batched data and completes the scene.
+		 * Should be called after all drawing operations are complete.
+		 */
 		static void EndScene();
+		
+		/**
+		 * @brief Flush all batched data to the GPU
+		 * 
+		 * Forces all queued rendering data to be submitted to the GPU.
+		 * Called automatically by EndScene() but can be called manually
+		 * for more control over batching.
+		 */
 		static void Flush();
 
 		// Primitives

@@ -24,6 +24,8 @@ namespace Sandbox {
 		m_Show3DTestWindow(true),
 		m_ShowPerformanceWindow(true),
 		m_ShowSettingsWindow(false),
+		m_ShowStressTestWindow(false),
+		m_ShowExampleScenesWindow(false),
 		// 2D options
 		m_2DShowQuads(true),
 		m_2DShowLines(true),
@@ -57,7 +59,15 @@ namespace Sandbox {
 		// Performance
 		m_FPS(0.0f),
 		m_FrameCount(0),
-		m_FPSTimer(0.0f)
+		m_FPSTimer(0.0f),
+		// Stress Test
+		m_StressTestRunning(false),
+		m_StressTestObjectCount(1000),
+		m_StressTestDuration(10.0f),
+		m_StressTestStartTime(0.0f),
+		// Example Scenes
+		m_CurrentExampleScene(0),
+		m_ExampleSceneRunning(false)
 	{
 	}
 
@@ -326,6 +336,12 @@ namespace Sandbox {
 		if (m_ShowSettingsWindow)
 			RenderSettingsWindow();
 
+		if (m_ShowStressTestWindow)
+			RenderStressTestWindow();
+
+		if (m_ShowExampleScenesWindow)
+			RenderExampleScenesWindow();
+
 		// Render performance monitoring UI
 		// TODO: Re-enable performance monitoring once implementation is complete
 		// Zgine::PerformanceMonitorUI::Render(true);
@@ -368,6 +384,8 @@ namespace Sandbox {
 				ImGui::MenuItem("3D Rendering Test", nullptr, &m_Show3DTestWindow);
 				ImGui::MenuItem("Particle Systems", nullptr, &m_ShowParticleSystem);
 				ImGui::MenuItem("Performance Monitor", nullptr, &m_ShowPerformanceWindow);
+				ImGui::MenuItem("Stress Test", nullptr, &m_ShowStressTestWindow);
+				ImGui::MenuItem("Example Scenes", nullptr, &m_ShowExampleScenesWindow);
 				ImGui::MenuItem("Settings", nullptr, &m_ShowSettingsWindow);
 				ImGui::EndMenu();
 			}
@@ -875,6 +893,22 @@ namespace Sandbox {
 					1.0f
 				};
 				Zgine::BatchRenderer2D::DrawCircle({ x, y, 0.0f }, size, color, 16);
+			}
+		}
+
+		// Render stress test objects
+		if (m_StressTestRunning && !m_StressTestPositions.empty())
+		{
+			ZG_CORE_TRACE("MainControlLayer::Render2DBasicShapes - Rendering {} stress test objects", m_StressTestPositions.size());
+			
+			for (size_t i = 0; i < m_StressTestPositions.size() && i < m_StressTestColors.size(); ++i)
+			{
+				const auto& pos = m_StressTestPositions[i];
+				const auto& color = m_StressTestColors[i];
+				
+				// Render small quads for stress testing
+				float size = 0.05f + 0.02f * sin(m_Time + i * 0.1f); // Animate size slightly
+				Zgine::BatchRenderer2D::DrawQuad(pos, { size, size }, color);
 			}
 		}
 	}
@@ -1395,6 +1429,232 @@ namespace Sandbox {
 			Zgine::ParticleSystemManager::ClearAll();
 		}
 
+		ImGui::End();
+	}
+
+	void MainControlLayer::RenderStressTestWindow()
+	{
+		ImGui::Begin("Stress Test", &m_ShowStressTestWindow);
+		
+		ImGui::Text("Performance Stress Testing");
+		ImGui::Separator();
+		
+		// Stress test controls
+		ImGui::Text("Test Configuration:");
+		ImGui::SliderInt("Object Count", &m_StressTestObjectCount, 100, 10000);
+		ImGui::SliderFloat("Duration (seconds)", &m_StressTestDuration, 1.0f, 60.0f);
+		
+		ImGui::Separator();
+		
+		// Test status
+		if (m_StressTestRunning)
+		{
+			float elapsed = m_Time - m_StressTestStartTime;
+			float remaining = m_StressTestDuration - elapsed;
+			
+			ImGui::Text("Test Running...");
+			ImGui::Text("Elapsed: %.1f seconds", elapsed);
+			ImGui::Text("Remaining: %.1f seconds", remaining);
+			ImGui::Text("Objects: %d", m_StressTestObjectCount);
+			
+			// Progress bar
+			float progress = elapsed / m_StressTestDuration;
+			ImGui::ProgressBar(progress, ImVec2(-1, 0), "");
+			
+			if (remaining <= 0.0f)
+			{
+				m_StressTestRunning = false;
+				ZG_CORE_INFO("Stress test completed! Duration: {:.1f}s, Objects: {}", elapsed, m_StressTestObjectCount);
+			}
+			
+			if (ImGui::Button("Stop Test"))
+			{
+				m_StressTestRunning = false;
+				ZG_CORE_INFO("Stress test stopped by user");
+			}
+		}
+		else
+		{
+			if (ImGui::Button("Start Stress Test"))
+			{
+				StartStressTest();
+			}
+		}
+		
+		ImGui::Separator();
+		
+		// Test results
+		ImGui::Text("Test Results:");
+		ImGui::Text("Current FPS: %.1f", m_FPS);
+		ImGui::Text("Total Objects: %d", GetTotalObjectCount());
+		
+		// Performance metrics
+		if (ImGui::CollapsingHeader("Performance Metrics"))
+		{
+			ImGui::Text("Memory Usage: %.2f MB", GetTotalObjectCount() * 0.001f); // Rough estimate
+			ImGui::Text("Rendering Load: %s", m_StressTestRunning ? "High" : "Normal");
+			
+			// Batch renderer stats
+			if (Zgine::BatchRenderer2D::IsInitialized())
+			{
+				auto stats = Zgine::BatchRenderer2D::GetStats();
+				ImGui::Text("2D Renderer Stats:");
+				ImGui::Text("  Quads: %d", stats.QuadCount);
+				ImGui::Text("  Draw Calls: %d", stats.DrawCalls);
+			}
+			
+			if (Zgine::BatchRenderer3D::IsInitialized())
+			{
+				auto stats = Zgine::BatchRenderer3D::GetStats();
+				ImGui::Text("3D Renderer Stats:");
+				ImGui::Text("  Cubes: %d", stats.CubeCount);
+				ImGui::Text("  Spheres: %d", stats.SphereCount);
+				ImGui::Text("  Cylinders: %d", stats.CylinderCount);
+				ImGui::Text("  Draw Calls: %d", stats.DrawCalls);
+			}
+		}
+		
+		ImGui::End();
+	}
+
+	void MainControlLayer::StartStressTest()
+	{
+		m_StressTestRunning = true;
+		m_StressTestStartTime = m_Time;
+		
+		// Generate random positions and colors for stress test objects
+		m_StressTestPositions.clear();
+		m_StressTestColors.clear();
+		
+		m_StressTestPositions.reserve(m_StressTestObjectCount);
+		m_StressTestColors.reserve(m_StressTestObjectCount);
+		
+		for (int i = 0; i < m_StressTestObjectCount; ++i)
+		{
+			// Random positions in a 10x10 area
+			float x = (rand() % 2000 - 1000) / 100.0f;
+			float y = (rand() % 2000 - 1000) / 100.0f;
+			m_StressTestPositions.push_back(glm::vec3(x, y, 0.0f));
+			
+			// Random colors
+			float r = (rand() % 100) / 100.0f;
+			float g = (rand() % 100) / 100.0f;
+			float b = (rand() % 100) / 100.0f;
+			m_StressTestColors.push_back(glm::vec4(r, g, b, 1.0f));
+		}
+		
+		ZG_CORE_INFO("Started stress test with {} objects for {:.1f} seconds", m_StressTestObjectCount, m_StressTestDuration);
+	}
+
+	void MainControlLayer::RenderExampleScenesWindow()
+	{
+		ImGui::Begin("Example Scenes", &m_ShowExampleScenesWindow);
+		
+		ImGui::Text("Example Scenes and Demos");
+		ImGui::Separator();
+		
+		// Scene selection
+		const char* sceneNames[] = {
+			"Basic 2D Shapes",
+			"Animated Patterns",
+			"Particle Effects",
+			"3D Objects",
+			"Performance Demo",
+			"Interactive Demo"
+		};
+		
+		ImGui::Text("Select Scene:");
+		if (ImGui::Combo("##Scene", &m_CurrentExampleScene, sceneNames, IM_ARRAYSIZE(sceneNames)))
+		{
+			// Scene changed
+			ZG_CORE_INFO("Selected example scene: {}", sceneNames[m_CurrentExampleScene]);
+		}
+		
+		ImGui::Separator();
+		
+		// Scene controls
+		if (ImGui::Button(m_ExampleSceneRunning ? "Stop Scene" : "Start Scene"))
+		{
+			m_ExampleSceneRunning = !m_ExampleSceneRunning;
+			if (m_ExampleSceneRunning)
+			{
+				ZG_CORE_INFO("Started example scene: {}", sceneNames[m_CurrentExampleScene]);
+			}
+			else
+			{
+				ZG_CORE_INFO("Stopped example scene");
+			}
+		}
+		
+		ImGui::SameLine();
+		if (ImGui::Button("Reset Scene"))
+		{
+			m_ExampleSceneRunning = false;
+			m_Time = 0.0f; // Reset time for consistent scene behavior
+			ZG_CORE_INFO("Reset example scene");
+		}
+		
+		ImGui::Separator();
+		
+		// Scene description
+		ImGui::Text("Scene Description:");
+		switch (m_CurrentExampleScene)
+		{
+		case 0: // Basic 2D Shapes
+			ImGui::TextWrapped("Demonstrates basic 2D rendering primitives including quads, circles, lines, and triangles with various colors and effects.");
+			break;
+		case 1: // Animated Patterns
+			ImGui::TextWrapped("Shows animated patterns with rotating, scaling, and color-changing objects to demonstrate smooth animations.");
+			break;
+		case 2: // Particle Effects
+			ImGui::TextWrapped("Displays various particle systems including fire, smoke, and explosion effects with realistic physics simulation.");
+			break;
+		case 3: // 3D Objects
+			ImGui::TextWrapped("Renders 3D objects including cubes, spheres, cylinders, and planes with lighting and material effects.");
+			break;
+		case 4: // Performance Demo
+			ImGui::TextWrapped("High-performance rendering demo with many objects to showcase the engine's optimization capabilities.");
+			break;
+		case 5: // Interactive Demo
+			ImGui::TextWrapped("Interactive demonstration with user-controlled objects and real-time parameter adjustments.");
+			break;
+		}
+		
+		ImGui::Separator();
+		
+		// Scene-specific controls
+		if (m_CurrentExampleScene == 1) // Animated Patterns
+		{
+			ImGui::Text("Animation Controls:");
+			ImGui::SliderFloat("Animation Speed", &m_2DAnimationSpeed, 0.1f, 5.0f);
+			ImGui::Checkbox("Enable Rotation", &m_2DAnimateQuads);
+			ImGui::Checkbox("Enable Scaling", &m_2DAnimateCircles);
+		}
+		else if (m_CurrentExampleScene == 2) // Particle Effects
+		{
+			ImGui::Text("Particle Controls:");
+			ImGui::SliderFloat("Intensity", &m_ParticleSystemIntensity, 0.1f, 3.0f);
+			ImGui::Checkbox("Fire Effect", &m_ParticleSystemEnabled);
+		}
+		else if (m_CurrentExampleScene == 3) // 3D Objects
+		{
+			ImGui::Text("3D Controls:");
+			ImGui::SliderFloat("Light Intensity", &m_3DLightIntensity, 0.1f, 3.0f);
+			ImGui::Checkbox("Wireframe Mode", &m_3DWireframeMode);
+			ImGui::Checkbox("Animate Objects", &m_3DAnimateObjects);
+		}
+		
+		ImGui::Separator();
+		
+		// Scene statistics
+		if (m_ExampleSceneRunning)
+		{
+			ImGui::Text("Scene Statistics:");
+			ImGui::Text("FPS: %.1f", m_FPS);
+			ImGui::Text("Objects: %d", GetTotalObjectCount());
+			ImGui::Text("Scene Time: %.1f seconds", m_Time);
+		}
+		
 		ImGui::End();
 	}
 
