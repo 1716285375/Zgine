@@ -30,7 +30,9 @@ namespace Zgine {
 		PushOverlay(m_ImGuiLayer.get());
 		
 		// Call derived class initialization
+		ZG_CORE_INFO("Application::Application calling OnApplicationStart");
 		OnApplicationStart();
+		ZG_CORE_INFO("Application::Application OnApplicationStart completed");
 	}
 
 	Application::~Application()
