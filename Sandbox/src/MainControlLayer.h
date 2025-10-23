@@ -5,6 +5,7 @@
 #include "Zgine/Renderer/PerspectiveCamera.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/BatchRenderer3D.h"
+#include "Zgine/Renderer/ParticleSystem.h"
 #include "Zgine/Input.h"
 #include "Zgine/KeyCodes.h"
 #include "Zgine/MouseButtonCodes.h"
@@ -33,11 +34,17 @@ namespace Sandbox {
 		void RenderMainMenu();
 		void Render2DTestWindow();
 		void Render3DTestWindow();
+		void RenderParticleSystemWindow();
 		void RenderPerformanceWindow();
 		void RenderSettingsWindow();
 
 		// Event handling
 		bool OnWindowResize(Zgine::WindowResizeEvent& e);
+
+		// Particle System
+		void InitializeParticleSystems();
+		void UpdateParticleSystems(Zgine::Timestep ts);
+		void RenderParticleSystems();
 
 		// 2D Test Layer
 		void Update2DCamera(Zgine::Timestep ts);
@@ -101,6 +108,14 @@ namespace Sandbox {
 		float m_3DLightIntensity;
 		glm::vec3 m_3DLightPosition;
 		glm::vec3 m_3DLightColor;
+
+		// Particle System
+		bool m_ShowParticleSystem;
+		bool m_ParticleSystemEnabled;
+		Zgine::Ref<Zgine::ParticleSystem> m_FireParticleSystem;
+		Zgine::Ref<Zgine::ParticleSystem> m_SmokeParticleSystem;
+		Zgine::Ref<Zgine::ParticleSystem> m_ExplosionParticleSystem;
+		float m_ParticleSystemIntensity;
 
 		// Performance
 		float m_FPS;

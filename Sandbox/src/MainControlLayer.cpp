@@ -48,6 +48,10 @@ namespace Sandbox {
 		m_3DLightIntensity(1.0f),
 		m_3DLightPosition(2.0f, 2.0f, 2.0f),
 		m_3DLightColor(1.0f, 1.0f, 1.0f),
+		// Particle System
+		m_ShowParticleSystem(true),
+		m_ParticleSystemEnabled(true),
+		m_ParticleSystemIntensity(1.0f),
 		// Performance
 		m_FPS(0.0f),
 		m_FrameCount(0),
@@ -143,6 +147,9 @@ namespace Sandbox {
 		ZG_CORE_INFO("Material Library: {} materials", materialLibrary.GetMaterialCount());
 		ZG_CORE_INFO("Resource Manager: {} materials", resourceManager.GetMaterialCount());
 		ZG_CORE_INFO("=== Starting Rendering Tests ===");
+		
+		// Initialize particle systems
+		InitializeParticleSystems();
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
@@ -200,6 +207,9 @@ namespace Sandbox {
 		// Update cameras
 		Update2DCamera(ts);
 		Update3DCamera(ts);
+		
+		// Update particle systems
+		UpdateParticleSystems(ts);
 
 		// Render 2D scene if window is open
 		if (m_Show2DTestWindow)
@@ -269,6 +279,9 @@ namespace Sandbox {
 				ZG_CORE_ERROR("Unknown 3D rendering error");
 			}
 		}
+		
+		// Render particle systems
+		RenderParticleSystems();
 	}
 
 	void MainControlLayer::OnImGuiRender()
@@ -291,6 +304,9 @@ namespace Sandbox {
 		if (m_Show3DTestWindow)
 			Render3DTestWindow();
 		
+		if (m_ShowParticleSystem)
+			RenderParticleSystemWindow();
+		
 		if (m_ShowPerformanceWindow)
 			RenderPerformanceWindow();
 		
@@ -309,6 +325,7 @@ namespace Sandbox {
 			{
 				ImGui::MenuItem("2D Test Window", nullptr, &m_Show2DTestWindow);
 				ImGui::MenuItem("3D Test Window", nullptr, &m_Show3DTestWindow);
+				ImGui::MenuItem("Particle System", nullptr, &m_ShowParticleSystem);
 				ImGui::MenuItem("Performance", nullptr, &m_ShowPerformanceWindow);
 				ImGui::MenuItem("Settings", nullptr, &m_ShowSettingsWindow);
 				ImGui::EndMenu();
@@ -1018,6 +1035,219 @@ namespace Sandbox {
 
 		// Light source visualization
 		Zgine::BatchRenderer3D::DrawSphere(m_3DLightPosition, 0.2f, glm::vec4(m_3DLightColor, 1.0f), 8);
+	}
+
+	// ===== Particle System Implementation =====
+	
+	void MainControlLayer::InitializeParticleSystems()
+	{
+		// Initialize ParticleSystemManager
+		Zgine::ParticleSystemManager::Init();
+		
+		// Create Fire Particle System
+		Zgine::ParticleEmitterConfig fireConfig;
+		fireConfig.Position = { 0.0f, -1.0f, 0.0f };
+		fireConfig.VelocityMin = { -0.5f, 1.0f, -0.5f };
+		fireConfig.VelocityMax = { 0.5f, 3.0f, 0.5f };
+		fireConfig.AccelerationMin = { -0.1f, 0.0f, -0.1f };
+		fireConfig.AccelerationMax = { 0.1f, 0.0f, 0.1f };
+		fireConfig.ColorStart = { 1.0f, 0.3f, 0.0f, 1.0f }; // Orange
+		fireConfig.ColorEnd = { 1.0f, 0.0f, 0.0f, 0.0f };   // Red to transparent
+		fireConfig.SizeStart = { 0.3f, 0.3f };
+		fireConfig.SizeEnd = { 0.1f, 0.1f };
+		fireConfig.LifeMin = 1.0f;
+		fireConfig.LifeMax = 2.0f;
+		fireConfig.EmissionRate = 50.0f;
+		fireConfig.MaxParticles = 500;
+		
+		m_FireParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(fireConfig);
+		m_FireParticleSystem->StartEmission();
+		Zgine::ParticleSystemManager::AddParticleSystem(m_FireParticleSystem);
+		
+		// Create Smoke Particle System
+		Zgine::ParticleEmitterConfig smokeConfig;
+		smokeConfig.Position = { 0.0f, -0.5f, 0.0f };
+		smokeConfig.VelocityMin = { -0.3f, 0.5f, -0.3f };
+		smokeConfig.VelocityMax = { 0.3f, 1.5f, 0.3f };
+		smokeConfig.AccelerationMin = { -0.05f, 0.0f, -0.05f };
+		smokeConfig.AccelerationMax = { 0.05f, 0.0f, 0.05f };
+		smokeConfig.ColorStart = { 0.3f, 0.3f, 0.3f, 0.8f }; // Gray
+		smokeConfig.ColorEnd = { 0.1f, 0.1f, 0.1f, 0.0f };  // Dark gray to transparent
+		smokeConfig.SizeStart = { 0.5f, 0.5f };
+		smokeConfig.SizeEnd = { 1.0f, 1.0f };
+		smokeConfig.LifeMin = 2.0f;
+		smokeConfig.LifeMax = 4.0f;
+		smokeConfig.EmissionRate = 20.0f;
+		smokeConfig.MaxParticles = 200;
+		
+		m_SmokeParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(smokeConfig);
+		m_SmokeParticleSystem->StartEmission();
+		Zgine::ParticleSystemManager::AddParticleSystem(m_SmokeParticleSystem);
+		
+		// Create Explosion Particle System (initially inactive)
+		Zgine::ParticleEmitterConfig explosionConfig;
+		explosionConfig.Position = { 2.0f, 0.0f, 0.0f };
+		explosionConfig.VelocityMin = { -2.0f, -2.0f, -2.0f };
+		explosionConfig.VelocityMax = { 2.0f, 2.0f, 2.0f };
+		explosionConfig.AccelerationMin = { -0.2f, -0.2f, -0.2f };
+		explosionConfig.AccelerationMax = { 0.2f, 0.2f, 0.2f };
+		explosionConfig.ColorStart = { 1.0f, 1.0f, 0.0f, 1.0f }; // Yellow
+		explosionConfig.ColorEnd = { 1.0f, 0.0f, 0.0f, 0.0f };  // Red to transparent
+		explosionConfig.SizeStart = { 0.2f, 0.2f };
+		explosionConfig.SizeEnd = { 0.05f, 0.05f };
+		explosionConfig.LifeMin = 0.5f;
+		explosionConfig.LifeMax = 1.0f;
+		explosionConfig.EmissionRate = 100.0f;
+		explosionConfig.MaxParticles = 100;
+		
+		m_ExplosionParticleSystem = Zgine::CreateRef<Zgine::ParticleSystem>(explosionConfig);
+		// Don't start emission immediately - will be triggered by UI
+		
+		ZG_CORE_INFO("Particle systems initialized successfully");
+		ZG_CORE_INFO("Fire particles: {} max", fireConfig.MaxParticles);
+		ZG_CORE_INFO("Smoke particles: {} max", smokeConfig.MaxParticles);
+		ZG_CORE_INFO("Explosion particles: {} max", explosionConfig.MaxParticles);
+	}
+
+	void MainControlLayer::UpdateParticleSystems(Zgine::Timestep ts)
+	{
+		if (!m_ParticleSystemEnabled)
+			return;
+			
+		// Update all particle systems
+		Zgine::ParticleSystemManager::OnUpdate(ts);
+		
+		// Update fire position based on time
+		if (m_FireParticleSystem)
+		{
+			float fireX = 0.5f * sin(m_Time * 0.5f);
+			float fireZ = 0.3f * cos(m_Time * 0.3f);
+			m_FireParticleSystem->SetPosition({ fireX, -1.0f, fireZ });
+		}
+		
+		// Update smoke position to follow fire
+		if (m_SmokeParticleSystem && m_FireParticleSystem)
+		{
+			auto firePos = m_FireParticleSystem->GetPosition();
+			m_SmokeParticleSystem->SetPosition({ firePos.x, firePos.y + 0.5f, firePos.z });
+		}
+	}
+
+	void MainControlLayer::RenderParticleSystems()
+	{
+		if (!m_ParticleSystemEnabled)
+			return;
+			
+		// Render all particle systems using 2D camera for now
+		Zgine::ParticleSystemManager::OnRender(m_2DCamera.GetViewProjectionMatrix());
+	}
+
+	void MainControlLayer::RenderParticleSystemWindow()
+	{
+		ImGui::Begin("Particle System", &m_ShowParticleSystem);
+		
+		// Debug info
+		ImGui::Text("Particle System Debug Info");
+		ImGui::Text("System Enabled: %s", m_ParticleSystemEnabled ? "true" : "false");
+		ImGui::Text("Total Active Particles: %d", Zgine::ParticleSystemManager::GetTotalActiveParticleCount());
+		
+		if (m_FireParticleSystem)
+			ImGui::Text("Fire Particles: %d", m_FireParticleSystem->GetActiveParticleCount());
+		if (m_SmokeParticleSystem)
+			ImGui::Text("Smoke Particles: %d", m_SmokeParticleSystem->GetActiveParticleCount());
+		if (m_ExplosionParticleSystem)
+			ImGui::Text("Explosion Particles: %d", m_ExplosionParticleSystem->GetActiveParticleCount());
+		
+		ImGui::Separator();
+		
+		// Controls
+		ImGui::Checkbox("Enable Particle Systems", &m_ParticleSystemEnabled);
+		ImGui::SliderFloat("Intensity", &m_ParticleSystemIntensity, 0.1f, 3.0f);
+		
+		ImGui::Separator();
+		
+		// Fire system controls
+		if (ImGui::CollapsingHeader("Fire System"))
+		{
+			if (m_FireParticleSystem)
+			{
+				auto& config = m_FireParticleSystem->GetConfig();
+				
+				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
+				ImGui::Text("Max Particles: %d", config.MaxParticles);
+				ImGui::Text("Emitting: %s", m_FireParticleSystem->IsEmitting() ? "Yes" : "No");
+				
+				if (ImGui::Button("Toggle Fire"))
+				{
+					if (m_FireParticleSystem->IsEmitting())
+						m_FireParticleSystem->StopEmission();
+					else
+						m_FireParticleSystem->StartEmission();
+				}
+				
+				if (ImGui::Button("Fire Burst"))
+				{
+					m_FireParticleSystem->EmitBurst(50);
+				}
+			}
+		}
+		
+		// Smoke system controls
+		if (ImGui::CollapsingHeader("Smoke System"))
+		{
+			if (m_SmokeParticleSystem)
+			{
+				auto& config = m_SmokeParticleSystem->GetConfig();
+				
+				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
+				ImGui::Text("Max Particles: %d", config.MaxParticles);
+				ImGui::Text("Emitting: %s", m_SmokeParticleSystem->IsEmitting() ? "Yes" : "No");
+				
+				if (ImGui::Button("Toggle Smoke"))
+				{
+					if (m_SmokeParticleSystem->IsEmitting())
+						m_SmokeParticleSystem->StopEmission();
+					else
+						m_SmokeParticleSystem->StartEmission();
+				}
+			}
+		}
+		
+		// Explosion system controls
+		if (ImGui::CollapsingHeader("Explosion System"))
+		{
+			if (m_ExplosionParticleSystem)
+			{
+				auto& config = m_ExplosionParticleSystem->GetConfig();
+				
+				ImGui::Text("Emission Rate: %.1f particles/sec", config.EmissionRate);
+				ImGui::Text("Max Particles: %d", config.MaxParticles);
+				ImGui::Text("Emitting: %s", m_ExplosionParticleSystem->IsEmitting() ? "Yes" : "No");
+				
+				if (ImGui::Button("Trigger Explosion"))
+				{
+					m_ExplosionParticleSystem->EmitBurst(100);
+				}
+				
+				if (ImGui::Button("Toggle Continuous Explosion"))
+				{
+					if (m_ExplosionParticleSystem->IsEmitting())
+						m_ExplosionParticleSystem->StopEmission();
+					else
+						m_ExplosionParticleSystem->StartEmission();
+				}
+			}
+		}
+		
+		ImGui::Separator();
+		
+		// Global controls
+		if (ImGui::Button("Clear All Particles"))
+		{
+			Zgine::ParticleSystemManager::ClearAll();
+		}
+		
+		ImGui::End();
 	}
 
 }
