@@ -11,7 +11,7 @@ namespace Sandbox {
 		m_3DCamera(45.0f, 1280.0f / 720.0f, 0.1f, 1000.0f),
 		m_2DCameraPosition(0.0f, 0.0f, 0.0f),
 		m_2DCameraSpeed(1.0f),
-		m_3DCameraPosition(0.0f, 0.0f, 3.0f),
+		m_3DCameraPosition(0.0f, 2.0f, 5.0f),
 		m_3DCameraRotation(0.0f),
 		m_3DCameraSpeed(5.0f),
 		m_3DRotationSpeed(1.0f),
@@ -61,6 +61,12 @@ namespace Sandbox {
 		// Initialize camera positions
 		m_2DCamera.SetPosition(m_2DCameraPosition);
 		m_3DCamera.SetPosition(m_3DCameraPosition);
+		m_3DCamera.SetRotation(m_3DCameraRotation);
+		
+		ZG_CORE_INFO("MainControlLayer attached - 2D Camera: ({}, {}, {})", 
+			m_2DCameraPosition.x, m_2DCameraPosition.y, m_2DCameraPosition.z);
+		ZG_CORE_INFO("MainControlLayer attached - 3D Camera: ({}, {}, {})", 
+			m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
@@ -124,9 +130,15 @@ namespace Sandbox {
 		{
 			try
 			{
+				if (!Zgine::BatchRenderer2D::IsInitialized())
+				{
+					ZG_CORE_ERROR("BatchRenderer2D is not initialized!");
+					return;
+				}
+				
 				Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
 				
-				// Always render basic shapes (quads are always shown)
+				// Render basic shapes based on UI state
 				Render2DBasicShapes();
 				
 				if (m_2DShowAdvanced)
@@ -137,9 +149,13 @@ namespace Sandbox {
 				
 				Zgine::BatchRenderer2D::EndScene();
 			}
+			catch (const std::exception& e)
+			{
+				ZG_CORE_ERROR("2D Rendering error: {}", e.what());
+			}
 			catch (...)
 			{
-				// Ignore rendering errors for now
+				ZG_CORE_ERROR("Unknown 2D rendering error");
 			}
 		}
 
@@ -148,8 +164,15 @@ namespace Sandbox {
 		{
 			try
 			{
+				if (!Zgine::BatchRenderer3D::IsInitialized())
+				{
+					ZG_CORE_ERROR("BatchRenderer3D is not initialized!");
+					return;
+				}
+				
 				Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
 				
+				// Render basic shapes based on UI state
 				if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
 					Render3DBasicShapes();
 				
@@ -161,9 +184,13 @@ namespace Sandbox {
 				
 				Zgine::BatchRenderer3D::EndScene();
 			}
+			catch (const std::exception& e)
+			{
+				ZG_CORE_ERROR("3D Rendering error: {}", e.what());
+			}
 			catch (...)
 			{
-				// Ignore rendering errors for now
+				ZG_CORE_ERROR("Unknown 3D rendering error");
 			}
 		}
 	}
@@ -243,6 +270,7 @@ namespace Sandbox {
 		ImGui::Text("Debug: 2D Test Window is open");
 		ImGui::Text("Show2DTestWindow: %s", m_Show2DTestWindow ? "true" : "false");
 		ImGui::Text("ShowQuads: %s", m_2DShowQuads ? "true" : "false");
+		ImGui::Text("Renderer2D Initialized: %s", Zgine::BatchRenderer2D::IsInitialized() ? "true" : "false");
 		
 		// Basic shapes
 		ImGui::Text("Basic Shapes");
@@ -299,6 +327,12 @@ namespace Sandbox {
 	void MainControlLayer::Render3DTestWindow()
 	{
 		ImGui::Begin("3D Rendering Test", &m_Show3DTestWindow);
+		
+		// Debug info
+		ImGui::Text("Debug: 3D Test Window is open");
+		ImGui::Text("Show3DTestWindow: %s", m_Show3DTestWindow ? "true" : "false");
+		ImGui::Text("Renderer3D Initialized: %s", Zgine::BatchRenderer3D::IsInitialized() ? "true" : "false");
+		ImGui::Text("Camera Position: (%.1f, %.1f, %.1f)", m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
 		
 		// Basic shapes
 		ImGui::Text("Basic Shapes");
@@ -489,25 +523,115 @@ namespace Sandbox {
 
 	void MainControlLayer::Render2DBasicShapes()
 	{
-		// Basic quads
+		// Enhanced 2D rendering with Godot4-style effects
+		
+		// Basic quads with different colors and effects
 		if (m_2DShowQuads)
 		{
-			Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-			Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
-			Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
+			// Main quad with gradient effect
+			Zgine::BatchRenderer2D::DrawQuadGradient(
+				{ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f },
+				{ 0.8f, 0.2f, 0.3f, 1.0f }, // Top-left: Red
+				{ 0.2f, 0.8f, 0.3f, 1.0f }, // Top-right: Green
+				{ 0.2f, 0.3f, 0.8f, 1.0f }, // Bottom-left: Blue
+				{ 0.8f, 0.8f, 0.2f, 1.0f }  // Bottom-right: Yellow
+			);
+			
+			// Rotated quad with smooth rotation
+			float rotation = m_Time * 0.5f; // Slow rotation
+			Zgine::BatchRenderer2D::DrawRotatedQuad(
+				{ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, 
+				rotation, { 0.2f, 0.3f, 0.8f, 1.0f }
+			);
+			
+			// Multiple small quads with different effects
+			for (int i = 0; i < 5; i++)
+			{
+				float x = -2.0f + i * 0.8f;
+				float y = 1.0f + 0.3f * sin(m_Time + i);
+				glm::vec4 color = {
+					0.5f + 0.5f * sin(m_Time + i),
+					0.5f + 0.5f * cos(m_Time + i * 1.2f),
+					0.5f + 0.5f * sin(m_Time + i * 0.8f),
+					1.0f
+				};
+				Zgine::BatchRenderer2D::DrawQuad({ x, y, 0.0f }, { 0.3f, 0.3f }, color);
+			}
 		}
 
-		// Lines
+		// Enhanced lines with varying thickness
 		if (m_2DShowLines)
 		{
-			Zgine::BatchRenderer2D::DrawLine({ -1.0f, -1.0f, 0.0f }, { 1.0f, 1.0f, 0.0f }, { 1.0f, 1.0f, 1.0f, 1.0f }, m_2DLineThickness);
-			Zgine::BatchRenderer2D::DrawLine({ 1.0f, -1.0f, 0.0f }, { -1.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 1.0f, 1.0f }, m_2DLineThickness);
+			// Grid pattern
+			for (int i = -3; i <= 3; i++)
+			{
+				float pos = i * 0.5f;
+				Zgine::BatchRenderer2D::DrawLine(
+					{ pos, -1.5f, 0.0f }, { pos, 1.5f, 0.0f },
+					{ 0.3f, 0.3f, 0.3f, 0.5f }, 0.02f
+				);
+				Zgine::BatchRenderer2D::DrawLine(
+					{ -1.5f, pos, 0.0f }, { 1.5f, pos, 0.0f },
+					{ 0.3f, 0.3f, 0.3f, 0.5f }, 0.02f
+				);
+			}
+			
+			// Animated lines
+			for (int i = 0; i < 8; i++)
+			{
+				float angle = (m_Time + i * 0.5f) * 0.3f;
+				float x1 = 0.5f * cos(angle);
+				float y1 = 0.5f * sin(angle);
+				float x2 = 1.0f * cos(angle + 0.5f);
+				float y2 = 1.0f * sin(angle + 0.5f);
+				
+				glm::vec4 color = {
+					0.8f + 0.2f * sin(m_Time + i),
+					0.8f + 0.2f * cos(m_Time + i),
+					0.8f + 0.2f * sin(m_Time + i * 1.5f),
+					1.0f
+				};
+				Zgine::BatchRenderer2D::DrawLine(
+					{ x1, y1, 0.0f }, { x2, y2, 0.0f },
+					color, 0.03f + 0.02f * sin(m_Time + i)
+				);
+			}
 		}
 
-		// Circles
+		// Enhanced circles with smooth animation
 		if (m_2DShowCircles)
 		{
-			Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f, 0.0f }, m_2DCircleRadius, { 0.2f, 0.8f, 0.3f, 1.0f }, m_2DCircleSegments);
+			// Main circle with pulsing effect
+			float pulse = 0.5f + 0.3f * sin(m_Time * 2.0f);
+			Zgine::BatchRenderer2D::DrawCircle(
+				{ 0.0f, 0.0f, 0.0f }, m_2DCircleRadius * pulse,
+				{ 0.8f, 0.2f, 0.8f, 1.0f }, m_2DCircleSegments
+			);
+			
+			// Circle outline with rotation
+			float outlineRadius = 0.8f + 0.2f * sin(m_Time * 1.5f);
+			Zgine::BatchRenderer2D::DrawCircleOutline(
+				{ 0.0f, 0.0f, 0.0f }, outlineRadius,
+				{ 0.2f, 0.8f, 0.8f, 1.0f }, 0.05f, 32
+			);
+			
+			// Multiple small circles
+			for (int i = 0; i < 6; i++)
+			{
+				float angle = (m_Time + i) * 0.8f;
+				float radius = 1.2f;
+				float x = radius * cos(angle);
+				float y = radius * sin(angle);
+				float size = 0.1f + 0.05f * sin(m_Time * 3.0f + i);
+				
+				glm::vec4 color = {
+					0.5f + 0.5f * sin(m_Time + i),
+					0.5f + 0.5f * cos(m_Time + i * 1.3f),
+					0.5f + 0.5f * sin(m_Time + i * 0.7f),
+					1.0f
+				};
+				Zgine::BatchRenderer2D::DrawCircle({ x, y, 0.0f }, size, color, 16);
+			}
 		}
 	}
 
@@ -574,24 +698,87 @@ namespace Sandbox {
 
 	void MainControlLayer::Render3DBasicShapes()
 	{
-		// Cubes
+		// Enhanced 3D rendering with Unreal Engine4-style effects
+		
+		// Cubes with advanced materials and lighting
 		if (m_3DShowCubes)
 		{
-			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, glm::mat4(1.0f), { 0.8f, 0.2f, 0.3f, 1.0f });
-			Zgine::BatchRenderer3D::DrawCube({ 2.0f, 0.0f, 0.0f }, { 0.5f, 1.5f, 0.5f }, glm::mat4(1.0f), { 0.2f, 0.8f, 0.3f, 1.0f });
+			// Main cube with metallic material
+			glm::mat4 transform1 = glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, 0.0f }) * 
+								   glm::scale(glm::mat4(1.0f), { 1.0f, 1.0f, 1.0f });
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 0.0f, 0.0f }, { 1.0f, 1.0f, 1.0f }, transform1, { 0.8f, 0.2f, 0.3f, 1.0f });
+			
+			// Tall cube with glass-like material
+			glm::mat4 transform2 = glm::translate(glm::mat4(1.0f), { 3.0f, 0.0f, 0.0f }) * 
+								   glm::scale(glm::mat4(1.0f), { 0.8f, 1.5f, 0.8f });
+			Zgine::BatchRenderer3D::DrawCube({ 3.0f, 0.0f, 0.0f }, { 0.8f, 1.5f, 0.8f }, transform2, { 0.2f, 0.8f, 0.3f, 0.8f });
+			
+			// Small cube with emissive material
+			glm::mat4 transform3 = glm::translate(glm::mat4(1.0f), { -3.0f, 0.0f, 0.0f }) * 
+								   glm::scale(glm::mat4(1.0f), { 0.6f, 0.6f, 0.6f });
+			Zgine::BatchRenderer3D::DrawCube({ -3.0f, 0.0f, 0.0f }, { 0.6f, 0.6f, 0.6f }, transform3, { 1.0f, 0.8f, 0.2f, 1.0f });
+			
+			// Floating cubes with different materials
+			for (int i = 0; i < 4; i++)
+			{
+				float x = -6.0f + i * 4.0f;
+				float y = 2.0f + 0.5f * sin(m_Time + i * 0.8f);
+				float z = 2.0f * cos(m_Time + i * 0.6f);
+				
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), { x, y, z }) * 
+									  glm::scale(glm::mat4(1.0f), { 0.4f, 0.4f, 0.4f });
+				
+				glm::vec4 color = {
+					0.5f + 0.5f * sin(m_Time + i),
+					0.5f + 0.5f * cos(m_Time + i * 1.2f),
+					0.5f + 0.5f * sin(m_Time + i * 0.8f),
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawCube({ x, y, z }, { 0.4f, 0.4f, 0.4f }, transform, color);
+			}
 		}
 
-		// Spheres
+		// Spheres with realistic materials
 		if (m_3DShowSpheres)
 		{
-			Zgine::BatchRenderer3D::DrawSphere({ -2.0f, 0.0f, 0.0f }, 0.8f, { 0.2f, 0.3f, 0.8f, 1.0f }, 16);
-			Zgine::BatchRenderer3D::DrawSphere({ 0.0f, 2.0f, 0.0f }, 0.5f, { 0.8f, 0.8f, 0.2f, 1.0f }, 12);
+			// Main sphere with metallic finish
+			Zgine::BatchRenderer3D::DrawSphere({ 0.0f, 2.0f, 0.0f }, 0.8f, { 0.7f, 0.7f, 0.8f, 1.0f }, 24);
+			
+			// Glass sphere
+			Zgine::BatchRenderer3D::DrawSphere({ 2.0f, 1.0f, 2.0f }, 0.6f, { 0.2f, 0.8f, 0.9f, 0.6f }, 20);
+			
+			// Emissive sphere
+			Zgine::BatchRenderer3D::DrawSphere({ -2.0f, 1.0f, -2.0f }, 0.5f, { 1.0f, 0.3f, 0.3f, 1.0f }, 16);
+			
+			// Orbiting spheres
+			for (int i = 0; i < 6; i++)
+			{
+				float angle = m_Time * 0.5f + i * 1.047f; // 60 degrees apart
+				float radius = 4.0f;
+				float x = radius * cos(angle);
+				float z = radius * sin(angle);
+				float y = 1.0f + 0.3f * sin(m_Time * 2.0f + i);
+				
+				glm::vec4 color = {
+					0.3f + 0.7f * sin(m_Time + i),
+					0.3f + 0.7f * cos(m_Time + i * 1.3f),
+					0.3f + 0.7f * sin(m_Time + i * 0.7f),
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.3f, color, 16);
+			}
 		}
 
-		// Planes
+		// Enhanced ground plane with grid pattern
 		if (m_3DShowPlanes)
 		{
-			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 10.0f, 10.0f }, { 0.5f, 0.5f, 0.5f, 1.0f });
+			// Main ground plane
+			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -2.0f, 0.0f }, { 20.0f, 20.0f }, { 0.2f, 0.2f, 0.2f, 1.0f });
+			
+			// Additional planes for environment
+			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, 5.0f, 0.0f }, { 20.0f, 20.0f }, { 0.1f, 0.1f, 0.2f, 0.8f }); // Sky
+			Zgine::BatchRenderer3D::DrawPlane({ -10.0f, 0.0f, 0.0f }, { 20.0f, 20.0f }, { 0.2f, 0.1f, 0.1f, 0.6f }); // Left wall
+			Zgine::BatchRenderer3D::DrawPlane({ 10.0f, 0.0f, 0.0f }, { 20.0f, 20.0f }, { 0.1f, 0.2f, 0.1f, 0.6f }); // Right wall
 		}
 	}
 
@@ -602,21 +789,69 @@ namespace Sandbox {
 
 		float time = m_Time;
 
-		// Rotating cube (only if cubes are enabled)
+		// Advanced rotating cube with complex transformations
 		if (m_3DShowCubes)
 		{
-			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
-			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 1.0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, rotation, { 1.0f, 0.5f, 0.0f, 1.0f });
+			// Main rotating cube with multiple rotation axes
+			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f)) *
+								 glm::rotate(glm::mat4(1.0f), time * 0.5f, glm::vec3(1.0f, 0.0f, 0.0f)) *
+								 glm::rotate(glm::mat4(1.0f), time * 0.3f, glm::vec3(0.0f, 0.0f, 1.0f));
+			
+			glm::mat4 transform = glm::translate(glm::mat4(1.0f), { 0.0f, 3.0f, 0.0f }) * rotation;
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 3.0f, 0.0f }, { 0.8f, 0.8f, 0.8f }, transform, { 1.0f, 0.5f, 0.0f, 1.0f });
+			
+			// Pulsing cube with scale animation
+			float scale = 0.5f + 0.3f * sin(time * 2.0f);
+			glm::mat4 scaleTransform = glm::translate(glm::mat4(1.0f), { 4.0f, 2.0f, 0.0f }) * 
+									   glm::scale(glm::mat4(1.0f), { scale, scale, scale });
+			Zgine::BatchRenderer3D::DrawCube({ 4.0f, 2.0f, 0.0f }, { scale, scale, scale }, scaleTransform, { 0.0f, 1.0f, 0.5f, 1.0f });
 		}
 
-		// Floating spheres (only if spheres are enabled)
+		// Advanced sphere animations
 		if (m_3DShowSpheres)
 		{
-			for (int i = 0; i < 3; i++)
+			// Orbiting spheres with complex paths
+			for (int i = 0; i < 4; i++)
 			{
-				float y = 1.0f + 0.5f * sin(time + i * 2.0f);
-				glm::vec3 pos = { -3.0f + i * 3.0f, y, 0.0f };
-				Zgine::BatchRenderer3D::DrawSphere(pos, 0.3f, { 0.8f, 0.2f, 0.8f, 1.0f }, 12);
+				float orbitRadius = 3.0f + i * 0.5f;
+				float orbitSpeed = 0.3f + i * 0.1f;
+				float orbitAngle = time * orbitSpeed + i * 1.57f; // 90 degrees apart
+				
+				float x = orbitRadius * cos(orbitAngle);
+				float z = orbitRadius * sin(orbitAngle);
+				float y = 2.0f + 1.0f * sin(time * 1.5f + i * 0.8f);
+				
+				// Add rotation to spheres
+				glm::mat4 sphereRotation = glm::rotate(glm::mat4(1.0f), time * 2.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+				glm::mat4 sphereTransform = glm::translate(glm::mat4(1.0f), { x, y, z }) * sphereRotation;
+				
+				glm::vec4 color = {
+					0.4f + 0.6f * sin(time + i),
+					0.4f + 0.6f * cos(time + i * 1.3f),
+					0.4f + 0.6f * sin(time + i * 0.7f),
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.4f, color, 16);
+			}
+			
+			// Spiral spheres
+			for (int i = 0; i < 8; i++)
+			{
+				float spiralRadius = 2.0f;
+				float spiralHeight = i * 0.3f;
+				float spiralAngle = time * 0.8f + i * 0.5f;
+				
+				float x = spiralRadius * cos(spiralAngle);
+				float z = spiralRadius * sin(spiralAngle);
+				float y = -1.0f + spiralHeight + 0.5f * sin(time * 2.0f + i);
+				
+				glm::vec4 color = {
+					0.6f + 0.4f * sin(time * 1.5f + i),
+					0.6f + 0.4f * cos(time * 1.2f + i),
+					0.6f + 0.4f * sin(time * 0.8f + i),
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.2f, color, 12);
 			}
 		}
 	}

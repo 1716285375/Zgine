@@ -45,11 +45,21 @@ namespace Zgine {
 		s_VertexBufferBase = CreateScopeArray<Vertex3D>(MaxVertices);
 		ZG_CORE_INFO("Created 3D vertex buffer base with {} vertices", MaxVertices);
 
-		// Create indices array
+		// Create indices array - use proper quad indexing pattern
 		std::vector<uint32_t> indices(MaxIndices);
-		for (uint32_t i = 0; i < MaxIndices; i++)
+		uint32_t offset = 0;
+		for (uint32_t i = 0; i < MaxIndices; i += 6)
 		{
-			indices[i] = i;
+			// Each quad uses 6 indices (2 triangles)
+			indices[i + 0] = offset + 0;
+			indices[i + 1] = offset + 1;
+			indices[i + 2] = offset + 2;
+
+			indices[i + 3] = offset + 2;
+			indices[i + 4] = offset + 3;
+			indices[i + 5] = offset + 0;
+
+			offset += 4; // Each quad has 4 vertices
 		}
 
 		Ref<IndexBuffer> indexBuffer;
@@ -364,9 +374,9 @@ namespace Zgine {
 			return;
 		}
 
-		// Check if we have enough space for 8 vertices and 36 indices
+		// Check if we have enough space for 24 vertices and 36 indices
 		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
-		if (currentVertexCount >= MaxVertices - 8)
+		if (currentVertexCount >= MaxVertices - 24)
 			NextBatch();
 
 		float textureIndex = 0.0f; // White texture
@@ -383,18 +393,47 @@ namespace Zgine {
 			{ -0.5f,  0.5f,  0.5f }  // 7
 		};
 
-		// Add vertices to buffer
-		for (int i = 0; i < 8; i++)
+		// Add vertices to buffer (24 vertices for 6 faces, each face has 4 vertices)
+		glm::vec3 faceVertices[24];
+		glm::vec3 faceNormals[6] = {
+			{ 0.0f, 0.0f, -1.0f }, // Front
+			{ 0.0f, 0.0f, 1.0f },  // Back
+			{ -1.0f, 0.0f, 0.0f }, // Left
+			{ 1.0f, 0.0f, 0.0f },  // Right
+			{ 0.0f, -1.0f, 0.0f }, // Bottom
+			{ 0.0f, 1.0f, 0.0f }   // Top
+		};
+		
+		// Front face (0,1,2,3)
+		faceVertices[0] = vertices[0]; faceVertices[1] = vertices[1];
+		faceVertices[2] = vertices[2]; faceVertices[3] = vertices[3];
+		// Back face (4,5,6,7)
+		faceVertices[4] = vertices[4]; faceVertices[5] = vertices[5];
+		faceVertices[6] = vertices[6]; faceVertices[7] = vertices[7];
+		// Left face (0,3,7,4)
+		faceVertices[8] = vertices[0]; faceVertices[9] = vertices[3];
+		faceVertices[10] = vertices[7]; faceVertices[11] = vertices[4];
+		// Right face (1,2,6,5)
+		faceVertices[12] = vertices[1]; faceVertices[13] = vertices[2];
+		faceVertices[14] = vertices[6]; faceVertices[15] = vertices[5];
+		// Bottom face (0,1,5,4)
+		faceVertices[16] = vertices[0]; faceVertices[17] = vertices[1];
+		faceVertices[18] = vertices[5]; faceVertices[19] = vertices[4];
+		// Top face (3,2,6,7)
+		faceVertices[20] = vertices[3]; faceVertices[21] = vertices[2];
+		faceVertices[22] = vertices[6]; faceVertices[23] = vertices[7];
+
+		for (int i = 0; i < 24; i++)
 		{
-			s_VertexBufferPtr->Position = vertices[i];
-			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 0.0f, 1.0f); // Will be calculated per face
+			s_VertexBufferPtr->Position = faceVertices[i];
+			s_VertexBufferPtr->Normal = faceNormals[i / 4];
 			s_VertexBufferPtr->Color = color;
-			s_VertexBufferPtr->TexCoord = { 0.0f, 0.0f };
+			s_VertexBufferPtr->TexCoord = { (i % 2) == 0 ? 0.0f : 1.0f, (i % 4) < 2 ? 0.0f : 1.0f };
 			s_VertexBufferPtr->TexIndex = textureIndex;
 			s_VertexBufferPtr++;
 		}
 
-		// Add indices (36 indices for 12 triangles)
+		// Add indices (36 indices for 6 faces * 2 triangles per face)
 		s_IndexCount += 36;
 
 		// Upload transform matrix
@@ -479,10 +518,12 @@ namespace Zgine {
 			return;
 		}
 
-		segments = glm::clamp(segments, 8, 64);
+		segments = glm::clamp(segments, 8, 32); // Reduce max segments for performance
 		
-		uint32_t vertexCount = (segments + 1) * (segments + 1);
-		uint32_t indexCount = segments * segments * 6;
+		// Use a simplified sphere approach - render as multiple quads
+		uint32_t quadCount = segments * segments;
+		uint32_t vertexCount = quadCount * 4; // 4 vertices per quad
+		uint32_t indexCount = quadCount * 6;  // 6 indices per quad
 		
 		// Check if we have enough space
 		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
@@ -491,29 +532,46 @@ namespace Zgine {
 
 		float textureIndex = 0.0f;
 
-		// Generate sphere vertices
-		for (int i = 0; i <= segments; i++)
+		// Generate sphere as multiple quads
+		for (int i = 0; i < segments; i++)
 		{
-			float lat = glm::pi<float>() * (-0.5f + (float)i / segments);
-			float y = sin(lat);
-			float radiusAtY = cos(lat);
+			float lat1 = glm::pi<float>() * (-0.5f + (float)i / segments);
+			float lat2 = glm::pi<float>() * (-0.5f + (float)(i + 1) / segments);
+			
+			float y1 = sin(lat1);
+			float y2 = sin(lat2);
+			float radiusAtY1 = cos(lat1);
+			float radiusAtY2 = cos(lat2);
 
-			for (int j = 0; j <= segments; j++)
+			for (int j = 0; j < segments; j++)
 			{
-				float lng = 2.0f * glm::pi<float>() * (float)j / segments;
-				float x = cos(lng) * radiusAtY;
-				float z = sin(lng) * radiusAtY;
-
-				s_VertexBufferPtr->Position = glm::vec3(x, y, z);
-				s_VertexBufferPtr->Normal = glm::vec3(x, y, z);
-				s_VertexBufferPtr->Color = color;
-				s_VertexBufferPtr->TexCoord = { (float)j / segments, (float)i / segments };
-				s_VertexBufferPtr->TexIndex = textureIndex;
-				s_VertexBufferPtr++;
+				float lng1 = 2.0f * glm::pi<float>() * (float)j / segments;
+				float lng2 = 2.0f * glm::pi<float>() * (float)(j + 1) / segments;
+				
+				// Calculate quad vertices
+				glm::vec3 v1 = glm::vec3(cos(lng1) * radiusAtY1, y1, sin(lng1) * radiusAtY1);
+				glm::vec3 v2 = glm::vec3(cos(lng2) * radiusAtY1, y1, sin(lng2) * radiusAtY1);
+				glm::vec3 v3 = glm::vec3(cos(lng2) * radiusAtY2, y2, sin(lng2) * radiusAtY2);
+				glm::vec3 v4 = glm::vec3(cos(lng1) * radiusAtY2, y2, sin(lng1) * radiusAtY2);
+				
+				// Calculate normal (average of the four vertices)
+				glm::vec3 normal = glm::normalize((v1 + v2 + v3 + v4) * 0.25f);
+				
+				// Add quad vertices
+				glm::vec3 quadVertices[4] = { v1, v2, v3, v4 };
+				for (int k = 0; k < 4; k++)
+				{
+					s_VertexBufferPtr->Position = quadVertices[k];
+					s_VertexBufferPtr->Normal = normal;
+					s_VertexBufferPtr->Color = color;
+					s_VertexBufferPtr->TexCoord = { (k % 2) == 0 ? 0.0f : 1.0f, (k < 2) ? 0.0f : 1.0f };
+					s_VertexBufferPtr->TexIndex = textureIndex;
+					s_VertexBufferPtr++;
+				}
 			}
 		}
 
-		// Add indices
+		// Add indices (each quad uses 6 indices)
 		s_IndexCount += indexCount;
 
 		// Upload transform matrix
@@ -532,10 +590,12 @@ namespace Zgine {
 			return;
 		}
 
-		segments = glm::clamp(segments, 8, 64);
+		segments = glm::clamp(segments, 8, 32); // Reduce max segments for performance
 		
-		uint32_t vertexCount = (segments + 1) * (segments + 1);
-		uint32_t indexCount = segments * segments * 6;
+		// Use a simplified sphere approach - render as multiple quads
+		uint32_t quadCount = segments * segments;
+		uint32_t vertexCount = quadCount * 4; // 4 vertices per quad
+		uint32_t indexCount = quadCount * 6;  // 6 indices per quad
 		
 		// Check if we have enough space
 		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
@@ -544,28 +604,53 @@ namespace Zgine {
 
 		float textureIndex = GetTextureIndex(texture);
 
-		for (int i = 0; i <= segments; i++)
+		// Generate sphere as multiple quads
+		for (int i = 0; i < segments; i++)
 		{
-			float lat = glm::pi<float>() * (-0.5f + (float)i / segments);
-			float y = sin(lat);
-			float radiusAtY = cos(lat);
+			float lat1 = glm::pi<float>() * (-0.5f + (float)i / segments);
+			float lat2 = glm::pi<float>() * (-0.5f + (float)(i + 1) / segments);
+			
+			float y1 = sin(lat1);
+			float y2 = sin(lat2);
+			float radiusAtY1 = cos(lat1);
+			float radiusAtY2 = cos(lat2);
 
-			for (int j = 0; j <= segments; j++)
+			for (int j = 0; j < segments; j++)
 			{
-				float lng = 2.0f * glm::pi<float>() * (float)j / segments;
-				float x = cos(lng) * radiusAtY;
-				float z = sin(lng) * radiusAtY;
-
-				s_VertexBufferPtr->Position = glm::vec3(x, y, z);
-				s_VertexBufferPtr->Normal = glm::vec3(x, y, z);
-				s_VertexBufferPtr->Color = tintColor;
-				s_VertexBufferPtr->TexCoord = { (float)j / segments, (float)i / segments };
-				s_VertexBufferPtr->TexIndex = textureIndex;
-				s_VertexBufferPtr++;
+				float lng1 = 2.0f * glm::pi<float>() * (float)j / segments;
+				float lng2 = 2.0f * glm::pi<float>() * (float)(j + 1) / segments;
+				
+				// Calculate quad vertices
+				glm::vec3 v1 = glm::vec3(cos(lng1) * radiusAtY1, y1, sin(lng1) * radiusAtY1);
+				glm::vec3 v2 = glm::vec3(cos(lng2) * radiusAtY1, y1, sin(lng2) * radiusAtY1);
+				glm::vec3 v3 = glm::vec3(cos(lng2) * radiusAtY2, y2, sin(lng2) * radiusAtY2);
+				glm::vec3 v4 = glm::vec3(cos(lng1) * radiusAtY2, y2, sin(lng1) * radiusAtY2);
+				
+				// Calculate normal (average of the four vertices)
+				glm::vec3 normal = glm::normalize((v1 + v2 + v3 + v4) * 0.25f);
+				
+				// Add quad vertices with proper texture coordinates
+				glm::vec3 quadVertices[4] = { v1, v2, v3, v4 };
+				glm::vec2 texCoords[4] = {
+					{ (float)j / segments, (float)i / segments },
+					{ (float)(j + 1) / segments, (float)i / segments },
+					{ (float)(j + 1) / segments, (float)(i + 1) / segments },
+					{ (float)j / segments, (float)(i + 1) / segments }
+				};
+				
+				for (int k = 0; k < 4; k++)
+				{
+					s_VertexBufferPtr->Position = quadVertices[k];
+					s_VertexBufferPtr->Normal = normal;
+					s_VertexBufferPtr->Color = tintColor;
+					s_VertexBufferPtr->TexCoord = texCoords[k];
+					s_VertexBufferPtr->TexIndex = textureIndex;
+					s_VertexBufferPtr++;
+				}
 			}
 		}
 
-		// Add indices
+		// Add indices (each quad uses 6 indices)
 		s_IndexCount += indexCount;
 
 		// Upload transform matrix

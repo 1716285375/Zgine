@@ -40,11 +40,32 @@ namespace Zgine {
 
 	Application::~Application()
 	{
+		ZG_CORE_INFO("Application destructor called");
+		
 		// Set global shutdown flag before shutting down renderer
 		extern bool g_ApplicationShuttingDown;
 		g_ApplicationShuttingDown = true;
 		
+		// Stop the main loop if it's still running
+		m_Running = false;
+		
+		// Shutdown ImGui layer first to prevent rendering calls
+		if (m_ImGuiLayer)
+		{
+			ZG_CORE_INFO("Shutting down ImGui layer");
+			// Remove ImGuiLayer from layer stack before destroying it
+			PopOverlay(m_ImGuiLayer.get());
+			m_ImGuiLayer->OnDetach();
+			m_ImGuiLayer.reset();
+		}
+		
+		// Layer stack will be cleared by its destructor
+		
+		// Now shutdown renderer
+		ZG_CORE_INFO("Shutting down renderer");
 		Renderer::Shutdown();
+		
+		ZG_CORE_INFO("Application destructor completed");
 	}
 
 	void Application::OnEvent(Event& e)

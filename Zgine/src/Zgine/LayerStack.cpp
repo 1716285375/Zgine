@@ -10,9 +10,19 @@ namespace Zgine {
 
 	LayerStack::~LayerStack()
 	{
+		// Safely delete layers, checking for null pointers
 		for (Layer* layer : m_Layers) {
-			delete layer;
+			if (layer) {
+				try {
+					layer->OnDetach();
+					delete layer;
+				}
+				catch (...) {
+					// Ignore exceptions during cleanup
+				}
+			}
 		}
+		m_Layers.clear();
 	}
 
 	void LayerStack::PushLayer(Layer* layer)
