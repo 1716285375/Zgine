@@ -103,6 +103,7 @@ namespace Zgine {
 		static uint32_t s_TextureSlotIndex;
 
 		static RenderStats3D s_Stats;
+		static bool s_Initialized;
 	};
 
 }

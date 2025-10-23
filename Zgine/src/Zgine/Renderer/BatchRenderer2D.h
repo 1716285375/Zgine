@@ -115,6 +115,7 @@ namespace Zgine {
 		static glm::vec4 s_QuadVertexPositions[4];
 
 		static RenderStats s_Stats;
+		static bool s_Initialized;
 	};
 
 }
