@@ -782,7 +782,10 @@ namespace Zgine {
 			return;
 		}
 
-		// Bind vertex array FIRST
+		// Bind shader FIRST to avoid disabling vertex attributes
+		s_TextureShader->Bind();
+		
+		// Bind vertex array AFTER shader binding
 		s_QuadVertexArray->Bind();
 		
 		// Upload vertex data
@@ -814,11 +817,17 @@ namespace Zgine {
 		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
 		ZG_CORE_TRACE("BatchRenderer2D::Flush - Current VAO: {}", currentVAO);
 		
-		// Debug: Check if vertex attributes are enabled
-		GLboolean attrib0Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY0);
-		GLboolean attrib1Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY1);
-		GLboolean attrib2Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY2);
-		GLboolean attrib3Enabled = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY3);
+		// Debug: Check vertex attribute state using glGetVertexAttrib
+		GLint attrib0Enabled = 0;
+		GLint attrib1Enabled = 0;
+		GLint attrib2Enabled = 0;
+		GLint attrib3Enabled = 0;
+		
+		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0Enabled);
+		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1Enabled);
+		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
+		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
+		
 		ZG_CORE_TRACE("BatchRenderer2D::Flush - Vertex attributes enabled: 0={}, 1={}, 2={}, 3={}", 
 			attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
 		

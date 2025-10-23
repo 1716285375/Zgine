@@ -316,4 +316,32 @@ namespace Zgine {
 		return location;
 	}
 
+	/**
+	 * @brief Bind the shader program
+	 * @details Makes this shader program active for rendering
+	 */
+	void Shader::Bind() const
+	{
+		// Ensure clean state before binding
+		glUseProgram(0);
+		
+		// Clear all vertex attribute arrays to prevent conflicts
+		for (int i = 0; i < 32; i++)
+		{
+			glDisableVertexAttribArray(i);
+		}
+		
+		// Bind the shader program
+		glUseProgram(m_RendererID);
+	}
+	
+	/**
+	 * @brief Unbind the shader program
+	 * @details Deactivates the current shader program
+	 */
+	void Shader::Unbind() const
+	{
+		glUseProgram(0);
+	}
+
 }
