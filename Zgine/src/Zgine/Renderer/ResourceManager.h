@@ -1,257 +1,374 @@
 #pragma once
 
-#include <unordered_map>
 #include <memory>
+#include <unordered_map>
 #include <string>
-#include <functional>
 #include <mutex>
+#include <atomic>
 #include <vector>
+#include <functional>
+
+#include "Zgine/Renderer/Texture.h"
+#include "Zgine/Renderer/Shader.h"
 
 namespace Zgine {
 
-	class Texture2D;
-	class Shader;
-	class Material;
+	/**
+	 * @brief High-performance resource cache with LRU eviction
+	 * @details Manages resources with automatic cleanup and memory optimization
+	 */
+	template<typename T>
+	class ResourceCache
+	{
+	public:
+		struct CacheEntry
+		{
+			std::shared_ptr<T> resource;
+			size_t lastAccess;
+			size_t accessCount;
+			size_t memorySize;
+			
+			CacheEntry() : resource(nullptr), lastAccess(0), accessCount(0), memorySize(0) {}
+			CacheEntry(std::shared_ptr<T> res, size_t size) 
+				: resource(res), lastAccess(0), accessCount(0), memorySize(size) {}
+		};
+
+		explicit ResourceCache(size_t maxMemoryBytes = 100 * 1024 * 1024) // 100MB default
+			: m_MaxMemoryBytes(maxMemoryBytes), m_CurrentMemoryBytes(0), m_AccessCounter(0)
+		{
+		}
+
+		/**
+		 * @brief Get a resource from cache
+		 * @param key Resource key
+		 * @return Shared pointer to resource, or nullptr if not found
+		 */
+		std::shared_ptr<T> Get(const std::string& key)
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			
+			auto it = m_Cache.find(key);
+			if (it != m_Cache.end())
+			{
+				it->second.lastAccess = ++m_AccessCounter;
+				it->second.accessCount++;
+				return it->second.resource;
+			}
+			
+			return nullptr;
+		}
+
+		/**
+		 * @brief Store a resource in cache
+		 * @param key Resource key
+		 * @param resource Resource to store
+		 * @param memorySize Memory size of the resource
+		 */
+		void Store(const std::string& key, std::shared_ptr<T> resource, size_t memorySize)
+		{
+			if (!resource) return;
+			
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			
+			// Remove existing entry if it exists
+			RemoveEntry(key);
+			
+			// Check if we need to evict resources
+			while (m_CurrentMemoryBytes + memorySize > m_MaxMemoryBytes && !m_Cache.empty())
+			{
+				EvictLeastRecentlyUsed();
+			}
+			
+			// Add new entry
+			m_Cache[key] = CacheEntry(resource, memorySize);
+			m_CurrentMemoryBytes += memorySize;
+		}
+
+		/**
+		 * @brief Remove a resource from cache
+		 * @param key Resource key
+		 */
+		void Remove(const std::string& key)
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			RemoveEntry(key);
+		}
+
+		/**
+		 * @brief Clear all resources from cache
+		 */
+		void Clear()
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_Cache.clear();
+			m_CurrentMemoryBytes = 0;
+		}
+
+		/**
+		 * @brief Get cache statistics
+		 */
+		struct CacheStats
+		{
+			size_t EntryCount;
+			size_t TotalMemoryBytes;
+			size_t MaxMemoryBytes;
+			double HitRate;
+			size_t TotalAccesses;
+		};
+
+		CacheStats GetStats() const
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			
+			size_t totalAccesses = 0;
+			for (const auto& entry : m_Cache)
+			{
+				totalAccesses += entry.second.accessCount;
+			}
+			
+			return {
+				m_Cache.size(),
+				m_CurrentMemoryBytes,
+				m_MaxMemoryBytes,
+				m_TotalAccesses > 0 ? static_cast<double>(m_CacheHits) / m_TotalAccesses : 0.0,
+				totalAccesses
+			};
+		}
+
+		/**
+		 * @brief Set maximum memory limit
+		 */
+		void SetMaxMemory(size_t maxMemoryBytes)
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_MaxMemoryBytes = maxMemoryBytes;
+			
+			// Evict resources if we're over the new limit
+			while (m_CurrentMemoryBytes > m_MaxMemoryBytes && !m_Cache.empty())
+			{
+				EvictLeastRecentlyUsed();
+			}
+		}
+
+	private:
+		void RemoveEntry(const std::string& key)
+		{
+			auto it = m_Cache.find(key);
+			if (it != m_Cache.end())
+			{
+				m_CurrentMemoryBytes -= it->second.memorySize;
+				m_Cache.erase(it);
+			}
+		}
+
+		void EvictLeastRecentlyUsed()
+		{
+			if (m_Cache.empty()) return;
+			
+			auto oldest = m_Cache.begin();
+			for (auto it = m_Cache.begin(); it != m_Cache.end(); ++it)
+			{
+				if (it->second.lastAccess < oldest->second.lastAccess)
+				{
+					oldest = it;
+				}
+			}
+			
+			m_CurrentMemoryBytes -= oldest->second.memorySize;
+			m_Cache.erase(oldest);
+		}
+
+		std::unordered_map<std::string, CacheEntry> m_Cache;
+		mutable std::mutex m_Mutex;
+		size_t m_MaxMemoryBytes;
+		size_t m_CurrentMemoryBytes;
+		std::atomic<size_t> m_AccessCounter;
+		std::atomic<size_t> m_TotalAccesses{0};
+		std::atomic<size_t> m_CacheHits{0};
+	};
 
 	/**
-	 * @brief Resource manager singleton for efficient resource loading and caching
-	 * @details This class provides centralized management of all engine resources
-	 *          including textures, shaders, and materials with thread-safe operations
+	 * @brief Optimized texture manager with caching and compression
+	 * @details Manages texture loading, caching, and memory optimization
+	 */
+	class TextureManager
+	{
+	public:
+		static void Init();
+		static void Shutdown();
+		
+		/**
+		 * @brief Load texture with caching
+		 * @param path Texture file path
+		 * @return Shared pointer to texture
+		 */
+		static Ref<Texture2D> LoadTexture(const std::string& path);
+		
+		/**
+		 * @brief Create texture from data
+		 * @param data Texture data
+		 * @param width Texture width
+		 * @param height Texture height
+		 * @param format Texture format
+		 * @return Shared pointer to texture
+		 */
+		static Ref<Texture2D> CreateTexture(const void* data, uint32_t width, uint32_t height);
+		
+		/**
+		 * @brief Get texture by ID
+		 * @param textureID OpenGL texture ID
+		 * @return Shared pointer to texture
+		 */
+		static Ref<Texture2D> GetTexture(uint32_t textureID);
+		
+		/**
+		 * @brief Preload textures for better performance
+		 * @param paths List of texture paths to preload
+		 */
+		static void PreloadTextures(const std::vector<std::string>& paths);
+		
+		/**
+		 * @brief Clear texture cache
+		 */
+		static void ClearCache();
+		
+		/**
+		 * @brief Get texture manager statistics
+		 */
+		struct TextureStats
+		{
+			size_t LoadedTextures;
+			size_t CacheHits;
+			size_t CacheMisses;
+			size_t TotalMemoryBytes;
+			double HitRate;
+		};
+		
+		static TextureStats GetStats();
+
+	private:
+		static std::unique_ptr<ResourceCache<Texture2D>> s_TextureCache;
+		static std::unordered_map<uint32_t, Ref<Texture2D>> s_TextureRegistry;
+		static std::mutex s_RegistryMutex;
+		static bool s_Initialized;
+	};
+
+	/**
+	 * @brief Optimized shader manager with compilation caching
+	 * @details Manages shader compilation, caching, and optimization
+	 */
+	class ShaderManager
+	{
+	public:
+		static void Init();
+		static void Shutdown();
+		
+		/**
+		 * @brief Load shader with caching
+		 * @param name Shader name
+		 * @param vertexSrc Vertex shader source
+		 * @param fragmentSrc Fragment shader source
+		 * @return Shared pointer to shader
+		 */
+		static Ref<Shader> LoadShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
+		
+		/**
+		 * @brief Load shader from file
+		 * @param filepath Shader file path
+		 * @return Shared pointer to shader
+		 */
+		static Ref<Shader> LoadShaderFromFile(const std::string& filepath);
+		
+		/**
+		 * @brief Get shader by name
+		 * @param name Shader name
+		 * @return Shared pointer to shader
+		 */
+		static Ref<Shader> GetShader(const std::string& name);
+		
+		/**
+		 * @brief Precompile shaders for better performance
+		 * @param shaderDefinitions List of shader definitions
+		 */
+		static void PrecompileShaders(const std::vector<std::pair<std::string, std::pair<std::string, std::string>>>& shaderDefinitions);
+		
+		/**
+		 * @brief Clear shader cache
+		 */
+		static void ClearCache();
+		
+		/**
+		 * @brief Get shader manager statistics
+		 */
+		struct ShaderStats
+		{
+			size_t LoadedShaders;
+			size_t CacheHits;
+			size_t CacheMisses;
+			size_t CompilationFailures;
+			double HitRate;
+		};
+		
+		static ShaderStats GetStats();
+
+	private:
+		static std::unique_ptr<ResourceCache<Shader>> s_ShaderCache;
+		static std::unordered_map<std::string, Ref<Shader>> s_ShaderRegistry;
+		static std::mutex s_RegistryMutex;
+		static bool s_Initialized;
+	};
+
+	/**
+	 * @brief Global resource manager
+	 * @details Coordinates all resource management systems
 	 */
 	class ResourceManager
 	{
 	public:
+		static void Init();
+		static void Shutdown();
+		
 		/**
-		 * @brief Get the singleton instance
-		 * @return ResourceManager& Reference to the singleton instance
+		 * @brief Update resource management systems
+		 * @param deltaTime Time since last update
 		 */
-		static ResourceManager& GetInstance()
+		static void Update(float deltaTime);
+		
+		/**
+		 * @brief Get total memory usage
+		 */
+		static size_t GetTotalMemoryUsage();
+		
+		/**
+		 * @brief Set memory limits
+		 * @param textureMemoryLimit Texture memory limit in bytes
+		 * @param shaderMemoryLimit Shader memory limit in bytes
+		 */
+		static void SetMemoryLimits(size_t textureMemoryLimit, size_t shaderMemoryLimit);
+		
+		/**
+		 * @brief Force garbage collection
+		 */
+		static void ForceGarbageCollection();
+		
+		/**
+		 * @brief Get comprehensive resource statistics
+		 */
+		struct ResourceStats
 		{
-			static ResourceManager instance;
-			return instance;
-		}
-
-		/**
-		 * @brief Load a texture from file path
-		 * @param path The file path to the texture
-		 * @return std::shared_ptr<Texture2D> The loaded texture, or nullptr if failed
-		 */
-		std::shared_ptr<Texture2D> LoadTexture(const std::string& path);
+			TextureManager::TextureStats TextureStats;
+			ShaderManager::ShaderStats ShaderStats;
+			size_t TotalMemoryUsage;
+			size_t TextureMemoryLimit;
+			size_t ShaderMemoryLimit;
+		};
 		
-		/**
-		 * @brief Create a new texture with specified dimensions
-		 * @param width The width of the texture
-		 * @param height The height of the texture
-		 * @return std::shared_ptr<Texture2D> The created texture
-		 */
-		std::shared_ptr<Texture2D> CreateTexture(uint32_t width, uint32_t height);
-		
-		/**
-		 * @brief Unload a texture from memory
-		 * @param path The file path of the texture to unload
-		 */
-		void UnloadTexture(const std::string& path);
-		
-		/**
-		 * @brief Clear all textures from memory
-		 */
-		void ClearTextures();
-
-		/**
-		 * @brief Load a shader with vertex and fragment source code
-		 * @param name The name identifier for the shader
-		 * @param vertexSrc The vertex shader source code
-		 * @param fragmentSrc The fragment shader source code
-		 * @return std::shared_ptr<Shader> The loaded shader, or nullptr if failed
-		 */
-		std::shared_ptr<Shader> LoadShader(const std::string& name, const std::string& vertexSrc, const std::string& fragmentSrc);
-		
-		/**
-		 * @brief Get a shader by name
-		 * @param name The name of the shader to retrieve
-		 * @return std::shared_ptr<Shader> The shader, or nullptr if not found
-		 */
-		std::shared_ptr<Shader> GetShader(const std::string& name);
-		
-		/**
-		 * @brief Unload a shader from memory
-		 * @param name The name of the shader to unload
-		 */
-		void UnloadShader(const std::string& name);
-		
-		/**
-		 * @brief Clear all shaders from memory
-		 */
-		void ClearShaders();
-
-		/**
-		 * @brief Create a new material with specified name
-		 * @param name The name identifier for the material
-		 * @return std::shared_ptr<Material> The created material
-		 */
-		std::shared_ptr<Material> CreateMaterial(const std::string& name);
-		
-		/**
-		 * @brief Get a material by name
-		 * @param name The name of the material to retrieve
-		 * @return std::shared_ptr<Material> The material, or nullptr if not found
-		 */
-		std::shared_ptr<Material> GetMaterial(const std::string& name);
-		
-		/**
-		 * @brief Unload a material from memory
-		 * @param name The name of the material to unload
-		 */
-		void UnloadMaterial(const std::string& name);
-		
-		/**
-		 * @brief Clear all materials from memory
-		 */
-		void ClearMaterials();
-
-		/**
-		 * @brief Get the number of loaded textures
-		 * @return size_t The number of textures
-		 */
-		size_t GetTextureCount() const { return m_Textures.size(); }
-		
-		/**
-		 * @brief Get the number of loaded shaders
-		 * @return size_t The number of shaders
-		 */
-		size_t GetShaderCount() const { return m_Shaders.size(); }
-		
-		/**
-		 * @brief Get the number of loaded materials
-		 * @return size_t The number of materials
-		 */
-		size_t GetMaterialCount() const { return m_Materials.size(); }
-		
-		/**
-		 * @brief Get the total memory usage of all resources
-		 * @return size_t The total memory usage in bytes
-		 */
-		size_t GetTotalMemoryUsage() const;
-
-		/**
-		 * @brief Clear all resources from memory
-		 */
-		void ClearAll();
+		static ResourceStats GetStats();
 
 	private:
-		ResourceManager() = default;
-		~ResourceManager() = default;
-		ResourceManager(const ResourceManager&) = delete;
-		ResourceManager& operator=(const ResourceManager&) = delete;
-
-		// Resource caches
-		std::unordered_map<std::string, std::shared_ptr<Texture2D>> m_Textures;  ///< Texture cache map
-		std::unordered_map<std::string, std::shared_ptr<Shader>> m_Shaders;     ///< Shader cache map
-		std::unordered_map<std::string, std::shared_ptr<Material>> m_Materials; ///< Material cache map
-
-		// Thread safety
-		mutable std::mutex m_TexturesMutex;   ///< Mutex for texture operations
-		mutable std::mutex m_ShadersMutex;    ///< Mutex for shader operations
-		mutable std::mutex m_MaterialsMutex;   ///< Mutex for material operations
-	};
-
-	/**
-	 * @brief Resource pool template for efficient object reuse
-	 * @details This template class provides object pooling functionality to reduce
-	 *          memory allocation overhead by reusing objects instead of creating new ones
-	 * @tparam T The type of objects to pool
-	 */
-	template<typename T>
-	class ResourcePool
-	{
-	public:
-		/**
-		 * @brief Construct a new ResourcePool object
-		 * @param initialSize The initial size of the pool
-		 */
-		ResourcePool(size_t initialSize = 100) : m_PoolSize(initialSize)
-		{
-			Reserve(initialSize);
-		}
-
-		/**
-		 * @brief Destroy the ResourcePool object
-		 */
-		~ResourcePool() = default;
-
-		/**
-		 * @brief Acquire an object from the pool
-		 * @return std::shared_ptr<T> A shared pointer to an object from the pool
-		 */
-		std::shared_ptr<T> Acquire()
-		{
-			std::lock_guard<std::mutex> lock(m_Mutex);
-			
-			if (m_Pool.empty())
-			{
-				Reserve(m_PoolSize);
-			}
-
-			auto obj = m_Pool.back();
-			m_Pool.pop_back();
-			return obj;
-		}
-
-		/**
-		 * @brief Return an object to the pool for reuse
-		 * @param obj The object to return to the pool
-		 */
-		void Release(std::shared_ptr<T> obj)
-		{
-			if (!obj)
-				return;
-
-			std::lock_guard<std::mutex> lock(m_Mutex);
-			
-			// Reset object state if it has a reset method
-			if constexpr (requires { obj->Reset(); })
-			{
-				obj->Reset();
-			}
-
-			m_Pool.push_back(obj);
-		}
-
-		/**
-		 * @brief Reserve space in the pool
-		 * @param count The number of objects to reserve
-		 */
-		void Reserve(size_t count)
-		{
-			std::lock_guard<std::mutex> lock(m_Mutex);
-			
-			for (size_t i = 0; i < count; ++i)
-			{
-				m_Pool.push_back(std::make_shared<T>());
-			}
-		}
-
-		/**
-		 * @brief Get the current pool size
-		 * @return size_t The number of objects currently in the pool
-		 */
-		size_t GetPoolSize() const
-		{
-			std::lock_guard<std::mutex> lock(m_Mutex);
-			return m_Pool.size();
-		}
-
-		/**
-		 * @brief Get the total number of objects created
-		 * @return size_t The total number of objects created
-		 */
-		size_t GetTotalCreated() const { return m_TotalCreated; }
-
-	private:
-		std::vector<std::shared_ptr<T>> m_Pool;  ///< Pool of reusable objects
-		mutable std::mutex m_Mutex;              ///< Mutex for thread safety
-		size_t m_PoolSize;                       ///< Size of the pool
-		size_t m_TotalCreated = 0;               ///< Total number of objects created
+		static bool s_Initialized;
+		static float s_LastGCTime;
+		static const float s_GCTimeInterval; // 5 seconds
 	};
 
 }

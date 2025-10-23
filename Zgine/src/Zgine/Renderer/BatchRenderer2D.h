@@ -8,6 +8,11 @@
 #include "Zgine/Renderer/Texture.h"
 #include "Zgine/Renderer/VertexArray.h"
 #include "Zgine/Renderer/OrthographicCamera.h"
+// Forward declarations for performance optimization classes
+namespace Zgine {
+	template<typename T> class MemoryPool;
+	template<typename T> class RingBuffer;
+}
 
 namespace Zgine {
 
@@ -80,6 +85,12 @@ namespace Zgine {
 		static RenderStats GetStats();
 		static void ResetStats();
 
+		// Performance optimization methods
+		static void SetMaxQuads(uint32_t maxQuads);
+		static void SetUseRingBuffer(bool useRingBuffer);
+		static void SetEnableTextureCaching(bool enableCaching);
+		static void OptimizeForScene(const RenderStats& expectedStats);
+
 	private:
 		static void StartBatch();
 		static void NextBatch();
@@ -95,28 +106,41 @@ namespace Zgine {
 		static float GetTextureIndex(const Ref<Texture2D>& texture);
 
 	private:
-		static const uint32_t MaxQuads = 10000;
-		static const uint32_t MaxVertices = MaxQuads * 4;
-		static const uint32_t MaxIndices = MaxQuads * 6;
+		// Dynamic buffer sizes based on performance requirements
+		static uint32_t s_MaxQuads;
+		static uint32_t s_MaxVertices;
+		static uint32_t s_MaxIndices;
 		static const uint32_t MaxTextureSlots = 32; // TODO: RenderCaps
 
+		// Core rendering objects
 		static Ref<VertexArray> s_QuadVertexArray;
 		static Ref<VertexBuffer> s_QuadVertexBuffer;
 		static Ref<Shader> s_TextureShader;
 		static Ref<Texture2D> s_WhiteTexture;
 
+		// Memory management
 		static uint32_t s_QuadIndexCount;
-		static ScopeArray<QuadVertex> s_QuadVertexBufferBase;
+		static std::unique_ptr<RingBuffer<QuadVertex>> s_VertexRingBuffer;
+		static std::unique_ptr<MemoryPool<QuadVertex>> s_VertexPool;
+		static QuadVertex* s_QuadVertexBufferBase;
 		static QuadVertex* s_QuadVertexBufferPtr;
 
+		// Texture management
 		static std::array<Ref<Texture2D>, MaxTextureSlots> s_TextureSlots;
 		static uint32_t s_TextureSlotIndex;
+		static std::unordered_map<uint32_t, uint32_t> s_TextureIndexCache; // Texture ID -> Index mapping
 
+		// Precomputed data
 		static glm::vec4 s_QuadVertexPositions[4];
 
+		// Statistics and state
 		static RenderStats s_Stats;
 		static bool s_Initialized;
 		static bool s_ShuttingDown;
+		
+		// Performance optimization flags
+		static bool s_UseRingBuffer;
+		static bool s_EnableTextureCaching;
 	};
 
 }
