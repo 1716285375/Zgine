@@ -21,6 +21,7 @@ namespace Zgine {
 	uint32_t BatchRenderer3D::s_TextureSlotIndex = 1;
 
 	RenderStats3D BatchRenderer3D::s_Stats;
+	bool BatchRenderer3D::s_Initialized = false;
 
 	void BatchRenderer3D::Init()
 	{
@@ -140,6 +141,9 @@ namespace Zgine {
 		s_VertexBufferPtr = s_VertexBufferBase.get();
 		s_TextureSlotIndex = 1;
 		
+		// Mark as initialized
+		s_Initialized = true;
+		
 		ZG_CORE_INFO("BatchRenderer3D::Init() completed successfully");
 	}
 
@@ -168,11 +172,20 @@ namespace Zgine {
 		// Reset stats
 		s_Stats = RenderStats3D{};
 		
+		// Mark as not initialized
+		s_Initialized = false;
+		
 		ZG_CORE_INFO("BatchRenderer3D::Shutdown() completed");
 	}
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
+		if (!s_Initialized)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::BeginScene called but renderer is not initialized!");
+			return;
+		}
+		
 		if (!s_Shader)
 		{
 			ZG_CORE_ERROR("BatchRenderer3D::BeginScene called but shader is not initialized!");

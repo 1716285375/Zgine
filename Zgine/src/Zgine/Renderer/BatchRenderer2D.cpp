@@ -28,6 +28,7 @@ namespace Zgine {
 	};
 
 	RenderStats BatchRenderer2D::s_Stats;
+	bool BatchRenderer2D::s_Initialized = false;
 
 	void BatchRenderer2D::Init()
 	{
@@ -129,6 +130,9 @@ namespace Zgine {
 		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
 		s_TextureSlotIndex = 1;
 		
+		// Mark as initialized
+		s_Initialized = true;
+		
 		ZG_CORE_INFO("BatchRenderer2D::Init() completed successfully");
 	}
 
@@ -157,11 +161,20 @@ namespace Zgine {
 		// Reset stats
 		s_Stats = RenderStats{};
 		
+		// Mark as not initialized
+		s_Initialized = false;
+		
 		ZG_CORE_INFO("BatchRenderer2D::Shutdown() completed");
 	}
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
+		if (!s_Initialized)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but renderer is not initialized!");
+			return;
+		}
+		
 		if (!s_TextureShader)
 		{
 			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but shader is not initialized!");

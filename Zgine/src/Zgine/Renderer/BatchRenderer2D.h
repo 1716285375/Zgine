@@ -35,6 +35,9 @@ namespace Zgine {
 	public:
 		static void Init();
 		static void Shutdown();
+		
+		// Check if renderer is initialized
+		static bool IsInitialized() { return s_Initialized; }
 
 		static void BeginScene(const OrthographicCamera& camera);
 		static void EndScene();
