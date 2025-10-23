@@ -4,11 +4,9 @@
 #include <GLFW/glfw3.h>
 #include "Input.h"
 #include "Zgine/Log.h"
-
 #include "Zgine/Layer.h"
 #include "imgui.h"
 #include "Zgine/Renderer/Renderer.h"
-
 #include "Zgine/KeyCodes.h"
 
 namespace Zgine {
@@ -21,6 +19,11 @@ bool g_ApplicationShuttingDown = false;
 
 namespace Zgine {
 
+	/**
+	 * @brief Construct a new Application object
+	 * @details Initializes the application singleton, creates the main window,
+	 *          initializes the renderer, and sets up the ImGui layer
+	 */
 	Application::Application()
 	{
 		ZG_CORE_ASSERT(!s_Instance, "Application already exists!");
@@ -38,6 +41,10 @@ namespace Zgine {
 		// Don't call OnApplicationStart here - virtual function calls in constructor don't work properly
 	}
 
+	/**
+	 * @brief Destroy the Application object
+	 * @details Safely shuts down the application and cleans up resources
+	 */
 	Application::~Application()
 	{
 		ZG_CORE_INFO("Application destructor called");
@@ -68,6 +75,11 @@ namespace Zgine {
 		ZG_CORE_INFO("Application destructor completed");
 	}
 
+	/**
+	 * @brief Handle application events
+	 * @param e The event to handle
+	 * @details Dispatches events to the appropriate handlers and layers
+	 */
 	void Application::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
@@ -81,6 +93,10 @@ namespace Zgine {
 		}
 	}
 
+	/**
+	 * @brief Run the main application loop
+	 * @details Starts the main game loop, handles updates, rendering, and events
+	 */
 	void Application::Run()
 	{
 		// Call OnApplicationStart after Application is fully constructed
@@ -118,28 +134,54 @@ namespace Zgine {
 		}
 	}
 
+	/**
+	 * @brief Push a layer onto the layer stack
+	 * @param layer Pointer to the layer to add
+	 * @details Adds the layer to the stack and calls its OnAttach method
+	 */
 	void Application::PushLayer(Layer* layer)
 	{
 		m_LayerStack.PushLayer(layer);
 		layer->OnAttach();
 	}
 
+	/**
+	 * @brief Push an overlay onto the layer stack
+	 * @param overlay Pointer to the overlay to add
+	 * @details Adds the overlay to the stack and calls its OnAttach method
+	 */
 	void Application::PushOverlay(Layer* overlay)
 	{
 		m_LayerStack.PushOverlay(overlay);
 		overlay->OnAttach();
 	}
 
+	/**
+	 * @brief Pop a layer from the layer stack
+	 * @param layer Pointer to the layer to remove
+	 * @details Removes the layer from the stack
+	 */
 	void Application::PopLayer(Layer* layer)
 	{
 		m_LayerStack.PopLayer(layer);
 	}
 
+	/**
+	 * @brief Pop an overlay from the layer stack
+	 * @param overlay Pointer to the overlay to remove
+	 * @details Removes the overlay from the stack
+	 */
 	void Application::PopOverlay(Layer* overlay)
 	{
 		m_LayerStack.PopOverlay(overlay);
 	}
 
+	/**
+	 * @brief Handle window close events
+	 * @param e The window close event
+	 * @return bool True if the event was handled
+	 * @details Sets the running flag to false to exit the main loop
+	 */
 	bool Application::OnWindowClose(WindowCloseEvent& e)
 	{
 		m_Running = false;

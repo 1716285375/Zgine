@@ -134,15 +134,15 @@ namespace Sandbox {
 		testMaterial2->SetEmissive(0.5f);
 		testMaterial2->SetEmissiveColor(glm::vec3(0.0f, 1.0f, 0.0f));
 		
-		ZG_CORE_INFO("=== Zgine 引擎核心系统测试初始化完成 ===");
-		ZG_CORE_INFO("2D 相机位置: ({}, {}, {})", 
+		ZG_CORE_INFO("=== Zgine Engine Core Systems Test Initialization Complete ===");
+		ZG_CORE_INFO("2D Camera Position: ({}, {}, {})", 
 			m_2DCameraPosition.x, m_2DCameraPosition.y, m_2DCameraPosition.z);
-		ZG_CORE_INFO("3D 相机位置: ({}, {}, {})",
+		ZG_CORE_INFO("3D Camera Position: ({}, {}, {})",
 			m_3DCameraPosition.x, m_3DCameraPosition.y, m_3DCameraPosition.z);
-		ZG_CORE_INFO("光照系统: {} 个光源", lightingSystem.GetLightCount());
-		ZG_CORE_INFO("材质库: {} 个材质", materialLibrary.GetMaterialCount());
-		ZG_CORE_INFO("资源管理器: {} 个材质", resourceManager.GetMaterialCount());
-		ZG_CORE_INFO("=== 开始渲染测试 ===");
+		ZG_CORE_INFO("Lighting System: {} lights", lightingSystem.GetLightCount());
+		ZG_CORE_INFO("Material Library: {} materials", materialLibrary.GetMaterialCount());
+		ZG_CORE_INFO("Resource Manager: {} materials", resourceManager.GetMaterialCount());
+		ZG_CORE_INFO("=== Starting Rendering Tests ===");
 	}
 
 	void MainControlLayer::OnEvent(Zgine::Event& e)
@@ -452,50 +452,50 @@ namespace Sandbox {
 
 	void MainControlLayer::RenderPerformanceWindow()
 	{
-		ImGui::Begin("Zgine 引擎核心系统测试", &m_ShowPerformanceWindow);
+		ImGui::Begin("Zgine Engine Core Systems Test", &m_ShowPerformanceWindow);
 		
 		// ===== 系统状态监控 =====
-		ImGui::Text("=== 系统状态监控 ===");
+		ImGui::Text("=== System Status Monitor ===");
 		ImGui::Separator();
 		
 		// 渲染器状态
-		ImGui::Text("渲染器状态:");
-		ImGui::Text("  2D 渲染器: %s", Zgine::BatchRenderer2D::IsInitialized() ? "✓ 已初始化" : "✗ 未初始化");
-		ImGui::Text("  3D 渲染器: %s", Zgine::BatchRenderer3D::IsInitialized() ? "✓ 已初始化" : "✗ 未初始化");
+		ImGui::Text("Renderer Status:");
+		ImGui::Text("  2D Renderer: %s", Zgine::BatchRenderer2D::IsInitialized() ? "✓ Initialized" : "✗ Not Initialized");
+		ImGui::Text("  3D Renderer: %s", Zgine::BatchRenderer3D::IsInitialized() ? "✓ Initialized" : "✗ Not Initialized");
 		
 		// 光照系统状态
 		auto& lightingSystem = Zgine::LightingSystem::GetInstance();
-		ImGui::Text("光照系统:");
-		ImGui::Text("  光源数量: %d", lightingSystem.GetLightCount());
-		ImGui::Text("  环境光强度: %.2f", lightingSystem.GetAmbientIntensity());
+		ImGui::Text("Lighting System:");
+		ImGui::Text("  Light Count: %d", lightingSystem.GetLightCount());
+		ImGui::Text("  Ambient Intensity: %.2f", lightingSystem.GetAmbientIntensity());
 		
 		// 材质系统状态
 		auto& materialLibrary = Zgine::MaterialLibrary::GetInstance();
-		ImGui::Text("材质系统:");
-		ImGui::Text("  材质数量: %d", materialLibrary.GetMaterialCount());
+		ImGui::Text("Material System:");
+		ImGui::Text("  Material Count: %d", materialLibrary.GetMaterialCount());
 		
 		// 资源管理器状态
 		auto& resourceManager = Zgine::ResourceManager::GetInstance();
-		ImGui::Text("资源管理器:");
-		ImGui::Text("  材质数量: %d", resourceManager.GetMaterialCount());
-		ImGui::Text("  纹理数量: %d", resourceManager.GetTextureCount());
-		ImGui::Text("  着色器数量: %d", resourceManager.GetShaderCount());
+		ImGui::Text("Resource Manager:");
+		ImGui::Text("  Material Count: %d", resourceManager.GetMaterialCount());
+		ImGui::Text("  Texture Count: %d", resourceManager.GetTextureCount());
+		ImGui::Text("  Shader Count: %d", resourceManager.GetShaderCount());
 		
 		ImGui::Separator();
 		
 		// ===== PBR 渲染测试控制 =====
-		ImGui::Text("=== PBR 渲染测试 ===");
-		ImGui::Checkbox("启用 PBR 材质测试", &m_3DAnimateObjects);
-		ImGui::Checkbox("显示金属材质立方体", &m_3DShowCubes);
-		ImGui::Checkbox("显示玻璃材质球体", &m_3DShowSpheres);
-		ImGui::Checkbox("显示环境平面", &m_3DShowPlanes);
+		ImGui::Text("=== PBR Rendering Test ===");
+		ImGui::Checkbox("Enable PBR Material Test", &m_3DAnimateObjects);
+		ImGui::Checkbox("Show Metallic Cubes", &m_3DShowCubes);
+		ImGui::Checkbox("Show Glass Spheres", &m_3DShowSpheres);
+		ImGui::Checkbox("Show Environment Planes", &m_3DShowPlanes);
 		
 		ImGui::Separator();
 		
 		// ===== 光照测试控制 =====
-		ImGui::Text("=== 光照测试 ===");
+		ImGui::Text("=== Lighting Test ===");
 		static float ambientIntensity = 0.2f;
-		if (ImGui::SliderFloat("环境光强度", &ambientIntensity, 0.0f, 1.0f))
+		if (ImGui::SliderFloat("Ambient Intensity", &ambientIntensity, 0.0f, 1.0f))
 		{
 			lightingSystem.SetAmbientLighting(glm::vec3(0.1f, 0.1f, 0.15f), ambientIntensity);
 		}
@@ -503,19 +503,19 @@ namespace Sandbox {
 		ImGui::Separator();
 		
 		// ===== 性能监控 =====
-		ImGui::Text("=== 性能监控 ===");
+		ImGui::Text("=== Performance Monitor ===");
 		ImGui::Text("FPS: %.1f", m_FPS);
-		ImGui::Text("运行时间: %.2f 秒", m_Time);
+		ImGui::Text("Runtime: %.2f seconds", m_Time);
 		
 		// 2D Stats
 		if (m_Show2DTestWindow)
 		{
 			auto stats2D = Zgine::BatchRenderer2D::GetStats();
-			ImGui::Text("2D 渲染统计:");
-			ImGui::Text("  绘制调用: %d", stats2D.DrawCalls);
-			ImGui::Text("  四边形: %d", stats2D.QuadCount);
-			ImGui::Text("  顶点: %d", stats2D.GetTotalVertexCount());
-			ImGui::Text("  索引: %d", stats2D.GetTotalIndexCount());
+			ImGui::Text("2D Render Stats:");
+			ImGui::Text("  Draw Calls: %d", stats2D.DrawCalls);
+			ImGui::Text("  Quads: %d", stats2D.QuadCount);
+			ImGui::Text("  Vertices: %d", stats2D.GetTotalVertexCount());
+			ImGui::Text("  Indices: %d", stats2D.GetTotalIndexCount());
 		}
 		
 		ImGui::Separator();
@@ -524,21 +524,21 @@ namespace Sandbox {
 		if (m_Show3DTestWindow)
 		{
 			auto stats3D = Zgine::BatchRenderer3D::GetStats();
-			ImGui::Text("3D 渲染统计:");
-			ImGui::Text("  绘制调用: %d", stats3D.DrawCalls);
-			ImGui::Text("  立方体: %d", stats3D.CubeCount);
-			ImGui::Text("  球体: %d", stats3D.SphereCount);
-			ImGui::Text("  平面: %d", stats3D.PlaneCount);
+			ImGui::Text("3D Render Stats:");
+			ImGui::Text("  Draw Calls: %d", stats3D.DrawCalls);
+			ImGui::Text("  Cubes: %d", stats3D.CubeCount);
+			ImGui::Text("  Spheres: %d", stats3D.SphereCount);
+			ImGui::Text("  Planes: %d", stats3D.PlaneCount);
 		}
 		
 		ImGui::Separator();
 		
 		// Reset buttons
-		if (ImGui::Button("重置 2D 统计"))
+		if (ImGui::Button("Reset 2D Stats"))
 			Zgine::BatchRenderer2D::ResetStats();
 		
 		ImGui::SameLine();
-		if (ImGui::Button("重置 3D 统计"))
+		if (ImGui::Button("Reset 3D Stats"))
 			Zgine::BatchRenderer3D::ResetStats();
 		
 		ImGui::End();
