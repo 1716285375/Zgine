@@ -490,9 +490,12 @@ namespace Sandbox {
 	void MainControlLayer::Render2DBasicShapes()
 	{
 		// Basic quads
-		Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-		Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
-		Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
+		if (m_2DShowQuads)
+		{
+			Zgine::BatchRenderer2D::DrawQuad({ -1.0f, 0.0f, 0.0f }, { 0.8f, 0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
+			Zgine::BatchRenderer2D::DrawQuad({ 0.5f, -0.5f, 0.0f }, { 0.5f, 0.75f }, { 0.2f, 0.3f, 0.8f, 1.0f });
+			Zgine::BatchRenderer2D::DrawRotatedQuad({ 0.0f, 0.0f, 0.0f }, { 0.5f, 0.5f }, 45.0f, { 0.8f, 0.8f, 0.2f, 1.0f });
+		}
 
 		// Lines
 		if (m_2DShowLines)
@@ -599,16 +602,22 @@ namespace Sandbox {
 
 		float time = m_Time;
 
-		// Rotating cube
-		glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
-		Zgine::BatchRenderer3D::DrawCube({ 0.0f, 1.0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, rotation, { 1.0f, 0.5f, 0.0f, 1.0f });
-
-		// Floating spheres
-		for (int i = 0; i < 3; i++)
+		// Rotating cube (only if cubes are enabled)
+		if (m_3DShowCubes)
 		{
-			float y = 1.0f + 0.5f * sin(time + i * 2.0f);
-			glm::vec3 pos = { -3.0f + i * 3.0f, y, 0.0f };
-			Zgine::BatchRenderer3D::DrawSphere(pos, 0.3f, { 0.8f, 0.2f, 0.8f, 1.0f }, 12);
+			glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), time, glm::vec3(0.0f, 1.0f, 0.0f));
+			Zgine::BatchRenderer3D::DrawCube({ 0.0f, 1.0f, 0.0f }, { 0.5f, 0.5f, 0.5f }, rotation, { 1.0f, 0.5f, 0.0f, 1.0f });
+		}
+
+		// Floating spheres (only if spheres are enabled)
+		if (m_3DShowSpheres)
+		{
+			for (int i = 0; i < 3; i++)
+			{
+				float y = 1.0f + 0.5f * sin(time + i * 2.0f);
+				glm::vec3 pos = { -3.0f + i * 3.0f, y, 0.0f };
+				Zgine::BatchRenderer3D::DrawSphere(pos, 0.3f, { 0.8f, 0.2f, 0.8f, 1.0f }, 12);
+			}
 		}
 	}
 
