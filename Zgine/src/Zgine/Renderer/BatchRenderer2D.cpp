@@ -805,6 +805,16 @@ namespace Zgine {
 		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase.get());
 		ZG_CORE_TRACE("BatchRenderer2D::Flush - Uploading {} bytes of vertex data ({} vertices)", dataSize, actualVertices);
 		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase.get(), dataSize);
+		
+		// Debug: Check vertex attributes after SetData
+		GLint attrib0Enabled = 0, attrib1Enabled = 0, attrib2Enabled = 0, attrib3Enabled = 0;
+		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0Enabled);
+		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1Enabled);
+		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
+		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
+		
+		ZG_CORE_TRACE("BatchRenderer2D::Flush - After SetData, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
+			attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
 
 		// Bind textures
 		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)

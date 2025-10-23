@@ -711,14 +711,15 @@ namespace Sandbox {
 
 	void MainControlLayer::Update2DCamera(Zgine::Timestep ts)
 	{
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
+		// Use arrow keys for 2D camera movement to avoid conflict with 3D camera
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT))
 			m_2DCameraPosition.x -= m_2DCameraSpeed * ts;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_RIGHT))
 			m_2DCameraPosition.x += m_2DCameraSpeed * ts;
 
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_UP))
 			m_2DCameraPosition.y += m_2DCameraSpeed * ts;
-		else if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_DOWN))
 			m_2DCameraPosition.y -= m_2DCameraSpeed * ts;
 
 		m_2DCamera.SetPosition(m_2DCameraPosition);
