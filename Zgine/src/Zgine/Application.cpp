@@ -14,9 +14,12 @@
 namespace Zgine {
 	
 	Application* Application::s_Instance = nullptr;
-	
-	// Global application shutdown flag
-	bool g_ApplicationShuttingDown = false;
+}
+
+// Global application shutdown flag (outside namespace for global access)
+bool g_ApplicationShuttingDown = false;
+
+namespace Zgine {
 
 	Application::Application()
 	{

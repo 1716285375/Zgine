@@ -6,6 +6,7 @@
 #include "Zgine/Renderer/RendererAPI.h"
 #include "Zgine/Renderer/RenderCommand.h"
 #include "Zgine/Renderer/RendererManager.h"
+#include "../Core.h"
 
 namespace Zgine {
 
