@@ -5,6 +5,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "Zgine/Renderer/RendererAPI.h"
 #include "Zgine/Renderer/RenderCommand.h"
+#include "Zgine/Renderer/RendererManager.h"
 
 namespace Zgine {
 
@@ -22,6 +23,7 @@ namespace Zgine {
 
 	RenderStats3D BatchRenderer3D::s_Stats;
 	bool BatchRenderer3D::s_Initialized = false;
+	bool BatchRenderer3D::s_ShuttingDown = false;
 
 	void BatchRenderer3D::Init()
 	{
@@ -151,6 +153,9 @@ namespace Zgine {
 	{
 		ZG_CORE_INFO("BatchRenderer3D::Shutdown() called");
 		
+		// Mark as shutting down to prevent further access
+		s_ShuttingDown = true;
+		
 		// Reset all static members to prevent access after shutdown
 		s_VertexArray.reset();
 		s_VertexBuffer.reset();
@@ -180,6 +185,25 @@ namespace Zgine {
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
+		// Check RendererManager state first
+		if (RendererManager::GetInstance().IsShuttingDown())
+		{
+			ZG_CORE_WARN("BatchRenderer3D::BeginScene called during shutdown, ignoring");
+			return;
+		}
+		
+		if (!RendererManager::GetInstance().IsInitialized())
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::BeginScene called but renderer manager is not initialized!");
+			return;
+		}
+		
+		if (s_ShuttingDown)
+		{
+			ZG_CORE_WARN("BatchRenderer3D::BeginScene called during shutdown, ignoring");
+			return;
+		}
+		
 		if (!s_Initialized)
 		{
 			ZG_CORE_ERROR("BatchRenderer3D::BeginScene called but renderer is not initialized!");

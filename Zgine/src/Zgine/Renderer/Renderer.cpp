@@ -2,6 +2,7 @@
 #include "Renderer.h"
 #include "BatchRenderer2D.h"
 #include "BatchRenderer3D.h"
+#include "RendererManager.h"
 
 
 namespace Zgine {
@@ -14,14 +15,14 @@ namespace Zgine {
 		if (!m_SceneData)
 			m_SceneData = new Renderer::SceneData;
 			
-		BatchRenderer2D::Init();
-		BatchRenderer3D::Init();
+		// Use RendererManager for safe initialization
+		RendererManager::GetInstance().Init();
 	}
 
 	void Renderer::Shutdown()
 	{
-		BatchRenderer3D::Shutdown();
-		BatchRenderer2D::Shutdown();
+		// Use RendererManager for safe shutdown
+		RendererManager::GetInstance().Shutdown();
 		
 		// Clean up scene data
 		if (m_SceneData)

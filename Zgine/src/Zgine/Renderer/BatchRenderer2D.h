@@ -116,6 +116,7 @@ namespace Zgine {
 
 		static RenderStats s_Stats;
 		static bool s_Initialized;
+		static bool s_ShuttingDown;
 	};
 
 }
