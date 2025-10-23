@@ -8,6 +8,7 @@
 
 #include "Zgine/Renderer/RenderCommand.h"
 #include "Zgine/Renderer/RendererAPI.h"
+#include "Zgine/Renderer/BatchRenderer2D.h"
 
 namespace Zgine {
 
@@ -36,11 +37,11 @@ namespace Zgine {
 		}
 
 		// Create vertex array
-		m_VertexArray = VertexArray::Create();
+		m_VertexArray.reset(VertexArray::Create());
 
 		// Create vertex buffer for particle quads
 		// Each particle is rendered as a quad with 4 vertices
-		m_VertexBuffer = VertexBuffer::Create(nullptr, m_Config.MaxParticles * 4 * sizeof(QuadVertex));
+		m_VertexBuffer.reset(VertexBuffer::Create(nullptr, m_Config.MaxParticles * 4 * sizeof(QuadVertex)));
 		m_VertexBuffer->SetLayout({
 			{ ShaderDataType::Float3, "a_Position" },
 			{ ShaderDataType::Float4, "a_Color" },
@@ -66,7 +67,8 @@ namespace Zgine {
 			offset += 4; // Each quad has 4 vertices
 		}
 
-		Ref<IndexBuffer> indexBuffer = IndexBuffer::Create(indices.data(), indices.size());
+		Ref<IndexBuffer> indexBuffer;
+		indexBuffer.reset(IndexBuffer::Create(indices.data(), indices.size()));
 		m_VertexArray->SetIndexBuffer(indexBuffer);
 
 		// Create particle shader
@@ -118,7 +120,7 @@ namespace Zgine {
 		int32_t samplers[32];
 		for (uint32_t i = 0; i < 32; i++)
 			samplers[i] = i;
-		m_Shader->SetIntArray("u_Textures", samplers, 32);
+		m_Shader->UploadUniformIntArray("u_Textures", samplers, 32);
 	}
 
 	void ParticleSystem::OnUpdate(float deltaTime)
@@ -155,7 +157,7 @@ namespace Zgine {
 
 		// Bind shader and set uniforms
 		m_Shader->Bind();
-		m_Shader->SetMat4("u_ViewProjection", viewProjection);
+		m_Shader->UploadUniformMat4("u_ViewProjection", viewProjection);
 
 		// Bind texture if available
 		if (m_Config.Texture)
@@ -223,7 +225,7 @@ namespace Zgine {
 
 		// Render
 		m_VertexArray->Bind();
-		RenderCommand::DrawIndexed(m_VertexArray, m_ActiveParticleCount * 6);
+		RenderCommand::DrawIndexed(m_VertexArray);
 
 		// Cleanup
 		delete[] vertexBuffer;
