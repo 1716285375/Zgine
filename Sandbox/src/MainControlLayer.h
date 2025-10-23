@@ -8,6 +8,8 @@
 #include "Zgine/Input.h"
 #include "Zgine/KeyCodes.h"
 #include "Zgine/MouseButtonCodes.h"
+#include "Zgine/Events/Event.h"
+#include "Zgine/Events/ApplicationEvent.h"
 #include "imgui.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -25,6 +27,7 @@ namespace Sandbox {
 		virtual void OnAttach() override;
 		virtual void OnUpdate(Zgine::Timestep ts) override;
 		virtual void OnImGuiRender() override;
+		virtual void OnEvent(Zgine::Event& e) override;
 
 	private:
 		void RenderMainMenu();
@@ -32,6 +35,9 @@ namespace Sandbox {
 		void Render3DTestWindow();
 		void RenderPerformanceWindow();
 		void RenderSettingsWindow();
+
+		// Event handling
+		bool OnWindowResize(Zgine::WindowResizeEvent& e);
 
 		// 2D Test Layer
 		void Update2DCamera(Zgine::Timestep ts);

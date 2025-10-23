@@ -1,6 +1,7 @@
 #include "MainControlLayer.h"
 #include "Zgine/Renderer/Renderer.h"
 #include "Zgine/Log.h"
+#include "Zgine/Events/ApplicationEvent.h"
 
 namespace Sandbox {
 
@@ -60,6 +61,35 @@ namespace Sandbox {
 		// Initialize camera positions
 		m_2DCamera.SetPosition(m_2DCameraPosition);
 		m_3DCamera.SetPosition(m_3DCameraPosition);
+	}
+
+	void MainControlLayer::OnEvent(Zgine::Event& e)
+	{
+		Zgine::EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<Zgine::WindowResizeEvent>([this](Zgine::WindowResizeEvent& e) { return OnWindowResize(e); });
+	}
+
+	bool MainControlLayer::OnWindowResize(Zgine::WindowResizeEvent& e)
+	{
+		// Update 3D camera aspect ratio when window is resized
+		float aspectRatio = (float)e.GetWidth() / (float)e.GetHeight();
+		m_3DCamera.SetAspectRatio(aspectRatio);
+		
+		// Update 2D camera projection to maintain aspect ratio
+		float width = (float)e.GetWidth();
+		float height = (float)e.GetHeight();
+		float aspect = width / height;
+		
+		// Maintain the same scale but adjust for aspect ratio
+		float left = -aspect;
+		float right = aspect;
+		float bottom = -1.0f;
+		float top = 1.0f;
+		
+		m_2DCamera.SetProjection(left, right, bottom, top);
+		
+		ZG_CORE_INFO("Window resized to {}x{}, aspect ratio: {}", e.GetWidth(), e.GetHeight(), aspectRatio);
+		return false; // Don't mark as handled, let other layers process it too
 	}
 
 	void MainControlLayer::OnUpdate(Zgine::Timestep ts)
