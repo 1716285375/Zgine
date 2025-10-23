@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Core.h"
+#include "../Core.h"
 #include "BatchRenderer2D.h"
 #include "BatchRenderer3D.h"
 
