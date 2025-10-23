@@ -63,10 +63,10 @@ namespace Zgine {
 	{
 		static int frameCount = 0;
 		frameCount++;
-		if (frameCount % 60 == 0) // Every 60 frames
-		{
-			ZG_CORE_INFO("ImGuiLayer::OnImGuiRender called - Frame: {}", frameCount);
-		}
+		// if (frameCount % 60 == 0) // Every 60 frames
+		// {
+		//	ZG_CORE_INFO("ImGuiLayer::OnImGuiRender called - Frame: {}", frameCount);
+		// }
 		
 		// Don't show demo window to allow custom UI
 		// static bool show = true;

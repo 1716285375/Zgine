@@ -67,10 +67,10 @@ namespace Sandbox {
 		// Debug output
 		static int frameCount = 0;
 		frameCount++;
-		if (frameCount % 60 == 0) // Every 60 frames
-		{
-			ZG_CORE_INFO("MainControlLayer::OnUpdate called - Frame: {}", frameCount);
-		}
+		// if (frameCount % 60 == 0) // Every 60 frames
+		// {
+		//	ZG_CORE_INFO("MainControlLayer::OnUpdate called - Frame: {}", frameCount);
+		// }
 
 		// Update time
 		m_Time += ts;
@@ -96,8 +96,8 @@ namespace Sandbox {
 			{
 				Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
 				
-				if (m_2DShowQuads)
-					Render2DBasicShapes();
+				// Always render basic shapes (quads are always shown)
+				Render2DBasicShapes();
 				
 				if (m_2DShowAdvanced)
 					Render2DAdvancedShapes();
