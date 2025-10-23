@@ -127,34 +127,6 @@ namespace Zgine {
 	}
 
 	/**
-	 * @brief Bind the shader program
-	 * @details Makes this shader program active for rendering
-	 */
-	void Shader::Bind() const
-	{
-		// Ensure clean state before binding
-		glUseProgram(0);
-		
-		// Clear all vertex attribute arrays to prevent conflicts
-		for (int i = 0; i < 32; i++)
-		{
-			glDisableVertexAttribArray(i);
-		}
-		
-		// Bind the shader program
-		glUseProgram(m_RendererID);
-	}
-	
-	/**
-	 * @brief Unbind the shader program
-	 * @details Deactivates the current shader program
-	 */
-	void Shader::Unbind() const
-	{
-		glUseProgram(0);
-	}
-	
-	/**
 	 * @brief Upload a float uniform to the shader
 	 * @param name The name of the uniform variable
 	 * @param value The float value to upload
@@ -322,16 +294,8 @@ namespace Zgine {
 	 */
 	void Shader::Bind() const
 	{
-		// Ensure clean state before binding
-		glUseProgram(0);
-		
-		// Clear all vertex attribute arrays to prevent conflicts
-		for (int i = 0; i < 32; i++)
-		{
-			glDisableVertexAttribArray(i);
-		}
-		
-		// Bind the shader program
+		// Simply bind the shader program without disabling vertex attributes
+		// Vertex attributes should be managed by the vertex array object
 		glUseProgram(m_RendererID);
 	}
 	
