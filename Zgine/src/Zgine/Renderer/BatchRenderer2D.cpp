@@ -235,6 +235,12 @@ namespace Zgine {
 
 	void BatchRenderer2D::StartBatch()
 	{
+		if (!s_Initialized)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::StartBatch called but renderer is not initialized!");
+			return;
+		}
+		
 		if (!s_QuadVertexBufferBase)
 		{
 			ZG_CORE_ERROR("BatchRenderer2D::StartBatch called but vertex buffer is not initialized!");
