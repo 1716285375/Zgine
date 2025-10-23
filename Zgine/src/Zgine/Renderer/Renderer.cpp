@@ -50,6 +50,12 @@ namespace Zgine {
 
 	void Renderer::Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray)
 	{
+		if (!m_SceneData)
+		{
+			ZG_CORE_ERROR("Renderer::Submit called but scene data is not initialized!");
+			return;
+		}
+		
 		shader->Bind();
 		shader->UploadUniformMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
 

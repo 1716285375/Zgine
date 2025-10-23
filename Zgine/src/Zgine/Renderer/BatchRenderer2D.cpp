@@ -134,7 +134,30 @@ namespace Zgine {
 
 	void BatchRenderer2D::Shutdown()
 	{
-		// Smart pointers will automatically clean up memory
+		ZG_CORE_INFO("BatchRenderer2D::Shutdown() called");
+		
+		// Reset all static members to prevent access after shutdown
+		s_QuadVertexArray.reset();
+		s_QuadVertexBuffer.reset();
+		s_TextureShader.reset();
+		s_WhiteTexture.reset();
+		
+		// Clear vertex buffer base and pointer
+		s_QuadVertexBufferBase.reset();
+		s_QuadVertexBufferPtr = nullptr;
+		
+		// Clear texture slots
+		for (auto& slot : s_TextureSlots)
+			slot.reset();
+		
+		// Reset counters
+		s_QuadIndexCount = 0;
+		s_TextureSlotIndex = 1;
+		
+		// Reset stats
+		s_Stats = RenderStats{};
+		
+		ZG_CORE_INFO("BatchRenderer2D::Shutdown() completed");
 	}
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)

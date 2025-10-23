@@ -145,7 +145,30 @@ namespace Zgine {
 
 	void BatchRenderer3D::Shutdown()
 	{
-		// Smart pointers will automatically clean up memory
+		ZG_CORE_INFO("BatchRenderer3D::Shutdown() called");
+		
+		// Reset all static members to prevent access after shutdown
+		s_VertexArray.reset();
+		s_VertexBuffer.reset();
+		s_Shader.reset();
+		s_WhiteTexture.reset();
+		
+		// Clear vertex buffer base and pointer
+		s_VertexBufferBase.reset();
+		s_VertexBufferPtr = nullptr;
+		
+		// Clear texture slots
+		for (auto& slot : s_TextureSlots)
+			slot.reset();
+		
+		// Reset counters
+		s_IndexCount = 0;
+		s_TextureSlotIndex = 1;
+		
+		// Reset stats
+		s_Stats = RenderStats3D{};
+		
+		ZG_CORE_INFO("BatchRenderer3D::Shutdown() completed");
 	}
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
@@ -290,7 +313,9 @@ namespace Zgine {
 			return;
 		}
 
-		if (s_IndexCount >= MaxIndices - 36) // 12 triangles * 3 indices
+		// Check if we have enough space for 8 vertices and 36 indices
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - 8)
 			NextBatch();
 
 		float textureIndex = 0.0f; // White texture
@@ -305,22 +330,6 @@ namespace Zgine {
 			{  0.5f, -0.5f,  0.5f }, // 5
 			{  0.5f,  0.5f,  0.5f }, // 6
 			{ -0.5f,  0.5f,  0.5f }  // 7
-		};
-
-		// Cube faces (6 faces, 2 triangles each) - 36 indices total
-		uint32_t indices[36] = {
-			// Front face
-			0, 1, 2,  2, 3, 0,
-			// Back face
-			4, 7, 6,  6, 5, 4,
-			// Left face
-			0, 3, 7,  7, 4, 0,
-			// Right face
-			1, 5, 6,  6, 2, 1,
-			// Top face
-			3, 2, 6,  6, 7, 3,
-			// Bottom face
-			0, 4, 5,  5, 1, 0
 		};
 
 		// Add vertices to buffer
@@ -353,7 +362,9 @@ namespace Zgine {
 			return;
 		}
 
-		if (s_IndexCount >= MaxIndices - 36)
+		// Check if we have enough space for 8 vertices and 36 indices
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - 8)
 			NextBatch();
 
 		float textureIndex = GetTextureIndex(texture);
@@ -422,7 +433,9 @@ namespace Zgine {
 		uint32_t vertexCount = (segments + 1) * (segments + 1);
 		uint32_t indexCount = segments * segments * 6;
 		
-		if (s_IndexCount >= MaxIndices - indexCount)
+		// Check if we have enough space
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - vertexCount)
 			NextBatch();
 
 		float textureIndex = 0.0f;
@@ -473,7 +486,9 @@ namespace Zgine {
 		uint32_t vertexCount = (segments + 1) * (segments + 1);
 		uint32_t indexCount = segments * segments * 6;
 		
-		if (s_IndexCount >= MaxIndices - indexCount)
+		// Check if we have enough space
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - vertexCount)
 			NextBatch();
 
 		float textureIndex = GetTextureIndex(texture);
@@ -519,7 +534,9 @@ namespace Zgine {
 			return;
 		}
 
-		if (s_IndexCount >= MaxIndices - 6)
+		// Check if we have enough space for 4 vertices and 6 indices
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - 4)
 			NextBatch();
 
 		float textureIndex = 0.0f;
@@ -562,7 +579,9 @@ namespace Zgine {
 			return;
 		}
 
-		if (s_IndexCount >= MaxIndices - 6)
+		// Check if we have enough space for 4 vertices and 6 indices
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - 4)
 			NextBatch();
 
 		float textureIndex = GetTextureIndex(texture);
