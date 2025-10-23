@@ -795,14 +795,220 @@ namespace Zgine {
 	// Cylinder implementations
 	void BatchRenderer3D::DrawCylinder(const glm::vec3& position, float radius, float height, const glm::vec4& color, int segments)
 	{
-		// TODO: Implement cylinder drawing
-		ZG_CORE_WARN("DrawCylinder not implemented yet");
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawCylinder called but vertex buffer is not initialized!");
+			return;
+		}
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		
+		// Calculate vertex count: 2 circles (top + bottom) + side quads
+		// Each circle: segments vertices (center + segments edge points)
+		// Side: segments quads = segments * 4 vertices
+		uint32_t vertexCount = (segments + 1) * 2 + segments * 4; // Top circle + bottom circle + side quads
+		uint32_t indexCount = segments * 6 * 3; // 6 indices per quad, 3 sets (top, bottom, side)
+		
+		// Check if we have enough space
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - vertexCount)
+			NextBatch();
+
+		float textureIndex = 0.0f; // White texture
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+		
+		// Generate top circle (Y = +height/2)
+		glm::vec3 topCenter = position + glm::vec3(0.0f, height * 0.5f, 0.0f);
+		glm::vec3 bottomCenter = position + glm::vec3(0.0f, -height * 0.5f, 0.0f);
+		
+		// Top circle center
+		s_VertexBufferPtr->Position = topCenter;
+		s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+		s_VertexBufferPtr->Color = color;
+		s_VertexBufferPtr->TexCoord = { 0.5f, 0.5f };
+		s_VertexBufferPtr->TexIndex = textureIndex;
+		s_VertexBufferPtr++;
+		
+		// Top circle edge vertices
+		for (int i = 0; i < segments; i++)
+		{
+			float angle = i * angleStep;
+			glm::vec3 vertex = topCenter + glm::vec3(cos(angle) * radius, 0.0f, sin(angle) * radius);
+			
+			s_VertexBufferPtr->Position = vertex;
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			s_VertexBufferPtr->Color = color;
+			s_VertexBufferPtr->TexCoord = { 0.5f + cos(angle) * 0.5f, 0.5f + sin(angle) * 0.5f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+		
+		// Bottom circle center
+		s_VertexBufferPtr->Position = bottomCenter;
+		s_VertexBufferPtr->Normal = glm::vec3(0.0f, -1.0f, 0.0f);
+		s_VertexBufferPtr->Color = color;
+		s_VertexBufferPtr->TexCoord = { 0.5f, 0.5f };
+		s_VertexBufferPtr->TexIndex = textureIndex;
+		s_VertexBufferPtr++;
+		
+		// Bottom circle edge vertices
+		for (int i = 0; i < segments; i++)
+		{
+			float angle = i * angleStep;
+			glm::vec3 vertex = bottomCenter + glm::vec3(cos(angle) * radius, 0.0f, sin(angle) * radius);
+			
+			s_VertexBufferPtr->Position = vertex;
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, -1.0f, 0.0f);
+			s_VertexBufferPtr->Color = color;
+			s_VertexBufferPtr->TexCoord = { 0.5f + cos(angle) * 0.5f, 0.5f + sin(angle) * 0.5f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+		
+		// Side quads (connecting top and bottom circles)
+		for (int i = 0; i < segments; i++)
+		{
+			int next = (i + 1) % segments;
+			
+			// Calculate side quad vertices
+			float angle1 = i * angleStep;
+			float angle2 = next * angleStep;
+			
+			glm::vec3 top1 = topCenter + glm::vec3(cos(angle1) * radius, 0.0f, sin(angle1) * radius);
+			glm::vec3 top2 = topCenter + glm::vec3(cos(angle2) * radius, 0.0f, sin(angle2) * radius);
+			glm::vec3 bottom1 = bottomCenter + glm::vec3(cos(angle1) * radius, 0.0f, sin(angle1) * radius);
+			glm::vec3 bottom2 = bottomCenter + glm::vec3(cos(angle2) * radius, 0.0f, sin(angle2) * radius);
+			
+			// Calculate normal for this side quad
+			glm::vec3 sideNormal = glm::normalize(glm::vec3(cos(angle1), 0.0f, sin(angle1)));
+			
+			// Add quad vertices (two triangles)
+			glm::vec3 quadVertices[4] = { bottom1, bottom2, top2, top1 };
+			for (int j = 0; j < 4; j++)
+			{
+				s_VertexBufferPtr->Position = quadVertices[j];
+				s_VertexBufferPtr->Normal = sideNormal;
+				s_VertexBufferPtr->Color = color;
+				s_VertexBufferPtr->TexCoord = { (float)j / 3.0f, 0.0f }; // Simple UV mapping
+				s_VertexBufferPtr->TexIndex = textureIndex;
+				s_VertexBufferPtr++;
+			}
+		}
+		
+		// Add indices for all triangles
+		s_IndexCount += indexCount;
+		
+		// Update statistics
+		s_Stats.CylinderCount++;
 	}
 
 	void BatchRenderer3D::DrawCylinder(const glm::vec3& position, float radius, float height, const Ref<Texture2D>& texture, const glm::vec4& tintColor, int segments)
 	{
-		// TODO: Implement textured cylinder drawing
-		ZG_CORE_WARN("DrawCylinder with texture not implemented yet");
+		if (!s_VertexBufferBase || !s_VertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer3D::DrawCylinder called but vertex buffer is not initialized!");
+			return;
+		}
+
+		// Clamp segments to reasonable range
+		segments = glm::clamp(segments, 3, 64);
+		
+		// Calculate vertex count: 2 circles (top + bottom) + side quads
+		uint32_t vertexCount = (segments + 1) * 2 + segments * 4;
+		uint32_t indexCount = segments * 6 * 3;
+		
+		// Check if we have enough space
+		uint32_t currentVertexCount = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+		if (currentVertexCount >= MaxVertices - vertexCount)
+			NextBatch();
+
+		float textureIndex = GetTextureIndex(texture);
+		const float angleStep = 2.0f * glm::pi<float>() / segments;
+		
+		// Generate top circle (Y = +height/2)
+		glm::vec3 topCenter = position + glm::vec3(0.0f, height * 0.5f, 0.0f);
+		glm::vec3 bottomCenter = position + glm::vec3(0.0f, -height * 0.5f, 0.0f);
+		
+		// Top circle center
+		s_VertexBufferPtr->Position = topCenter;
+		s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+		s_VertexBufferPtr->Color = tintColor;
+		s_VertexBufferPtr->TexCoord = { 0.5f, 0.5f };
+		s_VertexBufferPtr->TexIndex = textureIndex;
+		s_VertexBufferPtr++;
+		
+		// Top circle edge vertices
+		for (int i = 0; i < segments; i++)
+		{
+			float angle = i * angleStep;
+			glm::vec3 vertex = topCenter + glm::vec3(cos(angle) * radius, 0.0f, sin(angle) * radius);
+			
+			s_VertexBufferPtr->Position = vertex;
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, 1.0f, 0.0f);
+			s_VertexBufferPtr->Color = tintColor;
+			s_VertexBufferPtr->TexCoord = { 0.5f + cos(angle) * 0.5f, 0.5f + sin(angle) * 0.5f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+		
+		// Bottom circle center
+		s_VertexBufferPtr->Position = bottomCenter;
+		s_VertexBufferPtr->Normal = glm::vec3(0.0f, -1.0f, 0.0f);
+		s_VertexBufferPtr->Color = tintColor;
+		s_VertexBufferPtr->TexCoord = { 0.5f, 0.5f };
+		s_VertexBufferPtr->TexIndex = textureIndex;
+		s_VertexBufferPtr++;
+		
+		// Bottom circle edge vertices
+		for (int i = 0; i < segments; i++)
+		{
+			float angle = i * angleStep;
+			glm::vec3 vertex = bottomCenter + glm::vec3(cos(angle) * radius, 0.0f, sin(angle) * radius);
+			
+			s_VertexBufferPtr->Position = vertex;
+			s_VertexBufferPtr->Normal = glm::vec3(0.0f, -1.0f, 0.0f);
+			s_VertexBufferPtr->Color = tintColor;
+			s_VertexBufferPtr->TexCoord = { 0.5f + cos(angle) * 0.5f, 0.5f + sin(angle) * 0.5f };
+			s_VertexBufferPtr->TexIndex = textureIndex;
+			s_VertexBufferPtr++;
+		}
+		
+		// Side quads (connecting top and bottom circles)
+		for (int i = 0; i < segments; i++)
+		{
+			int next = (i + 1) % segments;
+			
+			// Calculate side quad vertices
+			float angle1 = i * angleStep;
+			float angle2 = next * angleStep;
+			
+			glm::vec3 top1 = topCenter + glm::vec3(cos(angle1) * radius, 0.0f, sin(angle1) * radius);
+			glm::vec3 top2 = topCenter + glm::vec3(cos(angle2) * radius, 0.0f, sin(angle2) * radius);
+			glm::vec3 bottom1 = bottomCenter + glm::vec3(cos(angle1) * radius, 0.0f, sin(angle1) * radius);
+			glm::vec3 bottom2 = bottomCenter + glm::vec3(cos(angle2) * radius, 0.0f, sin(angle2) * radius);
+			
+			// Calculate normal for this side quad
+			glm::vec3 sideNormal = glm::normalize(glm::vec3(cos(angle1), 0.0f, sin(angle1)));
+			
+			// Add quad vertices (two triangles)
+			glm::vec3 quadVertices[4] = { bottom1, bottom2, top2, top1 };
+			for (int j = 0; j < 4; j++)
+			{
+				s_VertexBufferPtr->Position = quadVertices[j];
+				s_VertexBufferPtr->Normal = sideNormal;
+				s_VertexBufferPtr->Color = tintColor;
+				s_VertexBufferPtr->TexCoord = { (float)j / 3.0f, 0.0f }; // Simple UV mapping
+				s_VertexBufferPtr->TexIndex = textureIndex;
+				s_VertexBufferPtr++;
+			}
+		}
+		
+		// Add indices for all triangles
+		s_IndexCount += indexCount;
+		
+		// Update statistics
+		s_Stats.CylinderCount++;
 	}
 
 }
