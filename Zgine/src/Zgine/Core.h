@@ -2,11 +2,25 @@
 
 #include "Zgine/Core/SmartPointers.h"
 
-// Global application state
+/**
+ * @file Core.h
+ * @brief Core definitions and macros for the Zgine engine
+ * @details This header contains essential type definitions, compiler detection,
+ *          platform detection, and utility macros used throughout the engine
+ */
+
+/**
+ * @brief Global application shutdown flag
+ * @details This flag is set to true when the application is shutting down
+ *          to prevent operations on destroyed resources
+ */
 extern bool g_ApplicationShuttingDown;
 
 namespace Zgine {
-	// Time types
+	/**
+	 * @brief Time step type for frame timing
+	 * @details Represents the time elapsed since the last frame in seconds
+	 */
 	using Timestep = float;
 }
 
@@ -59,6 +73,12 @@ namespace Zgine {
 
 /*  Runtime Assertion  */
 #ifdef ZG_ENABLE_ASSERTS
+/**
+ * @brief Client assertion macro
+ * @param x The condition to assert
+ * @param ... Additional arguments for error message formatting
+ * @details Triggers a debug break if the condition is false
+ */
 #   define ZG_ASSERT(x, ...)                                                       \
         do {                                                                       \
             if (!(x)) {                                                            \
@@ -67,6 +87,12 @@ namespace Zgine {
             }                                                                      \
         } while (0)
 
+/**
+ * @brief Core assertion macro
+ * @param x The condition to assert
+ * @param ... Additional arguments for error message formatting
+ * @details Triggers a debug break if the condition is false
+ */
 #   define ZG_CORE_ASSERT(x, ...)                                                  \
         do {                                                                       \
             if (!(x)) {                                                            \
@@ -81,5 +107,17 @@ namespace Zgine {
 
 
 /*  Helper Macros  */
+/**
+ * @brief Bind event function macro
+ * @param fn The function to bind
+ * @details Creates a std::bind wrapper for event handling functions
+ */
 #define BIND_EVENT_FN(fn)    std::bind(&fn, this, std::placeholders::_1)
+
+/**
+ * @brief Bit manipulation macro
+ * @param x The bit position
+ * @return uint32_t A value with the specified bit set
+ * @details Creates a bitmask with a single bit set at the specified position
+ */
 #define BIT(x)               (1u << (x))
