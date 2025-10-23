@@ -6,36 +6,66 @@
 #include "Zgine/Events/KeyEvent.h"
 #include "Platform/OpenGL/OpenGLContext.h"
 
-
 namespace Zgine {
 	
 	static bool s_GLFWInitialized = false;
+	
+	/**
+	 * @brief GLFW error callback function
+	 * @param error The error code
+	 * @param description The error description
+	 * @details Logs GLFW errors using the engine's logging system
+	 */
 	static void GLFWErrorCallback(int error, const char* description)
 	{
 		ZG_CORE_ERROR("GLFW Error ({0}): {1}", error, description);
 	}
 
+	/**
+	 * @brief Create a new window instance
+	 * @param props The window properties
+	 * @return Window* Pointer to the created window
+	 * @details Factory method for creating platform-specific window implementations
+	 */
 	Window* Window::Create(const WindowProps& props)
 	{
 		return new WindowsWindow(props);
 	}
 
+	/**
+	 * @brief Construct a new WindowsWindow object
+	 * @param props The window properties
+	 * @details Initializes the window with the given properties
+	 */
 	WindowsWindow::WindowsWindow(const WindowProps& props)
 	{
 		Init(props);
 	}
 
+	/**
+	 * @brief Destroy the WindowsWindow object
+	 * @details Properly cleans up GLFW window and context
+	 */
 	WindowsWindow::~WindowsWindow()
 	{
 		Shutdonw();
 	}
 
+	/**
+	 * @brief Update the window (swap buffers, poll events)
+	 * @details Called every frame to handle window updates
+	 */
 	void WindowsWindow::OnUpdate()
 	{
 		glfwPollEvents();
 		m_Context->SwapBuffers();
 	}
 
+	/**
+	 * @brief Enable or disable VSync
+	 * @param enabled True to enable VSync, false to disable
+	 * @details Sets GLFW swap interval and updates internal state
+	 */
 	void WindowsWindow::SetVSync(bool enabled)
 	{
 		if (enabled) {
@@ -48,11 +78,21 @@ namespace Zgine {
 		m_Data.VSync = enabled;
 	}
 
+	/**
+	 * @brief Check if VSync is enabled
+	 * @return bool True if VSync is enabled
+	 * @details Returns the current VSync state
+	 */
 	bool WindowsWindow::IsVSync() const
 	{
 		return false;
 	}
 
+	/**
+	 * @brief Initialize the window
+	 * @param props The window properties
+	 * @details Creates GLFW window and sets up event callbacks
+	 */
 	void WindowsWindow::Init(const WindowProps& props)
 	{
 		m_Data.Title = props.Title;
@@ -78,7 +118,7 @@ namespace Zgine {
 		SetVSync(true);
 
 		// Set GLFW callbacks
-		// resize event
+		// Window resize event callback
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			data.Width = width;
@@ -88,14 +128,14 @@ namespace Zgine {
 			data.EventCallback(event);
 		});
 
-		// close event
+		// Window close event callback
 		glfwSetWindowCloseCallback(m_Window, [](GLFWwindow* window) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			WindowCloseEvent event;
 			data.EventCallback(event);
 		});
 
-		// keyboard event
+		// Keyboard event callback
 		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int momds) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			switch (action) {
@@ -117,13 +157,14 @@ namespace Zgine {
 			}
 		});
 
+		// Character input event callback
 		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			KeyTypedEvent event(keycode);
 			data.EventCallback(event);
 		});
 
-		// mouse button event
+		// Mouse button event callback
 		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
@@ -141,7 +182,7 @@ namespace Zgine {
 			}
 		});
 
-		// mouse scroll event
+		// Mouse scroll event callback
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 			
@@ -149,7 +190,7 @@ namespace Zgine {
 			data.EventCallback(event);
 		});
 
-		// cursor position event
+		// Mouse cursor position event callback
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos) {
 			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
@@ -158,6 +199,10 @@ namespace Zgine {
 		});
 	}
 
+	/**
+	 * @brief Shutdown the window
+	 * @details Destroys GLFW window and cleans up resources
+	 */
 	void WindowsWindow::Shutdonw()
 	{
 		glfwDestroyWindow(m_Window);
