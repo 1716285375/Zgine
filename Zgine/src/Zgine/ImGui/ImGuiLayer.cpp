@@ -4,7 +4,6 @@
 #include "GLFW/glfw3.h"
 #include "imgui.h"
 
-
 //#define IMGUI_IMPL_API
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_opengl3.h"
@@ -12,15 +11,30 @@
 #include "Zgine/Application.h"
 
 namespace Zgine {
+
+	/**
+	 * @brief Construct a new ImGuiLayer object
+	 * @details Initializes the ImGui layer with default settings
+	 */
 	ImGuiLayer::ImGuiLayer()
 		: Layer("ImGuiLayer")
 	{
+		// ImGuiLayer constructor implementation
 	}
 
+	/**
+	 * @brief Destroy the ImGuiLayer object
+	 * @details Properly cleans up ImGui resources
+	 */
 	ImGuiLayer::~ImGuiLayer()
 	{
+		// ImGuiLayer destructor implementation
 	}
 
+	/**
+	 * @brief Called when the layer is attached to the layer stack
+	 * @details Initializes ImGui and sets up the rendering context
+	 */
 	void ImGuiLayer::OnAttach()
 	{
 		IMGUI_CHECKVERSION();
@@ -51,6 +65,10 @@ namespace Zgine {
 		ImGui_ImplOpenGL3_Init("#version 410");
 	}
 
+	/**
+	 * @brief Called when the layer is detached from the layer stack
+	 * @details Shuts down ImGui and cleans up resources
+	 */
 	void ImGuiLayer::OnDetach()
 	{
 		ImGui_ImplOpenGL3_Shutdown();
@@ -58,7 +76,10 @@ namespace Zgine {
 		ImGui::DestroyContext();
 	}
 
-
+	/**
+	 * @brief Called every frame to render ImGui elements
+	 * @details Renders ImGui debug interface and UI elements
+	 */
 	void ImGuiLayer::OnImGuiRender()
 	{
 		static int frameCount = 0;
@@ -73,13 +94,21 @@ namespace Zgine {
 		// ImGui::ShowDemoWindow(&show);
 	}
 
+	/**
+	 * @brief Called when an event occurs
+	 * @param e The event that occurred
+	 * @details Handles ImGui events and input processing
+	 */
 	void ImGuiLayer::OnEvent(Event& e)
 	{
 		// ImGui handles its own input events through GLFW callbacks
 		// No need to manually dispatch events here
 	}
 
-
+	/**
+	 * @brief Begin ImGui frame
+	 * @details Starts a new ImGui frame for rendering
+	 */
 	void ImGuiLayer::Begin()
 	{
 		//ZG_INFO("ImGuiLayer::Begin called");
@@ -88,6 +117,10 @@ namespace Zgine {
 		ImGui::NewFrame();
 	}
 
+	/**
+	 * @brief End ImGui frame
+	 * @details Ends the current ImGui frame and renders it
+	 */
 	void ImGuiLayer::End()
 	{
 		ImGuiIO& io = ImGui::GetIO();
