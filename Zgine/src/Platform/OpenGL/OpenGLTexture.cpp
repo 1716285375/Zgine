@@ -1,11 +1,16 @@
 #include "zgpch.h"
 #include "OpenGLTexture.h"
-
 #include <glad/glad.h>
 #include <stb_image.h>
 
 namespace Zgine {
 
+	/**
+	 * @brief Construct a new OpenGLTexture2D object with specified dimensions
+	 * @param width The texture width
+	 * @param height The texture height
+	 * @details Creates an empty OpenGL 2D texture with the specified dimensions
+	 */
 	OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
 		: Texture2D(width, height)
 	{
@@ -22,6 +27,11 @@ namespace Zgine {
 		glTextureParameteri(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	}
 
+	/**
+	 * @brief Construct a new OpenGLTexture2D object from file
+	 * @param path The path to the texture file
+	 * @details Loads an OpenGL 2D texture from the specified file path
+	 */
 	OpenGLTexture2D::OpenGLTexture2D(const std::string& path)
 		: Texture2D(path)
 	{
@@ -67,11 +77,21 @@ namespace Zgine {
 		m_IsLoaded = true;
 	}
 
+	/**
+	 * @brief Destroy the OpenGLTexture2D object
+	 * @details Properly cleans up OpenGL texture resources
+	 */
 	OpenGLTexture2D::~OpenGLTexture2D()
 	{
 		glDeleteTextures(1, &m_RendererID);
 	}
 
+	/**
+	 * @brief Set texture data
+	 * @param data Pointer to the texture data
+	 * @param size Size of the data in bytes
+	 * @details Uploads pixel data to the OpenGL texture
+	 */
 	void OpenGLTexture2D::SetData(void* data, uint32_t size)
 	{
 		uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
@@ -79,6 +99,11 @@ namespace Zgine {
 		glTextureSubImage2D(m_RendererID, 0, 0, 0, m_Width, m_Height, m_DataFormat, GL_UNSIGNED_BYTE, data);
 	}
 
+	/**
+	 * @brief Bind the texture to a texture slot
+	 * @param slot The texture slot to bind to (default: 0)
+	 * @details Makes this OpenGL texture active for rendering
+	 */
 	void OpenGLTexture2D::Bind(uint32_t slot) const
 	{
 		glBindTextureUnit(slot, m_RendererID);
