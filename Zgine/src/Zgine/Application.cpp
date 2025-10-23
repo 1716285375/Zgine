@@ -71,7 +71,7 @@ namespace Zgine {
 			for (auto* layer : m_LayerStack) {
 				layer->OnImGuiRender();
 			}
-			m_ImGuiLayer->OnImGuiRender(); // Add this line to call ImGuiLayer's OnImGuiRender
+			// ImGuiLayer is already in LayerStack as overlay, so its OnImGuiRender is called above
 			m_ImGuiLayer->End();
 			
 			m_Window->OnUpdate();

@@ -8,6 +8,7 @@ class SandboxApp : public Zgine::Application
 public:
 	SandboxApp()
 	{
+		ZG_CORE_INFO("SandboxApp constructor called");
 		// Don't create layers in constructor - wait for Application to be fully initialized
 	}
 
@@ -27,5 +28,6 @@ public:
 
 Zgine::Application* Zgine::CreateApplication()
 {
+	ZG_CORE_INFO("CreateApplication called - Creating SandboxApp");
 	return new SandboxApp();
 }

@@ -68,8 +68,9 @@ namespace Zgine {
 			ZG_CORE_INFO("ImGuiLayer::OnImGuiRender called - Frame: {}", frameCount);
 		}
 		
-		static bool show = true;
-		ImGui::ShowDemoWindow(&show);
+		// Don't show demo window to allow custom UI
+		// static bool show = true;
+		// ImGui::ShowDemoWindow(&show);
 	}
 
 
