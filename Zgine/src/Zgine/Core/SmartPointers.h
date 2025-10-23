@@ -113,12 +113,12 @@ namespace Zgine {
 	using RefArray = std::array<Ref<T>, N>;
 
 	/**
-	 * @brief Array of unique ownership smart pointers
+	 * @brief Fixed-size array of unique ownership smart pointers
 	 * @tparam T The type of objects to manage
 	 * @tparam N The size of the array
 	 */
 	template<typename T, size_t N>
-	using ScopeArray = std::array<Scope<T>, N>;
+	using ScopeFixedArray = std::array<Scope<T>, N>;
 
 	/**
 	 * @brief Helper function for creating a vector of reference-counted smart pointers
