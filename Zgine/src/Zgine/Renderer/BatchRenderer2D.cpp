@@ -31,6 +31,8 @@ namespace Zgine {
 
 	void BatchRenderer2D::Init()
 	{
+		ZG_CORE_INFO("BatchRenderer2D::Init() called");
+		
 		s_QuadVertexArray.reset(VertexArray::Create());
 
 		s_QuadVertexBuffer.reset(VertexBuffer::Create(nullptr, MaxVertices * sizeof(QuadVertex)));
@@ -43,6 +45,7 @@ namespace Zgine {
 		s_QuadVertexArray->AddVertexBuffer(s_QuadVertexBuffer);
 
 		s_QuadVertexBufferBase = CreateScopeArray<QuadVertex>(MaxVertices);
+		ZG_CORE_INFO("Created vertex buffer base with {} vertices", MaxVertices);
 
 		// Create indices array - keep it alive until IndexBuffer is created
 		std::vector<uint32_t> quadIndices(MaxIndices);
@@ -120,6 +123,13 @@ namespace Zgine {
 
 		// Set all texture slots to 0
 		s_TextureSlots[0] = s_WhiteTexture;
+		
+		// Initialize other static members
+		s_QuadIndexCount = 0;
+		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
+		s_TextureSlotIndex = 1;
+		
+		ZG_CORE_INFO("BatchRenderer2D::Init() completed successfully");
 	}
 
 	void BatchRenderer2D::Shutdown()
@@ -129,6 +139,12 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
+		if (!s_TextureShader)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::BeginScene called but shader is not initialized!");
+			return;
+		}
+		
 		s_TextureShader->Bind();
 		s_TextureShader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 
@@ -145,13 +161,32 @@ namespace Zgine {
 		if (s_QuadIndexCount == 0)
 			return; // Nothing to draw
 
+		if (!s_QuadVertexBufferBase || !s_QuadVertexBufferPtr)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex buffer is not initialized!");
+			return;
+		}
+
+		if (!s_QuadVertexBuffer)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex buffer object is not initialized!");
+			return;
+		}
+
+		if (!s_QuadVertexArray)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::Flush called but vertex array is not initialized!");
+			return;
+		}
+
 		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase.get());
 		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase.get(), dataSize);
 
 		// Bind textures
 		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
 		{
-			s_TextureSlots[i]->Bind(i);
+			if (s_TextureSlots[i])
+				s_TextureSlots[i]->Bind(i);
 		}
 
 		RenderCommand::DrawIndexed(s_QuadVertexArray);
@@ -164,6 +199,12 @@ namespace Zgine {
 
 	void BatchRenderer2D::StartBatch()
 	{
+		if (!s_QuadVertexBufferBase)
+		{
+			ZG_CORE_ERROR("BatchRenderer2D::StartBatch called but vertex buffer is not initialized!");
+			return;
+		}
+		
 		s_QuadIndexCount = 0;
 		s_QuadVertexBufferPtr = s_QuadVertexBufferBase.get();
 		s_TextureSlotIndex = 1;

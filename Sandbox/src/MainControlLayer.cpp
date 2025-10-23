@@ -94,7 +94,7 @@ namespace Sandbox {
 		{
 			try
 			{
-				Zgine::Renderer::BeginScene(m_2DCamera);
+				Zgine::BatchRenderer2D::BeginScene(m_2DCamera);
 				
 				if (m_2DShowQuads)
 					Render2DBasicShapes();
@@ -105,7 +105,7 @@ namespace Sandbox {
 				if (m_2DAnimateCircles || m_2DAnimateQuads)
 					Render2DAnimatedShapes();
 				
-				Zgine::Renderer::EndScene();
+				Zgine::BatchRenderer2D::EndScene();
 			}
 			catch (...)
 			{
@@ -118,7 +118,7 @@ namespace Sandbox {
 		{
 			try
 			{
-				Zgine::Renderer::BeginScene(m_3DCamera);
+				Zgine::BatchRenderer3D::BeginScene(m_3DCamera);
 				
 				if (m_3DShowCubes || m_3DShowSpheres || m_3DShowPlanes)
 					Render3DBasicShapes();
@@ -129,7 +129,7 @@ namespace Sandbox {
 				if (m_3DShowEnvironment)
 					Render3DEnvironment();
 				
-				Zgine::Renderer::EndScene();
+				Zgine::BatchRenderer3D::EndScene();
 			}
 			catch (...)
 			{

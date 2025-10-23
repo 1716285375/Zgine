@@ -29,10 +29,7 @@ namespace Zgine {
 		m_ImGuiLayer = CreateScope<ImGuiLayer>();
 		PushOverlay(m_ImGuiLayer.get());
 		
-		// Call derived class initialization
-		ZG_CORE_INFO("Application::Application calling OnApplicationStart");
-		OnApplicationStart();
-		ZG_CORE_INFO("Application::Application OnApplicationStart completed");
+		// Don't call OnApplicationStart here - virtual function calls in constructor don't work properly
 	}
 
 	Application::~Application()
@@ -55,6 +52,16 @@ namespace Zgine {
 
 	void Application::Run()
 	{
+		// Call OnApplicationStart after Application is fully constructed
+		static bool firstRun = true;
+		if (firstRun)
+		{
+			ZG_CORE_INFO("Application::Run calling OnApplicationStart");
+			OnApplicationStart();
+			ZG_CORE_INFO("Application::Run OnApplicationStart completed");
+			firstRun = false;
+		}
+		
 		float lastFrameTime = 0.0f;
 		
 		while (m_Running) {
