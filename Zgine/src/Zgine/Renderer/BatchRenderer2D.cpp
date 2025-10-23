@@ -732,6 +732,19 @@ namespace Zgine {
 		s_Stats.QuadCount++;
 	}
 
+	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
+	{
+		s_TextureShader->Bind();
+		s_TextureShader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
+		
+		StartBatch();
+	}
+
+	void BatchRenderer2D::EndScene()
+	{
+		Flush();
+	}
+
 	void BatchRenderer2D::Flush()
 	{
 		if (s_QuadIndexCount == 0)
