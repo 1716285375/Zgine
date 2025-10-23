@@ -42,6 +42,7 @@ namespace Sandbox {
 		// 3D options
 		m_3DShowCubes(true),
 		m_3DShowSpheres(true),
+		m_3DShowCylinders(true),
 		m_3DShowPlanes(true),
 		m_3DShowEnvironment(false),
 		m_3DAnimateObjects(true),
@@ -428,6 +429,7 @@ namespace Sandbox {
 		// Count 3D objects
 		if (m_3DShowCubes) count += 8; // Main cube + tall cube + small cube + 5 floating cubes
 		if (m_3DShowSpheres) count += 6; // Main sphere + 5 floating spheres
+		if (m_3DShowCylinders) count += 8; // Main cylinder + glass cylinder + emissive cylinder + 4 rotating + 3 stacked
 		if (m_3DShowPlanes) count += 3; // Environment planes
 
 		// Count particle systems
@@ -518,6 +520,8 @@ namespace Sandbox {
 		ImGui::Checkbox("Cubes", &m_3DShowCubes);
 		ImGui::SameLine();
 		ImGui::Checkbox("Spheres", &m_3DShowSpheres);
+		ImGui::SameLine();
+		ImGui::Checkbox("Cylinders", &m_3DShowCylinders);
 		ImGui::SameLine();
 		ImGui::Checkbox("Planes", &m_3DShowPlanes);
 
@@ -631,6 +635,7 @@ namespace Sandbox {
 			ImGui::Text("  Draw Calls: %d", stats3D.DrawCalls);
 			ImGui::Text("  Cubes: %d", stats3D.CubeCount);
 			ImGui::Text("  Spheres: %d", stats3D.SphereCount);
+			ImGui::Text("  Cylinders: %d", stats3D.CylinderCount);
 			ImGui::Text("  Planes: %d", stats3D.PlaneCount);
 		}
 
@@ -691,6 +696,7 @@ namespace Sandbox {
 			// Reset 3D settings
 			m_3DShowCubes = true;
 			m_3DShowSpheres = true;
+			m_3DShowCylinders = true;
 			m_3DShowPlanes = true;
 			m_3DShowEnvironment = false;
 			m_3DAnimateObjects = true;
@@ -999,6 +1005,53 @@ namespace Sandbox {
 					1.0f
 				};
 				Zgine::BatchRenderer3D::DrawSphere({ x, y, z }, 0.3f, color, 16);
+			}
+		}
+
+		// Cylinders with different materials and sizes
+		if (m_3DShowCylinders)
+		{
+			// Main cylinder with metallic finish
+			Zgine::BatchRenderer3D::DrawCylinder({ 0.0f, 0.0f, 3.0f }, 0.5f, 2.0f, { 0.7f, 0.7f, 0.8f, 1.0f }, 24);
+
+			// Glass cylinder
+			Zgine::BatchRenderer3D::DrawCylinder({ 2.0f, 0.0f, 3.0f }, 0.3f, 1.5f, { 0.2f, 0.8f, 0.9f, 0.6f }, 20);
+
+			// Emissive cylinder
+			Zgine::BatchRenderer3D::DrawCylinder({ -2.0f, 0.0f, 3.0f }, 0.4f, 1.8f, { 1.0f, 0.3f, 0.3f, 1.0f }, 16);
+
+			// Rotating cylinders
+			for (int i = 0; i < 4; i++)
+			{
+				float angle = m_Time * 0.3f + i * 1.57f; // 90 degrees apart
+				float radius = 5.0f;
+				float x = radius * cos(angle);
+				float z = 3.0f + radius * sin(angle);
+				float y = 0.5f + 0.2f * sin(m_Time * 1.5f + i);
+
+				glm::vec4 color = {
+					0.4f + 0.6f * sin(m_Time + i),
+					0.4f + 0.6f * cos(m_Time + i * 1.2f),
+					0.4f + 0.6f * sin(m_Time + i * 0.8f),
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawCylinder({ x, y, z }, 0.2f, 1.0f, color, 16);
+			}
+
+			// Stacked cylinders
+			for (int i = 0; i < 3; i++)
+			{
+				float y = -1.0f + i * 0.8f;
+				float radius = 0.3f - i * 0.05f;
+				float height = 0.6f;
+				
+				glm::vec4 color = {
+					0.8f - i * 0.2f,
+					0.6f + i * 0.1f,
+					0.4f + i * 0.2f,
+					1.0f
+				};
+				Zgine::BatchRenderer3D::DrawCylinder({ 4.0f, y, 0.0f }, radius, height, color, 20);
 			}
 		}
 

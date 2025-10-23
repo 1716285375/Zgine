@@ -104,6 +104,7 @@ namespace Sandbox {
 		// 3D Render options
 		bool m_3DShowCubes;
 		bool m_3DShowSpheres;
+		bool m_3DShowCylinders;
 		bool m_3DShowPlanes;
 		bool m_3DShowEnvironment;
 		bool m_3DAnimateObjects;

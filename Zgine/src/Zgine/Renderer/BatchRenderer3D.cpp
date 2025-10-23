@@ -815,6 +815,9 @@ namespace Zgine {
 		if (currentVertexCount >= MaxVertices - vertexCount)
 			NextBatch();
 
+		// Store the starting vertex index for this cylinder
+		uint32_t startVertexIndex = (uint32_t)(s_VertexBufferPtr - s_VertexBufferBase.get());
+
 		float textureIndex = 0.0f; // White texture
 		const float angleStep = 2.0f * glm::pi<float>() / segments;
 		
@@ -896,8 +899,9 @@ namespace Zgine {
 			}
 		}
 		
-		// Add indices for all triangles
-		s_IndexCount += indexCount;
+		// Add indices for all triangles (using the pre-generated pattern)
+		// Each quad uses 6 indices, and we have segments quads for each part
+		s_IndexCount += segments * 6 * 3; // Top circle + bottom circle + side quads
 		
 		// Update statistics
 		s_Stats.CylinderCount++;
@@ -1004,8 +1008,9 @@ namespace Zgine {
 			}
 		}
 		
-		// Add indices for all triangles
-		s_IndexCount += indexCount;
+		// Add indices for all triangles (using the pre-generated pattern)
+		// Each quad uses 6 indices, and we have segments quads for each part
+		s_IndexCount += segments * 6 * 3; // Top circle + bottom circle + side quads
 		
 		// Update statistics
 		s_Stats.CylinderCount++;
