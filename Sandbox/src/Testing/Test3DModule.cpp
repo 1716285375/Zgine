@@ -6,6 +6,7 @@
 #include "Zgine/Events/MouseEvent.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
+#include <GL/gl.h>
 
 namespace Sandbox {
 
@@ -246,9 +247,22 @@ namespace Sandbox {
 
 	void Test3DModule::RenderBasicShapesScene(const Test3DConfig& config)
 	{
+		// Apply render mode settings
+		if (config.wireframeMode)
+		{
+			// Enable wireframe rendering
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+		else
+		{
+			// Ensure normal rendering
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
+
 		// Render cubes
 		if (config.showCubes)
 		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering cubes (showCubes=true)");
 			for (int i = 0; i < 3; i++)
 			{
 				for (int j = 0; j < 3; j++)
@@ -262,10 +276,15 @@ namespace Sandbox {
 				}
 			}
 		}
+		else
+		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping cubes (showCubes=false)");
+		}
 
 		// Render spheres
 		if (config.showSpheres)
 		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering spheres (showSpheres=true)");
 			for (int i = 0; i < 2; i++)
 			{
 				for (int j = 0; j < 2; j++)
@@ -279,13 +298,22 @@ namespace Sandbox {
 				}
 			}
 		}
+		else
+		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping spheres (showSpheres=false)");
+		}
 
 		// Render planes
 		if (config.showPlanes)
 		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering planes (showPlanes=true)");
 			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 10.0f, 10.0f }, 
 				{ 0.5f, 0.5f, 0.5f, 1.0f });
 			IncrementObjectCount();
+		}
+		else
+		{
+			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping planes (showPlanes=false)");
 		}
 	}
 

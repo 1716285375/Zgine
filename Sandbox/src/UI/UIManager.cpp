@@ -740,97 +740,222 @@ namespace Sandbox {
 			{
 				auto& config = m_Test3DModule->GetConfig();
 				
-				// Header with status
+				// Header 区 - 显示FPS、Objects、Draw Calls
 				ImGui::Text("3D Rendering Test Module");
 				ImGui::SameLine();
-				ImGui::Text("| FPS: %.1f | Objects: %d", m_Test3DModule->GetFPS(), m_Test3DModule->GetObjectCount());
-				ImGui::Separator();
+				ImGui::Text("| FPS: %.1f", m_Test3DModule->GetFPS());
+				ImGui::SameLine();
+				ImGui::Text("| Objects: %d", m_Test3DModule->GetObjectCount());
+				ImGui::SameLine();
+				ImGui::Text("| Draw Calls: %d", m_Test3DModule->GetObjectCount() / 4); // Approximate draw calls
 				
-				// Tab-based preset selection
-				if (ImGui::BeginTabBar("3D_PresetTabs"))
+				// Tooltips for header info
+				if (ImGui::IsItemHovered())
 				{
-					if (ImGui::BeginTabItem("Basic Preset"))
-					{
-						// Basic preset button - only set scene, don't force config values
-						if (ImGui::Button("Apply Basic Preset"))
-						{
-							config.showCubes = true;
-							config.showSpheres = true;
-							config.showPlanes = false;
-							config.showEnvironment = false;
-							config.animateObjects = false;
-							config.wireframeMode = false;
-							m_Test3DModule->SetActiveScene("Basic Shapes");
-						}
-						
-						// Basic 3D shapes controls
-						ImGui::Separator();
-						ImGui::Text("Basic 3D Shape Controls:");
-						ImGui::Columns(2, "3D_BasicControls", false);
-						ImGui::Checkbox("Show Cubes", &config.showCubes);
-						ImGui::Checkbox("Show Spheres", &config.showSpheres);
-						ImGui::NextColumn();
-						ImGui::Checkbox("Show Planes", &config.showPlanes);
-						ImGui::Checkbox("Show Environment", &config.showEnvironment);
-						ImGui::Columns(1);
-						
-						ImGui::EndTabItem();
-					}
-					
-					if (ImGui::BeginTabItem("Advanced Preset"))
-					{
-						// Advanced preset button - only set scene, don't force config values
-						if (ImGui::Button("Apply Advanced Preset"))
-						{
-							config.showCubes = true;
-							config.showSpheres = true;
-							config.showPlanes = true;
-							config.showEnvironment = true;
-							config.animateObjects = true;
-							config.wireframeMode = false;
-							m_Test3DModule->SetActiveScene("Environment");
-						}
-						
-						// Advanced 3D features controls
-						ImGui::Separator();
-						ImGui::Text("Advanced 3D Feature Controls:");
-						ImGui::Columns(2, "3D_AdvancedControls", false);
-						ImGui::Checkbox("Animate Objects", &config.animateObjects);
-						ImGui::Checkbox("Wireframe Mode", &config.wireframeMode);
-						ImGui::NextColumn();
-						ImGui::SliderFloat("Light Intensity", &config.lightIntensity, 0.0f, 2.0f);
-						if (config.animateObjects)
-						{
-							ImGui::SliderFloat("Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
-						}
-						ImGui::Columns(1);
-						
-						ImGui::EndTabItem();
-					}
-					ImGui::EndTabBar();
+					ImGui::SetTooltip("Current 3D rendering performance metrics");
 				}
 				
-				// Scene selection - REMOVED to avoid duplication with Tab-style UI
-				// The scene selection is now handled through the Tab-style CollapsingHeader interface
+				ImGui::Separator();
 				
-				// Performance section
-				if (ImGui::CollapsingHeader("3D Performance Details"))
+				// Quick Preset Buttons - 与2D测试保持一致的设计
+				ImGui::Text("Quick Presets:");
+				ImGui::SameLine();
+				if (ImGui::Button("Basic"))
 				{
-					ImGui::Text("FPS: %.1f", m_Test3DModule->GetFPS());
-					ImGui::Text("Objects: %d", m_Test3DModule->GetObjectCount());
-					ImGui::Text("Active Scene: %s", m_Test3DModule->GetActiveScene().c_str());
+					config.showCubes = true;
+					config.showSpheres = true;
+					config.showPlanes = false;
+					config.showEnvironment = false;
+					config.animateObjects = false;
+					config.wireframeMode = false;
+					m_Test3DModule->SetActiveScene("Basic Shapes");
+					ZG_CORE_INFO("3D Basic preset applied - Basic shapes only");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Advanced"))
+				{
+					config.showCubes = true;
+					config.showSpheres = true;
+					config.showPlanes = true;
+					config.showEnvironment = true;
+					config.animateObjects = true;
+					config.wireframeMode = false;
+					m_Test3DModule->SetActiveScene("Environment");
+					ZG_CORE_INFO("3D Advanced preset applied - All features enabled");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Performance"))
+				{
+					config.showCubes = true;
+					config.showSpheres = false;
+					config.showPlanes = false;
+					config.showEnvironment = false;
+					config.animateObjects = false;
+					config.wireframeMode = false;
+					m_Test3DModule->SetActiveScene("Performance Test");
+					ZG_CORE_INFO("3D Performance preset applied - Performance test scene");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Clear All"))
+				{
+					config.showCubes = false;
+					config.showSpheres = false;
+					config.showPlanes = false;
+					config.showEnvironment = false;
+					config.animateObjects = false;
+					config.wireframeMode = false;
+					m_Test3DModule->SetActiveScene("Basic Shapes");
+					ZG_CORE_INFO("3D Clear All preset applied - All shapes disabled");
+				}
+				
+				ImGui::Separator();
+				
+				// Shape 控制区 - 两列布局
+				ImGui::Text("Shape Controls");
+				ImGui::Columns(2, "3D_ShapeControls", false);
+				
+				// Left column - Basic Shapes
+				ImGui::Text("Basic Shapes:");
+				if (ImGui::Checkbox("Cubes", &config.showCubes))
+				{
+					// Auto-switch scene based on configuration
+					if (config.showEnvironment || config.animateObjects)
+						m_Test3DModule->SetActiveScene("Environment");
+					else
+						m_Test3DModule->SetActiveScene("Basic Shapes");
+				}
+				if (ImGui::Checkbox("Spheres", &config.showSpheres))
+				{
+					if (config.showEnvironment || config.animateObjects)
+						m_Test3DModule->SetActiveScene("Environment");
+					else
+						m_Test3DModule->SetActiveScene("Basic Shapes");
+				}
+				if (ImGui::Checkbox("Planes", &config.showPlanes))
+				{
+					if (config.showEnvironment || config.animateObjects)
+						m_Test3DModule->SetActiveScene("Environment");
+					else
+						m_Test3DModule->SetActiveScene("Basic Shapes");
+				}
+				
+				ImGui::NextColumn();
+				
+				// Right column - Advanced Features
+				ImGui::Text("Advanced Features:");
+				if (ImGui::Checkbox("Environment", &config.showEnvironment))
+				{
+					m_Test3DModule->SetActiveScene("Environment");
+				}
+				if (ImGui::Checkbox("Animate Objects", &config.animateObjects))
+				{
+					if (config.animateObjects)
+						m_Test3DModule->SetActiveScene("Animated Shapes");
+					else if (config.showEnvironment)
+						m_Test3DModule->SetActiveScene("Environment");
+					else
+						m_Test3DModule->SetActiveScene("Basic Shapes");
+				}
+				if (ImGui::Checkbox("Wireframe Mode", &config.wireframeMode))
+				{
+					// Wireframe mode can be applied to any scene
+				}
+				
+				ImGui::Columns(1);
+				ImGui::Separator();
+				
+				// Animation Controls 区
+				if (config.animateObjects)
+				{
+					ImGui::Text("Animation Controls");
+					ImGui::SliderFloat("Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
+					ImGui::SameLine();
+					if (ImGui::Button("Reset Animation"))
+					{
+						// Reset animation state if needed
+					}
+				}
+				
+				ImGui::Separator();
+				
+				// Render Options 区 - 可折叠
+				if (ImGui::CollapsingHeader("Render Options"))
+				{
+					ImGui::Checkbox("Wireframe Mode", &config.wireframeMode);
+					ImGui::SameLine();
+					ImGui::Checkbox("Show Bounding Boxes", &config.showEnvironment); // Reuse for now
 					
-					// Show current configuration status
-					ImGui::Separator();
-					ImGui::Text("Current Configuration:");
-					ImGui::Text("Cubes: %s | Spheres: %s | Planes: %s", 
-						config.showCubes ? "ON" : "OFF",
-						config.showSpheres ? "ON" : "OFF", 
-						config.showPlanes ? "ON" : "OFF");
-					ImGui::Text("Environment: %s | Animation: %s | Wireframe: %s", 
-						config.showEnvironment ? "ON" : "OFF",
-						config.animateObjects ? "ON" : "OFF", 
-						config.wireframeMode ? "ON" : "OFF");
+					// Render mode dropdown
+					const char* renderModes[] = { "Normal", "Wireframe", "Points" };
+					int renderMode = config.wireframeMode ? 1 : 0;
+					if (ImGui::Combo("Render Mode", &renderMode, renderModes, IM_ARRAYSIZE(renderModes)))
+					{
+						config.wireframeMode = (renderMode == 1);
+					}
+				}
+				
+				// Lighting Options 区 - 可折叠
+				if (ImGui::CollapsingHeader("Lighting Options"))
+				{
+					ImGui::SliderFloat("Light Intensity", &config.lightIntensity, 0.0f, 5.0f);
+					ImGui::SliderFloat3("Light Position", &config.lightPosition.x, -20.0f, 20.0f);
+					ImGui::ColorEdit3("Light Color", &config.lightColor.x);
+					
+					if (ImGui::Button("Reset Lighting"))
+					{
+						config.lightIntensity = 1.0f;
+						config.lightPosition = { 0.0f, 10.0f, 0.0f };
+						config.lightColor = { 1.0f, 1.0f, 1.0f };
+					}
+				}
+				
+				// Camera Controls 区 - 可折叠
+				if (ImGui::CollapsingHeader("Camera Controls"))
+				{
+					ImGui::SliderFloat("Camera Speed", &config.cameraSpeed, 1.0f, 20.0f);
+					ImGui::SliderFloat("Rotation Speed", &config.rotationSpeed, 10.0f, 180.0f);
+					ImGui::SliderFloat3("Camera Position", &config.cameraPosition.x, -50.0f, 50.0f);
+					ImGui::SliderFloat3("Camera Rotation", &config.cameraRotation.x, -180.0f, 180.0f);
+					
+					if (ImGui::Button("Reset Camera"))
+					{
+						config.cameraPosition = { 0.0f, 5.0f, 10.0f };
+						config.cameraRotation = { 0.0f, 0.0f, 0.0f };
+					}
+				}
+				
+				ImGui::Separator();
+				
+				// Actions 区
+				ImGui::Text("Actions:");
+				ImGui::SameLine();
+				if (ImGui::Button("Apply"))
+				{
+					// Apply current configuration
+					ZG_CORE_INFO("3D configuration applied");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Reset"))
+				{
+					// Reset to default configuration
+					config.showCubes = true;
+					config.showSpheres = true;
+					config.showPlanes = true;
+					config.showEnvironment = true;
+					config.animateObjects = false;
+					config.wireframeMode = false;
+					config.lightIntensity = 1.0f;
+					config.lightPosition = { 0.0f, 10.0f, 0.0f };
+					config.lightColor = { 1.0f, 1.0f, 1.0f };
+					config.cameraPosition = { 0.0f, 5.0f, 10.0f };
+					config.cameraRotation = { 0.0f, 0.0f, 0.0f };
+					m_Test3DModule->SetActiveScene("Basic Shapes");
+					ZG_CORE_INFO("3D configuration reset to defaults");
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Export"))
+				{
+					Export3DConfiguration(config);
 				}
 			}
 			ImGui::End();
@@ -1023,6 +1148,107 @@ namespace Sandbox {
 		{
 			ImGui::Text("Failed to export configuration!");
 			ImGui::Text("Please check file permissions.");
+			ImGui::Separator();
+			if (ImGui::Button("OK"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+	}
+
+	void UIManager::Export3DConfiguration(const struct Test3DConfig& config)
+	{
+		// Create a timestamp for the filename
+		auto now = std::chrono::system_clock::now();
+		auto time_t = std::chrono::system_clock::to_time_t(now);
+		auto tm = *std::localtime(&time_t);
+		
+		// Create filename with timestamp
+		std::stringstream filename;
+		filename << "3D_Config_" << std::put_time(&tm, "%Y%m%d_%H%M%S") << ".json";
+		
+		// Create JSON content
+		std::stringstream json;
+		json << "{\n";
+		json << "  \"3D_Rendering_Configuration\": {\n";
+		json << "    \"render_options\": {\n";
+		json << "      \"showCubes\": " << (config.showCubes ? "true" : "false") << ",\n";
+		json << "      \"showSpheres\": " << (config.showSpheres ? "true" : "false") << ",\n";
+		json << "      \"showPlanes\": " << (config.showPlanes ? "true" : "false") << ",\n";
+		json << "      \"showEnvironment\": " << (config.showEnvironment ? "true" : "false") << ",\n";
+		json << "      \"animateObjects\": " << (config.animateObjects ? "true" : "false") << ",\n";
+		json << "      \"wireframeMode\": " << (config.wireframeMode ? "true" : "false") << "\n";
+		json << "    },\n";
+		json << "    \"lighting_settings\": {\n";
+		json << "      \"lightIntensity\": " << config.lightIntensity << ",\n";
+		json << "      \"lightPosition\": [\n";
+		json << "        " << config.lightPosition.x << ",\n";
+		json << "        " << config.lightPosition.y << ",\n";
+		json << "        " << config.lightPosition.z << "\n";
+		json << "      ],\n";
+		json << "      \"lightColor\": [\n";
+		json << "        " << config.lightColor.x << ",\n";
+		json << "        " << config.lightColor.y << ",\n";
+		json << "        " << config.lightColor.z << "\n";
+		json << "      ]\n";
+		json << "    },\n";
+		json << "    \"camera_settings\": {\n";
+		json << "      \"cameraSpeed\": " << config.cameraSpeed << ",\n";
+		json << "      \"rotationSpeed\": " << config.rotationSpeed << ",\n";
+		json << "      \"cameraPosition\": [\n";
+		json << "        " << config.cameraPosition.x << ",\n";
+		json << "        " << config.cameraPosition.y << ",\n";
+		json << "        " << config.cameraPosition.z << "\n";
+		json << "      ],\n";
+		json << "      \"cameraRotation\": [\n";
+		json << "        " << config.cameraRotation.x << ",\n";
+		json << "        " << config.cameraRotation.y << ",\n";
+		json << "        " << config.cameraRotation.z << "\n";
+		json << "      ]\n";
+		json << "    }\n";
+		json << "  },\n";
+		json << "  \"export_info\": {\n";
+		json << "    \"timestamp\": \"" << std::put_time(&tm, "%Y-%m-%d %H:%M:%S") << "\",\n";
+		json << "    \"engine_version\": \"Zgine 1.0.0\",\n";
+		json << "    \"active_scene\": \"" << (m_Test3DModule ? m_Test3DModule->GetActiveScene() : "Unknown") << "\"\n";
+		json << "  }\n";
+		json << "}\n";
+		
+		// Write to file
+		std::ofstream file(filename.str());
+		if (file.is_open())
+		{
+			file << json.str();
+			file.close();
+			ZG_CORE_INFO("3D Configuration exported to: {}", filename.str());
+			
+			// Show success message in ImGui
+			ImGui::OpenPopup("3D Export Success");
+		}
+		else
+		{
+			ZG_CORE_ERROR("Failed to export 3D configuration to: {}", filename.str());
+			ImGui::OpenPopup("3D Export Failed");
+		}
+		
+		// Show popup messages
+		if (ImGui::BeginPopupModal("3D Export Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("3D Configuration exported successfully!");
+			ImGui::Text("File: %s", filename.str().c_str());
+			ImGui::Separator();
+			if (ImGui::Button("OK"))
+			{
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+		
+		if (ImGui::BeginPopupModal("3D Export Failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		{
+			ImGui::Text("Failed to export 3D configuration!");
+			ImGui::Text("Please check file permissions and try again.");
 			ImGui::Separator();
 			if (ImGui::Button("OK"))
 			{

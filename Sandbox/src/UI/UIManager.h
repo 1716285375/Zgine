@@ -163,5 +163,6 @@ namespace Sandbox {
 		
 		// Configuration export/import
 		void Export2DConfiguration(const struct Test2DConfig& config);
+		void Export3DConfiguration(const struct Test3DConfig& config);
 	};
 }
