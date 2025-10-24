@@ -740,6 +740,16 @@ namespace Sandbox {
 			{
 				auto& config = m_Test3DModule->GetConfig();
 				
+				// Debug: Log current configuration values
+				ZG_CORE_INFO("UIManager::Render3DTestWindow - Current config: showCubes={}, showSpheres={}, showPlanes={}", 
+					config.showCubes, config.showSpheres, config.showPlanes);
+				
+				// Debug: Check if all shapes are disabled
+				if (!config.showCubes && !config.showSpheres && !config.showPlanes)
+				{
+					ZG_CORE_WARN("UIManager: All 3D shapes are disabled in UI! User needs to click '3D Basic' button.");
+				}
+				
 				// Header 区 - 显示FPS、Objects、Draw Calls
 				ImGui::Text("3D Rendering Test Module");
 				ImGui::SameLine();
@@ -758,21 +768,25 @@ namespace Sandbox {
 				ImGui::Separator();
 				
 				// Quick Preset Buttons - 与2D测试保持一致的设计
-				ImGui::Text("Quick Presets:");
+				ImGui::Text("3D Quick Presets:");
 				ImGui::SameLine();
-				if (ImGui::Button("Basic"))
+				if (ImGui::Button("3D Basic"))
 				{
+					ZG_CORE_INFO("3D Basic button clicked!");
 					config.showCubes = true;
 					config.showSpheres = true;
-					config.showPlanes = false;
+					config.showPlanes = true;
 					config.showEnvironment = false;
 					config.animateObjects = false;
 					config.wireframeMode = false;
 					m_Test3DModule->SetActiveScene("Basic Shapes");
-					ZG_CORE_INFO("3D Basic preset applied - Basic shapes only");
+					// Update camera immediately
+					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
+					ZG_CORE_INFO("3D Basic preset applied - Basic shapes enabled, ActiveScene: {}", m_Test3DModule->GetActiveScene());
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Advanced"))
+				if (ImGui::Button("3D Advanced"))
 				{
 					config.showCubes = true;
 					config.showSpheres = true;
@@ -781,10 +795,13 @@ namespace Sandbox {
 					config.animateObjects = true;
 					config.wireframeMode = false;
 					m_Test3DModule->SetActiveScene("Environment");
+					// Update camera immediately
+					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Advanced preset applied - All features enabled");
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Performance"))
+				if (ImGui::Button("3D Performance"))
 				{
 					config.showCubes = true;
 					config.showSpheres = false;
@@ -793,10 +810,13 @@ namespace Sandbox {
 					config.animateObjects = false;
 					config.wireframeMode = false;
 					m_Test3DModule->SetActiveScene("Performance Test");
+					// Update camera immediately
+					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Performance preset applied - Performance test scene");
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Clear All"))
+				if (ImGui::Button("3D Clear All"))
 				{
 					config.showCubes = false;
 					config.showSpheres = false;
@@ -805,18 +825,21 @@ namespace Sandbox {
 					config.animateObjects = false;
 					config.wireframeMode = false;
 					m_Test3DModule->SetActiveScene("Basic Shapes");
+					// Update camera immediately
+					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Clear All preset applied - All shapes disabled");
 				}
 				
 				ImGui::Separator();
 				
 				// Shape 控制区 - 两列布局
-				ImGui::Text("Shape Controls");
+				ImGui::Text("3D Shape Controls");
 				ImGui::Columns(2, "3D_ShapeControls", false);
 				
 				// Left column - Basic Shapes
-				ImGui::Text("Basic Shapes:");
-				if (ImGui::Checkbox("Cubes", &config.showCubes))
+				ImGui::Text("3D Basic Shapes:");
+				if (ImGui::Checkbox("3D Cubes", &config.showCubes))
 				{
 					// Auto-switch scene based on configuration
 					if (config.showEnvironment || config.animateObjects)
@@ -824,14 +847,14 @@ namespace Sandbox {
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("Spheres", &config.showSpheres))
+				if (ImGui::Checkbox("3D Spheres", &config.showSpheres))
 				{
 					if (config.showEnvironment || config.animateObjects)
 						m_Test3DModule->SetActiveScene("Environment");
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("Planes", &config.showPlanes))
+				if (ImGui::Checkbox("3D Planes", &config.showPlanes))
 				{
 					if (config.showEnvironment || config.animateObjects)
 						m_Test3DModule->SetActiveScene("Environment");
@@ -842,12 +865,12 @@ namespace Sandbox {
 				ImGui::NextColumn();
 				
 				// Right column - Advanced Features
-				ImGui::Text("Advanced Features:");
-				if (ImGui::Checkbox("Environment", &config.showEnvironment))
+				ImGui::Text("3D Advanced Features:");
+				if (ImGui::Checkbox("3D Environment", &config.showEnvironment))
 				{
 					m_Test3DModule->SetActiveScene("Environment");
 				}
-				if (ImGui::Checkbox("Animate Objects", &config.animateObjects))
+				if (ImGui::Checkbox("3D Animate Objects", &config.animateObjects))
 				{
 					if (config.animateObjects)
 						m_Test3DModule->SetActiveScene("Animated Shapes");
@@ -856,7 +879,7 @@ namespace Sandbox {
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("Wireframe Mode", &config.wireframeMode))
+				if (ImGui::Checkbox("3D Wireframe Mode", &config.wireframeMode))
 				{
 					// Wireframe mode can be applied to any scene
 				}
@@ -867,10 +890,10 @@ namespace Sandbox {
 				// Animation Controls 区
 				if (config.animateObjects)
 				{
-					ImGui::Text("Animation Controls");
-					ImGui::SliderFloat("Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
+					ImGui::Text("3D Animation Controls");
+					ImGui::SliderFloat("3D Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
 					ImGui::SameLine();
-					if (ImGui::Button("Reset Animation"))
+					if (ImGui::Button("3D Reset Animation"))
 					{
 						// Reset animation state if needed
 					}
@@ -879,29 +902,29 @@ namespace Sandbox {
 				ImGui::Separator();
 				
 				// Render Options 区 - 可折叠
-				if (ImGui::CollapsingHeader("Render Options"))
+				if (ImGui::CollapsingHeader("3D Render Options"))
 				{
-					ImGui::Checkbox("Wireframe Mode", &config.wireframeMode);
+					ImGui::Checkbox("3D Wireframe Mode", &config.wireframeMode);
 					ImGui::SameLine();
-					ImGui::Checkbox("Show Bounding Boxes", &config.showEnvironment); // Reuse for now
+					ImGui::Checkbox("3D Show Bounding Boxes", &config.showEnvironment); // Reuse for now
 					
 					// Render mode dropdown
 					const char* renderModes[] = { "Normal", "Wireframe", "Points" };
 					int renderMode = config.wireframeMode ? 1 : 0;
-					if (ImGui::Combo("Render Mode", &renderMode, renderModes, IM_ARRAYSIZE(renderModes)))
+					if (ImGui::Combo("3D Render Mode", &renderMode, renderModes, IM_ARRAYSIZE(renderModes)))
 					{
 						config.wireframeMode = (renderMode == 1);
 					}
 				}
 				
 				// Lighting Options 区 - 可折叠
-				if (ImGui::CollapsingHeader("Lighting Options"))
+				if (ImGui::CollapsingHeader("3D Lighting Options"))
 				{
-					ImGui::SliderFloat("Light Intensity", &config.lightIntensity, 0.0f, 5.0f);
-					ImGui::SliderFloat3("Light Position", &config.lightPosition.x, -20.0f, 20.0f);
-					ImGui::ColorEdit3("Light Color", &config.lightColor.x);
+					ImGui::SliderFloat("3D Light Intensity", &config.lightIntensity, 0.0f, 5.0f);
+					ImGui::SliderFloat3("3D Light Position", &config.lightPosition.x, -20.0f, 20.0f);
+					ImGui::ColorEdit3("3D Light Color", &config.lightColor.x);
 					
-					if (ImGui::Button("Reset Lighting"))
+					if (ImGui::Button("3D Reset Lighting"))
 					{
 						config.lightIntensity = 1.0f;
 						config.lightPosition = { 0.0f, 10.0f, 0.0f };
@@ -910,32 +933,72 @@ namespace Sandbox {
 				}
 				
 				// Camera Controls 区 - 可折叠
-				if (ImGui::CollapsingHeader("Camera Controls"))
+				if (ImGui::CollapsingHeader("3D Camera Controls"))
 				{
-					ImGui::SliderFloat("Camera Speed", &config.cameraSpeed, 1.0f, 20.0f);
-					ImGui::SliderFloat("Rotation Speed", &config.rotationSpeed, 10.0f, 180.0f);
-					ImGui::SliderFloat3("Camera Position", &config.cameraPosition.x, -50.0f, 50.0f);
-					ImGui::SliderFloat3("Camera Rotation", &config.cameraRotation.x, -180.0f, 180.0f);
+					// Camera control enable/disable
+					ImGui::Checkbox("3D Enable Keyboard Movement", &config.enableKeyboardMovement);
+					ImGui::SameLine();
+					ImGui::Checkbox("3D Enable Mouse Look", &config.enableMouseLook);
 					
-					if (ImGui::Button("Reset Camera"))
+					ImGui::Separator();
+					
+					// Camera settings
+					ImGui::SliderFloat("3D Camera Speed", &config.cameraSpeed, 0.1f, 20.0f);
+					ImGui::SliderFloat("3D Mouse Sensitivity", &config.mouseSensitivity, 0.01f, 1.0f);
+					ImGui::SliderFloat("3D Rotation Speed", &config.rotationSpeed, 10.0f, 180.0f);
+					
+					ImGui::Separator();
+					
+					// Manual camera controls
+					ImGui::SliderFloat3("3D Camera Position", &config.cameraPosition.x, -50.0f, 50.0f);
+					ImGui::SliderFloat3("3D Camera Rotation", &config.cameraRotation.x, -180.0f, 180.0f);
+					
+					// Update camera immediately when sliders change
+					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
+					
+					ImGui::Separator();
+					
+					// Camera control buttons
+					if (ImGui::Button("3D Reset Camera"))
 					{
-						config.cameraPosition = { 0.0f, 5.0f, 10.0f };
-						config.cameraRotation = { 0.0f, 0.0f, 0.0f };
+						m_Test3DModule->ResetCamera();
+						config.cameraPosition = { 0.0f, 2.0f, 8.0f };
+						config.cameraRotation = { -15.0f, 0.0f, 0.0f };
+						// Update camera immediately
+						m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
+						m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					}
+					ImGui::SameLine();
+					if (ImGui::Button("3D Look at Origin"))
+					{
+						m_Test3DModule->SetCameraLookAt({ 0.0f, 0.0f, 0.0f });
+						// Update UI to reflect new rotation
+						config.cameraRotation = m_Test3DModule->GetCamera().GetRotation();
+					}
+					
+					ImGui::Separator();
+					
+					// Help text
+					ImGui::TextColored({ 0.7f, 0.7f, 0.7f, 1.0f }, "Controls:");
+					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "WASD - Move, Space/Shift - Up/Down");
+					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Right Mouse - Look around");
+					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Q/E - Decrease/Increase speed");
+					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "R - Reset camera");
 				}
 				
 				ImGui::Separator();
 				
 				// Actions 区
-				ImGui::Text("Actions:");
+				ImGui::Text("3D Actions:");
 				ImGui::SameLine();
-				if (ImGui::Button("Apply"))
+				if (ImGui::Button("3D Apply"))
 				{
 					// Apply current configuration
 					ZG_CORE_INFO("3D configuration applied");
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Reset"))
+				if (ImGui::Button("3D Reset"))
 				{
 					// Reset to default configuration
 					config.showCubes = true;
@@ -947,13 +1010,13 @@ namespace Sandbox {
 					config.lightIntensity = 1.0f;
 					config.lightPosition = { 0.0f, 10.0f, 0.0f };
 					config.lightColor = { 1.0f, 1.0f, 1.0f };
-					config.cameraPosition = { 0.0f, 5.0f, 10.0f };
-					config.cameraRotation = { 0.0f, 0.0f, 0.0f };
+					config.cameraPosition = { 0.0f, 2.0f, 8.0f };
+					config.cameraRotation = { -15.0f, 0.0f, 0.0f };
 					m_Test3DModule->SetActiveScene("Basic Shapes");
 					ZG_CORE_INFO("3D configuration reset to defaults");
 				}
 				ImGui::SameLine();
-				if (ImGui::Button("Export"))
+				if (ImGui::Button("3D Export"))
 				{
 					Export3DConfiguration(config);
 				}

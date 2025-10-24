@@ -4,7 +4,7 @@
 namespace Sandbox {
 
 	Test3DLayer::Test3DLayer()
-		: ImGuiLayer("Test3D")
+		: ImGuiLayer()
 	{
 		ZG_CORE_INFO("Test3DLayer created");
 	}

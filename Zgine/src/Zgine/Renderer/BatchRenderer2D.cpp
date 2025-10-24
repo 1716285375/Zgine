@@ -139,7 +139,7 @@ namespace Zgine {
 			in vec2 v_TexCoord;
 			in float v_TexIndex;
 
-			uniform sampler2D u_Textures[32];
+			layout(binding = 0) uniform sampler2D u_Textures[32];
 
 			void main()
 			{

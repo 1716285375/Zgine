@@ -1,6 +1,6 @@
 #pragma once
 
-#include <memory>
+#include "Zgine/Core/SmartPointers.h"
 #include <unordered_map>
 #include <string>
 #include <mutex>
@@ -23,13 +23,13 @@ namespace Zgine {
 	public:
 		struct CacheEntry
 		{
-			std::shared_ptr<T> resource;
+			Ref<T> resource;
 			size_t lastAccess;
 			size_t accessCount;
 			size_t memorySize;
 			
 			CacheEntry() : resource(nullptr), lastAccess(0), accessCount(0), memorySize(0) {}
-			CacheEntry(std::shared_ptr<T> res, size_t size) 
+			CacheEntry(Ref<T> res, size_t size) 
 				: resource(res), lastAccess(0), accessCount(0), memorySize(size) {}
 		};
 
@@ -43,7 +43,7 @@ namespace Zgine {
 		 * @param key Resource key
 		 * @return Shared pointer to resource, or nullptr if not found
 		 */
-		std::shared_ptr<T> Get(const std::string& key)
+		Ref<T> Get(const std::string& key)
 		{
 			std::lock_guard<std::mutex> lock(m_Mutex);
 			
@@ -64,7 +64,7 @@ namespace Zgine {
 		 * @param resource Resource to store
 		 * @param memorySize Memory size of the resource
 		 */
-		void Store(const std::string& key, std::shared_ptr<T> resource, size_t memorySize)
+		void Store(const std::string& key, Ref<T> resource, size_t memorySize)
 		{
 			if (!resource) return;
 			

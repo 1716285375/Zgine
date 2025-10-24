@@ -1,0 +1,44 @@
+{
+  "3D_Rendering_Configuration": {
+    "render_options": {
+      "showCubes": true,
+      "showSpheres": true,
+      "showPlanes": true,
+      "showEnvironment": true,
+      "animateObjects": false,
+      "wireframeMode": false
+    },
+    "lighting_settings": {
+      "lightIntensity": 1,
+      "lightPosition": [
+        0,
+        10,
+        0
+      ],
+      "lightColor": [
+        1,
+        1,
+        1
+      ]
+    },
+    "camera_settings": {
+      "cameraSpeed": 13.554,
+      "rotationSpeed": 120.587,
+      "cameraPosition": [
+        0,
+        5,
+        10
+      ],
+      "cameraRotation": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "export_info": {
+    "timestamp": "2025-10-24 14:13:30",
+    "engine_version": "Zgine 1.0.0",
+    "active_scene": "Basic Shapes"
+  }
+}

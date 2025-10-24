@@ -12,11 +12,8 @@ namespace Sandbox {
 
 ECSTestLayer::ECSTestLayer()
     : ImGuiLayer()
-    , m_SceneManager()
 {
     ZG_CORE_INFO("ECS Test Layer created");
-    // Initialize ECS manager with current scene
-    m_ECSManager = m_SceneManager.GetCurrentScene();
 }
 
 void ECSTestLayer::OnAttach()
@@ -187,34 +184,6 @@ void ECSTestLayer::RenderCustomUI()
                 
                 Zgine::IG::Separator();
                 
-                // Scene Manager Controls
-                if (Zgine::IG::Button("Create New Scene"))
-                {
-                    m_SceneManager.CreateScene(sceneName);
-                    ZG_CORE_INFO("Created new scene: {}", sceneName);
-                }
-                
-                Zgine::IG::SameLine();
-                if (Zgine::IG::Button("Switch to Scene"))
-                {
-                    if (m_SceneManager.SwitchToScene(sceneName))
-                    {
-                        m_ECSManager = m_SceneManager.GetCurrentScene();
-                        RefreshEntityList();
-                        ZG_CORE_INFO("Switched to scene: {}", sceneName);
-                    }
-                }
-                
-                // Scene List
-                auto sceneNames = m_SceneManager.GetSceneNames();
-                if (!sceneNames.empty())
-                {
-                    Zgine::IG::Text("Available Scenes:");
-                    for (const auto& name : sceneNames)
-                    {
-                        Zgine::IG::Text("- %s", name.c_str());
-                    }
-                }
             }
             
             Zgine::IG::Separator();

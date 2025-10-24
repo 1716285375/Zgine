@@ -23,8 +23,8 @@ namespace Sandbox {
 		bool showCubes = true;
 		bool showSpheres = true;
 		bool showPlanes = true;
-		bool showEnvironment = true;
-		bool animateObjects = true;
+		bool showEnvironment = false; // Changed from true to false
+		bool animateObjects = false; // Changed from true to false
 		bool wireframeMode = false;
 
 		// Settings
@@ -35,8 +35,11 @@ namespace Sandbox {
 		// Camera settings
 		float cameraSpeed = 5.0f;
 		float rotationSpeed = 45.0f;
-		glm::vec3 cameraPosition = { 0.0f, 5.0f, 10.0f };
-		glm::vec3 cameraRotation = { 0.0f, 0.0f, 0.0f };
+		float mouseSensitivity = 0.1f;
+		bool enableMouseLook = true;
+		bool enableKeyboardMovement = true;
+		glm::vec3 cameraPosition = { 0.0f, 2.0f, 8.0f };
+		glm::vec3 cameraRotation = { -15.0f, 0.0f, 0.0f };
 	};
 
 	// 3D Test Scene
@@ -80,6 +83,12 @@ namespace Sandbox {
 		Zgine::PerspectiveCamera& GetCamera() { return m_Camera; }
 		const Zgine::PerspectiveCamera& GetCamera() const { return m_Camera; }
 
+		// Camera control
+		void EnableCameraControl(bool enable) { m_CameraControlEnabled = enable; }
+		bool IsCameraControlEnabled() const { return m_CameraControlEnabled; }
+		void ResetCamera();
+		void SetCameraLookAt(const glm::vec3& target);
+
 		// Performance
 		float GetFPS() const { return m_FPS; }
 		int GetObjectCount() const { return m_ObjectCount; }
@@ -103,6 +112,9 @@ namespace Sandbox {
 		void UpdateCamera(float ts);
 		void UpdateAnimations(float ts);
 		void RenderUI();
+		void HandleCameraInput(float ts);
+		void HandleMouseInput(float ts);
+		void HandleKeyboardInput(float ts);
 
 		// Built-in scenes
 		void RenderBasicShapesScene(const Test3DConfig& config);
@@ -136,6 +148,13 @@ namespace Sandbox {
 		bool m_ShowConfigWindow = true;
 		bool m_ShowPerformanceWindow = false;
 		bool m_ShowSceneSelector = true;
+
+		// Camera control state
+		bool m_CameraControlEnabled = true;
+		bool m_FirstMouse = true;
+		float m_LastMouseX = 0.0f;
+		float m_LastMouseY = 0.0f;
+		bool m_MouseCaptured = false;
 	};
 
 }

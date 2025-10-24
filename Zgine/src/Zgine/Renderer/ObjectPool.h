@@ -1,6 +1,7 @@
 #pragma once
 
 #include "zgpch.h"
+#include "Zgine/Core/SmartPointers.h"
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -31,7 +32,7 @@ namespace Zgine {
 		 * @return Shared pointer to the object
 		 */
 		template<typename... Args>
-		std::shared_ptr<T> Acquire(Args&&... args)
+		Ref<T> Acquire(Args&&... args)
 		{
 			std::lock_guard<std::mutex> lock(m_Mutex);
 			
@@ -40,7 +41,7 @@ namespace Zgine {
 				if (m_TotalAllocated >= m_MaxSize)
 				{
 					// Pool is full, create a temporary object
-					return std::make_shared<T>(std::forward<Args>(args)...);
+					return CreateRef<T>(std::forward<Args>(args)...);
 				}
 				ExpandPool(std::min(m_TotalAllocated, m_MaxSize - m_TotalAllocated));
 			}
@@ -52,7 +53,7 @@ namespace Zgine {
 			// Construct the object in place
 			new(obj) T(std::forward<Args>(args)...);
 			
-			return std::shared_ptr<T>(obj, [this](T* ptr) {
+			return Ref<T>(obj, [this](T* ptr) {
 				this->Release(ptr);
 			});
 		}
@@ -365,8 +366,8 @@ namespace Zgine {
 		static ManagerStats GetStats();
 
 	private:
-		static std::unique_ptr<RenderCommandBatch> s_CurrentBatch;
-		static std::vector<std::unique_ptr<RenderCommandBatch>> s_BatchPool;
+		static Scope<RenderCommandBatch> s_CurrentBatch;
+		static std::vector<Scope<RenderCommandBatch>> s_BatchPool;
 		static size_t s_BatchCapacity;
 		static size_t s_TotalCommands;
 		static size_t s_TotalBatches;

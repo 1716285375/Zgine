@@ -17,3 +17,6 @@
 [submodule "Zgine/vendor/json/rapidjson"]
 	path = Zgine/vendor/json/rapidjson
 	url = https://github.com/1716285375/rapidjson.git
+[submodule "Zgine/vendor/json/nlohmann"]
+	path = Zgine/vendor/json/nlohmann
+	url = https://github.com/1716285375/json.git

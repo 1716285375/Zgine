@@ -4,12 +4,14 @@
 #include "Zgine/Application.h"
 #include "Zgine/Layer.h"
 #include "Zgine/Log.h"
+#include "Zgine/Timestep.h"
 
 #include "Zgine/Input.h"
 #include "Zgine/KeyCodes.h"
 #include "Zgine/MouseButtonCodes.h"
 
 #include "Zgine/ImGui/ImGuiLayer.h"
+#include "Zgine/ImGui/ImGuiWrapper.h"
 
 #include "Zgine/Renderer/Renderer.h"
 #include "Zgine/Renderer/RenderCommand.h"
@@ -24,6 +26,8 @@
 #include "Zgine/Renderer/VertexArray.h"
 #include "Zgine/Renderer/OrthographicCamera.h"
 #include "Zgine/Renderer/PerspectiveCamera.h"
+
+#include "Zgine/ECS/ECS.h"
 
 
 

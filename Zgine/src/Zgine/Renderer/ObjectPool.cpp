@@ -2,12 +2,13 @@
 #include "ObjectPool.h"
 #include "BatchRenderer2D.h"
 #include "../Core.h"
+#include "Zgine/Core/SmartPointers.h"
 
 namespace Zgine {
 
 	// RenderCommandManager static members
-	std::unique_ptr<RenderCommandBatch> RenderCommandManager::s_CurrentBatch;
-	std::vector<std::unique_ptr<RenderCommandBatch>> RenderCommandManager::s_BatchPool;
+	Scope<RenderCommandBatch> RenderCommandManager::s_CurrentBatch;
+	std::vector<Scope<RenderCommandBatch>> RenderCommandManager::s_BatchPool;
 	size_t RenderCommandManager::s_BatchCapacity = 1000;
 	size_t RenderCommandManager::s_TotalCommands = 0;
 	size_t RenderCommandManager::s_TotalBatches = 0;
@@ -21,7 +22,7 @@ namespace Zgine {
 			return;
 		}
 		
-		s_CurrentBatch = std::make_unique<RenderCommandBatch>(s_BatchCapacity);
+		s_CurrentBatch = CreateScope<RenderCommandBatch>(s_BatchCapacity);
 		s_Initialized = true;
 		
 		ZG_CORE_INFO("RenderCommandManager::Init() completed with batch capacity: {}", s_BatchCapacity);

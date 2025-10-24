@@ -20,11 +20,15 @@ workspace "Zgine"
 	IncludeDir["ImGui"] = "Zgine/vendor/imgui"
 	IncludeDir["glm"] = "Zgine/vendor/glm"
 	IncludeDir["stb_image"] = "Zgine/vendor/stb_image"
+	IncludeDir["EnTT"] = "Zgine/vendor/entt/src"
+	IncludeDir["RapidJSON"] = "Zgine/vendor/json/rapidjson/include"
+	IncludeDir["NlohmannJSON"] = "Zgine/vendor/json/nlohmann/single_include"
 	
 	
 	include "Zgine/vendor/glfw"
 	include "Zgine/vendor/glad"
 	include "Zgine/vendor/imgui"
+	include "Zgine/vendor/json/rapidjson"
 	
 project "Zgine"
     location "Zgine"
@@ -59,6 +63,9 @@ project "Zgine"
 		"%{IncludeDir.ImGui}",
         "%{IncludeDir.glm}",
         "%{IncludeDir.stb_image}",
+        "%{IncludeDir.EnTT}",
+        "%{IncludeDir.RapidJSON}",
+        "%{IncludeDir.NlohmannJSON}",
     }
 	
 	links
@@ -119,7 +126,10 @@ project "Sandbox"
         "Zgine/src",
         "Zgine/vendor/spdlog/include",
         "%{IncludeDir.ImGui}",
-        "%{IncludeDir.glm}"
+        "%{IncludeDir.glm}",
+        "%{IncludeDir.EnTT}",
+        "%{IncludeDir.RapidJSON}",
+        "%{IncludeDir.NlohmannJSON}"
     }
     
     links

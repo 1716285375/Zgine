@@ -46,6 +46,10 @@ namespace Zgine {
 			static bool SliderInt3(const char* label, int v[3], int v_min, int v_max, const char* format = "%d", int flags = 0);
 			static bool SliderInt4(const char* label, int v[4], int v_min, int v_max, const char* format = "%d", int flags = 0);
 
+			// Selection
+			static bool Selectable(const char* label, bool selected = false, int flags = 0);
+			static bool Selectable(const char* label, bool* p_selected, int flags = 0);
+			
 			// Input fields
 			static bool InputText(const char* label, char* buf, size_t buf_size, int flags = 0);
 			static bool InputTextMultiline(const char* label, char* buf, size_t buf_size, const glm::vec2& size = { 0, 0 }, int flags = 0);

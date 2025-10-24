@@ -37,20 +37,19 @@ namespace Zgine {
 	 */
 	void ImGuiLayer::OnAttach()
 	{
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGui::StyleColorsDark();
+		::ImGui::CreateContext();
+		::ImGui::StyleColorsDark();
 
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		ImGuiIO& io = ::ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 		// set ImGui theme style dark
-		ImGui::StyleColorsDark();
+		::ImGui::StyleColorsDark();
 
-		ImGuiStyle& style = ImGui::GetStyle();
+		ImGuiStyle& style = ::ImGui::GetStyle();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			style.WindowRounding = 0.0f;
@@ -73,7 +72,7 @@ namespace Zgine {
 	{
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
-		ImGui::DestroyContext();
+		::ImGui::DestroyContext();
 	}
 
 	/**
@@ -88,6 +87,10 @@ namespace Zgine {
 		// {
 		//	ZG_CORE_INFO("ImGuiLayer::OnImGuiRender called - Frame: {}", frameCount);
 		// }
+		
+		// Call custom UI rendering
+		ZG_CORE_INFO("ImGuiLayer::OnImGuiRender - Calling RenderCustomUI");
+		RenderCustomUI();
 		
 		// Don't show demo window to allow custom UI
 		// static bool show = true;
@@ -114,7 +117,7 @@ namespace Zgine {
 		//ZG_INFO("ImGuiLayer::Begin called");
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
-		ImGui::NewFrame();
+		::ImGui::NewFrame();
 	}
 
 	/**
@@ -123,20 +126,55 @@ namespace Zgine {
 	 */
 	void ImGuiLayer::End()
 	{
-		ImGuiIO& io = ImGui::GetIO();
+		ImGuiIO& io = ::ImGui::GetIO();
 		Application& app = Application::Get();
 		io.DisplaySize = ImVec2(static_cast<float>(app.GetWindow().GetWidth()), static_cast<float>(app.GetWindow().GetHeight()));
 
 		// rendering
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		::ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(::ImGui::GetDrawData());
 
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
 		{
 			GLFWwindow* backup_current_context =glfwGetCurrentContext();
-			ImGui::UpdatePlatformWindows();
-			ImGui::RenderPlatformWindowsDefault();
+			::ImGui::UpdatePlatformWindows();
+			::ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
+		}
+	}
+
+	void ImGuiLayer::SetTheme(const std::string& theme)
+	{
+		if (theme == "Dark") {
+			::ImGui::StyleColorsDark();
+		}
+		else if (theme == "Light") {
+			::ImGui::StyleColorsLight();
+		}
+		else if (theme == "Classic") {
+			::ImGui::StyleColorsClassic();
+		}
+	}
+
+	void ImGuiLayer::SetDockingEnabled(bool enable)
+	{
+		ImGuiIO& io = ::ImGui::GetIO();
+		if (enable) {
+			io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		}
+		else {
+			io.ConfigFlags &= ~ImGuiConfigFlags_DockingEnable;
+		}
+	}
+
+	void ImGuiLayer::SetViewportsEnabled(bool enable)
+	{
+		ImGuiIO& io = ::ImGui::GetIO();
+		if (enable) {
+			io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		}
+		else {
+			io.ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
 		}
 	}
 

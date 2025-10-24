@@ -4,7 +4,7 @@
 namespace Sandbox {
 
 	Test2DLayer::Test2DLayer()
-		: ImGuiLayer("Test2D")
+		: ImGuiLayer()
 	{
 		ZG_CORE_INFO("Test2DLayer created");
 	}

@@ -218,6 +218,8 @@ namespace Zgine {
 
 	void BatchRenderer3D::BeginScene(const PerspectiveCamera& camera)
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::BeginScene called");
+		
 		// Check global application shutdown flag first
 		if (g_ApplicationShuttingDown)
 		{
@@ -256,24 +258,38 @@ namespace Zgine {
 			return;
 		}
 		
+		ZG_CORE_TRACE("BatchRenderer3D::BeginScene - Binding shader and uploading camera matrix");
 		s_Shader->Bind();
 		s_Shader->UploadUniformMat4("u_ViewProjection", camera.GetViewProjectionMatrix());
 		
 		// Update lighting system uniforms
 		LightingSystem::GetInstance().UpdateShaderUniforms(s_Shader.get());
 
+		// CRITICAL FIX: Enable depth test for 3D rendering
+		// 2D rendering disables depth test, so we need to re-enable it for 3D
+		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_LESS);
+		ZG_CORE_TRACE("BatchRenderer3D::BeginScene - Enabled depth test for 3D rendering");
+
+		ZG_CORE_TRACE("BatchRenderer3D::BeginScene - Starting batch");
 		StartBatch();
+		ZG_CORE_TRACE("BatchRenderer3D::BeginScene completed");
 	}
 
 	void BatchRenderer3D::EndScene()
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::EndScene called - IndexCount: {}", s_IndexCount);
 		Flush();
 	}
 
 	void BatchRenderer3D::Flush()
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::Flush called - IndexCount: {}", s_IndexCount);
 		if (s_IndexCount == 0)
+		{
+			ZG_CORE_TRACE("BatchRenderer3D::Flush - Nothing to draw (IndexCount = 0)");
 			return; // Nothing to draw
+		}
 
 		if (!s_VertexBufferBase || !s_VertexBufferPtr)
 		{
@@ -314,6 +330,7 @@ namespace Zgine {
 
 	void BatchRenderer3D::StartBatch()
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::StartBatch called");
 		if (!s_Initialized)
 		{
 			ZG_CORE_ERROR("BatchRenderer3D::StartBatch called but renderer is not initialized!");
@@ -329,6 +346,7 @@ namespace Zgine {
 		s_IndexCount = 0;
 		s_VertexBufferPtr = s_VertexBufferBase.get();
 		s_TextureSlotIndex = 1;
+		ZG_CORE_TRACE("BatchRenderer3D::StartBatch completed - Reset IndexCount to 0");
 	}
 
 	void BatchRenderer3D::NextBatch()
@@ -371,6 +389,8 @@ namespace Zgine {
 	// Cube rendering
 	void BatchRenderer3D::DrawCube(const glm::vec3& position, const glm::vec3& size, const glm::vec4& color)
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::DrawCube called - Position: ({}, {}, {}), Size: ({}, {}, {}), Color: ({}, {}, {}, {})", 
+			position.x, position.y, position.z, size.x, size.y, size.z, color.r, color.g, color.b, color.a);
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), size);
 		DrawCubeInternal(position, size, transform, color);
 	}
@@ -460,6 +480,7 @@ namespace Zgine {
 
 		// Add indices (36 indices for 6 faces * 2 triangles per face)
 		s_IndexCount += 36;
+		ZG_CORE_TRACE("BatchRenderer3D::DrawCubeInternal - Added 36 indices, IndexCount now: {}", s_IndexCount);
 
 		// Upload transform matrix
 		if (s_Shader)
@@ -525,6 +546,8 @@ namespace Zgine {
 	// Sphere rendering
 	void BatchRenderer3D::DrawSphere(const glm::vec3& position, float radius, const glm::vec4& color, int segments)
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::DrawSphere called - Position: ({}, {}, {}), Radius: {}, Color: ({}, {}, {}, {})", 
+			position.x, position.y, position.z, radius, color.r, color.g, color.b, color.a);
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position) * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
 		DrawSphereInternal(position, radius, transform, color, segments);
 	}
@@ -598,6 +621,7 @@ namespace Zgine {
 
 		// Add indices (each quad uses 6 indices)
 		s_IndexCount += indexCount;
+		ZG_CORE_TRACE("BatchRenderer3D::DrawSphereInternal - Added {} indices, IndexCount now: {}", indexCount, s_IndexCount);
 
 		// Upload transform matrix
 		if (s_Shader)
@@ -689,6 +713,8 @@ namespace Zgine {
 	// Plane rendering
 	void BatchRenderer3D::DrawPlane(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
 	{
+		ZG_CORE_TRACE("BatchRenderer3D::DrawPlane called - Position: ({}, {}, {}), Size: ({}, {}), Color: ({}, {}, {}, {})", 
+			position.x, position.y, position.z, size.x, size.y, color.r, color.g, color.b, color.a);
 		if (!s_VertexBufferBase || !s_VertexBufferPtr)
 		{
 			ZG_CORE_ERROR("BatchRenderer3D::DrawPlane called but vertex buffer is not initialized!");
@@ -723,6 +749,7 @@ namespace Zgine {
 		}
 
 		s_IndexCount += 6;
+		ZG_CORE_TRACE("BatchRenderer3D::DrawPlane - Added 6 indices, IndexCount now: {}", s_IndexCount);
 		
 		// Upload transform matrix
 		if (s_Shader)

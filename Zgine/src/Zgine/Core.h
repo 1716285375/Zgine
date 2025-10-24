@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Zgine/Core/SmartPointers.h"
+#include "Zgine/Timestep.h"
 
 /**
  * @file Core.h
@@ -17,11 +18,7 @@
 extern bool g_ApplicationShuttingDown;
 
 namespace Zgine {
-	/**
-	 * @brief Time step type for frame timing
-	 * @details Represents the time elapsed since the last frame in seconds
-	 */
-	using Timestep = float;
+	// Timestep is now defined in Timestep.h
 }
 
 /*  Compiler Detection  */

@@ -4,6 +4,7 @@
 #include "Zgine/Events/KeyEvent.h"
 #include "Zgine/Events/MouseEvent.h"
 #include "Zgine/Events/ApplicationEvent.h"
+#include "Zgine/ImGui/ImGuiWrapper.h"
 
 namespace Zgine {
 
@@ -63,6 +64,37 @@ namespace Zgine {
 		 * @details Ends the current ImGui frame and renders it
 		 */
 		void End();
+
+		/**
+		 * @brief Set ImGui theme
+		 * @param theme Theme name ("Dark", "Light", "Classic")
+		 */
+		void SetTheme(const std::string& theme);
+
+		/**
+		 * @brief Enable/disable docking
+		 * @param enable Whether to enable docking
+		 */
+		void SetDockingEnabled(bool enable);
+
+		/**
+		 * @brief Enable/disable viewports
+		 * @param enable Whether to enable viewports
+		 */
+		void SetViewportsEnabled(bool enable);
+
+		/**
+		 * @brief Get ImGui wrapper for UI creation
+		 * @return Reference to ImGui wrapper
+		 */
+		static ImGui::ImGuiWrapper& GetImGui() { return ImGui::ImGuiWrapper(); }
+
+	protected:
+		/**
+		 * @brief Override this method to create custom UI
+		 * @details Called during OnImGuiRender, override to add custom UI elements
+		 */
+		virtual void RenderCustomUI() {}
 
 	private:
 		float m_Time = 0.0f;  ///< Time tracking for ImGui rendering
