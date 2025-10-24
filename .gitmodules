@@ -11,3 +11,6 @@
 [submodule "Zgine/vendor/glm"]
 	path = Zgine/vendor/glm
 	url = https://github.com/1716285375/glm.git
+[submodule "Zgine/vendor/entt"]
+	path = Zgine/vendor/entt
+	url = https://github.com/1716285375/entt.git
