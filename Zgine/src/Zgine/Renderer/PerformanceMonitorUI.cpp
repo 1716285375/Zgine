@@ -824,7 +824,7 @@ namespace Zgine {
 
 		if (s_ShowMemory)
 		{
-			ImGui::Text("Memory: %s", PerformanceMonitorUI::FormatBytes(s_CurrentData.memoryUsage).c_str());
+			ImGui::Text("Memory: %s", PerformanceOverlay::FormatBytes(s_CurrentData.memoryUsage).c_str());
 		}
 
 		if (s_ShowDrawCalls)
@@ -880,21 +880,21 @@ namespace Zgine {
 		}
 	}
 
-	std::string PerformanceMonitorUI::FormatBytes(size_t bytes)
+	std::string PerformanceOverlay::FormatBytes(size_t bytes)
 	{
 		const char* units[] = { "B", "KB", "MB", "GB", "TB" };
-		int unit = 0;
+		int unitIndex = 0;
 		double size = static_cast<double>(bytes);
-		
-		while (size >= 1024.0 && unit < 4)
+
+		while (size >= 1024.0 && unitIndex < 4)
 		{
 			size /= 1024.0;
-			unit++;
+			unitIndex++;
 		}
-		
-		char buffer[32];
-		snprintf(buffer, sizeof(buffer), "%.1f %s", size, units[unit]);
-		return std::string(buffer);
+
+		std::stringstream ss;
+		ss << std::fixed << std::setprecision(2) << size << " " << units[unitIndex];
+		return ss.str();
 	}
 
 }

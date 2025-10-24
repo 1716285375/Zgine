@@ -62,7 +62,7 @@ namespace Zgine {
 
 		// set platform/renderer bindings
 		ImGui_ImplGlfw_InitForOpenGL(window, true);
-		ImGui_ImplOpenGL3_Init("#version 410");
+		ImGui_ImplOpenGL3_Init("#version 420");
 	}
 
 	/**

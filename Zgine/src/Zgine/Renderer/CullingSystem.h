@@ -16,10 +16,10 @@ namespace Zgine {
 	{
 		glm::vec3 min;
 		glm::vec3 max;
-		
+
 		BoundingBox() : min(0.0f), max(0.0f) {}
 		BoundingBox(const glm::vec3& min, const glm::vec3& max) : min(min), max(max) {}
-		
+
 		/**
 		 * @brief Expand bounding box to include a point
 		 */
@@ -28,7 +28,7 @@ namespace Zgine {
 			min = glm::min(min, point);
 			max = glm::max(max, point);
 		}
-		
+
 		/**
 		 * @brief Expand bounding box to include another bounding box
 		 */
@@ -37,7 +37,7 @@ namespace Zgine {
 			min = glm::min(min, other.min);
 			max = glm::max(max, other.max);
 		}
-		
+
 		/**
 		 * @brief Get center of the bounding box
 		 */
@@ -45,7 +45,7 @@ namespace Zgine {
 		{
 			return (min + max) * 0.5f;
 		}
-		
+
 		/**
 		 * @brief Get size of the bounding box
 		 */
@@ -53,7 +53,7 @@ namespace Zgine {
 		{
 			return max - min;
 		}
-		
+
 		/**
 		 * @brief Get radius of the bounding sphere
 		 */
@@ -61,7 +61,7 @@ namespace Zgine {
 		{
 			return glm::length(GetSize()) * 0.5f;
 		}
-		
+
 		/**
 		 * @brief Check if bounding box is valid
 		 */
@@ -73,47 +73,31 @@ namespace Zgine {
 
 	/**
 	 * @brief Bounding sphere for culling operations
-	 * @details Represents a sphere for more efficient culling
+	 * @details Represents a sphere for culling operations
 	 */
 	struct BoundingSphere
 	{
 		glm::vec3 center;
 		float radius;
-		
+
 		BoundingSphere() : center(0.0f), radius(0.0f) {}
-		BoundingSphere(const glm::vec3& center, float radius) : center(center), radius(radius) {}
-		
-		/**
-		 * @brief Expand sphere to include a point
-		 */
-		void Expand(const glm::vec3& point)
+		BoundingSphere(const glm::vec3& c, float r) : center(c), radius(r) {}
+
+		bool Contains(const glm::vec3& point) const
 		{
-			float distance = glm::length(point - center);
-			if (distance > radius)
-			{
-				radius = distance;
-			}
+			return glm::length(point - center) <= radius;
 		}
-		
-		/**
-		 * @brief Expand sphere to include another sphere
-		 */
-		void Expand(const BoundingSphere& other)
+
+		bool Intersects(const BoundingBox& box) const
 		{
-			float distance = glm::length(other.center - center);
-			float newRadius = distance + other.radius;
-			if (newRadius > radius)
-			{
-				radius = newRadius;
-			}
+			glm::vec3 closest = glm::clamp(center, box.min, box.max);
+			return glm::length(closest - center) <= radius;
 		}
-		
-		/**
-		 * @brief Check if sphere is valid
-		 */
-		bool IsValid() const
+
+		bool Intersects(const BoundingSphere& sphere) const
 		{
-			return radius >= 0.0f;
+			float distance = glm::length(center - sphere.center);
+			return distance <= (radius + sphere.radius);
 		}
 	};
 
@@ -125,13 +109,13 @@ namespace Zgine {
 	{
 	public:
 		Frustum() = default;
-		
+
 		/**
 		 * @brief Create frustum from view-projection matrix
 		 * @param viewProj View-projection matrix
 		 */
 		explicit Frustum(const glm::mat4& viewProj);
-		
+
 		/**
 		 * @brief Create frustum from camera parameters
 		 * @param position Camera position
@@ -143,23 +127,23 @@ namespace Zgine {
 		 * @param farPlane Far plane distance
 		 */
 		Frustum(const glm::vec3& position, const glm::vec3& direction, const glm::vec3& up,
-				float fov, float aspect, float nearPlane, float farPlane);
-		
+			float fov, float aspect, float nearPlane, float farPlane);
+
 		/**
 		 * @brief Check if point is inside frustum
 		 */
 		bool Contains(const glm::vec3& point) const;
-		
+
 		/**
 		 * @brief Check if bounding box intersects frustum
 		 */
 		bool Intersects(const BoundingBox& box) const;
-		
+
 		/**
 		 * @brief Check if bounding sphere intersects frustum
 		 */
 		bool Intersects(const BoundingSphere& sphere) const;
-		
+
 		/**
 		 * @brief Update frustum from view-projection matrix
 		 */
@@ -172,19 +156,19 @@ namespace Zgine {
 			RIGHT = 1,
 			BOTTOM = 2,
 			TOP = 3,
-			NEAR = 4,
-			FAR = 5,
+			NEAR_PLANE = 4,
+			FAR_PLANE = 5,
 			COUNT = 6
 		};
-		
+
 		struct PlaneData
 		{
 			glm::vec3 normal;
 			float distance;
 		};
-		
-		PlaneData m_Planes[COUNT];
-		
+
+		PlaneData m_Planes[COUNT]; // COUNT = 6
+
 		void ExtractPlanes(const glm::mat4& viewProj);
 	};
 
@@ -203,21 +187,22 @@ namespace Zgine {
 			float distance;
 			float detail;
 			std::string name;
-			
-			LODLevel(float dist, float det, const std::string& n) 
-				: distance(dist), detail(det), name(n) {}
+
+			LODLevel(float dist, float det, const std::string& n)
+				: distance(dist), detail(det), name(n) {
+			}
 		};
-		
+
 		/**
 		 * @brief Initialize LOD system
 		 */
 		static void Init();
-		
+
 		/**
 		 * @brief Shutdown LOD system
 		 */
 		static void Shutdown();
-		
+
 		/**
 		 * @brief Add LOD level
 		 * @param distance Distance threshold
@@ -225,37 +210,37 @@ namespace Zgine {
 		 * @param name Level name
 		 */
 		static void AddLODLevel(float distance, float detail, const std::string& name);
-		
+
 		/**
 		 * @brief Get LOD level for distance
 		 * @param distance Distance from camera
 		 * @return LOD level index
 		 */
 		static int GetLODLevel(float distance);
-		
+
 		/**
 		 * @brief Get LOD level data
 		 * @param level LOD level index
 		 * @return LOD level data
 		 */
 		static const LODLevel* GetLODLevelData(int level);
-		
+
 		/**
 		 * @brief Get all LOD levels
 		 */
 		static const std::vector<LODLevel>& GetAllLODLevels();
-		
+
 		/**
 		 * @brief Clear all LOD levels
 		 */
 		static void ClearLODLevels();
-		
+
 		/**
 		 * @brief Set LOD bias (affects distance calculations)
 		 * @param bias LOD bias multiplier
 		 */
 		static void SetLODBias(float bias);
-		
+
 		/**
 		 * @brief Get LOD bias
 		 */
@@ -268,49 +253,50 @@ namespace Zgine {
 	};
 
 	/**
+	 * @brief Renderable object interface
+	 */
+	class IRenderable
+	{
+	public:
+		virtual ~IRenderable() = default;
+		virtual BoundingBox GetBoundingBox() const = 0;
+		virtual BoundingSphere GetBoundingSphere() const = 0;
+		virtual void Render(int lodLevel = 0) = 0;
+		virtual bool IsVisible() const = 0;
+		virtual void SetVisible(bool visible) = 0;
+	};
+
+	/**
 	 * @brief Culling system for efficient rendering
 	 * @details Manages frustum culling, occlusion culling, and LOD selection
 	 */
 	class CullingSystem
 	{
 	public:
-		/**
-		 * @brief Renderable object interface
-		 */
-		class IRenderable
-		{
-		public:
-			virtual ~IRenderable() = default;
-			virtual BoundingBox GetBoundingBox() const = 0;
-			virtual BoundingSphere GetBoundingSphere() const = 0;
-			virtual void Render(int lodLevel = 0) = 0;
-			virtual bool IsVisible() const = 0;
-			virtual void SetVisible(bool visible) = 0;
-		};
-		
+
 		/**
 		 * @brief Initialize culling system
 		 */
 		static void Init();
-		
+
 		/**
 		 * @brief Shutdown culling system
 		 */
 		static void Shutdown();
-		
+
 		/**
 		 * @brief Add renderable object
 		 * @param id Object ID
 		 * @param renderable Renderable object
 		 */
 		static void AddRenderable(uint32_t id, std::shared_ptr<IRenderable> renderable);
-		
+
 		/**
 		 * @brief Remove renderable object
 		 * @param id Object ID
 		 */
 		static void RemoveRenderable(uint32_t id);
-		
+
 		/**
 		 * @brief Update culling system
 		 * @param cameraPosition Camera position
@@ -322,32 +308,32 @@ namespace Zgine {
 		 * @param farPlane Far plane distance
 		 */
 		static void Update(const glm::vec3& cameraPosition, const glm::vec3& cameraDirection,
-						   const glm::vec3& cameraUp, float fov, float aspect,
-						   float nearPlane, float farPlane);
-		
+			const glm::vec3& cameraUp, float fov, float aspect,
+			float nearPlane, float farPlane);
+
 		/**
 		 * @brief Render all visible objects
 		 */
 		static void RenderVisible();
-		
+
 		/**
 		 * @brief Enable/disable frustum culling
 		 * @param enabled Whether frustum culling is enabled
 		 */
 		static void SetFrustumCullingEnabled(bool enabled);
-		
+
 		/**
 		 * @brief Enable/disable LOD system
 		 * @param enabled Whether LOD system is enabled
 		 */
 		static void SetLODEnabled(bool enabled);
-		
+
 		/**
 		 * @brief Enable/disable occlusion culling
 		 * @param enabled Whether occlusion culling is enabled
 		 */
 		static void SetOcclusionCullingEnabled(bool enabled);
-		
+
 		/**
 		 * @brief Get culling statistics
 		 */
@@ -360,9 +346,9 @@ namespace Zgine {
 			double CullingTime;
 			double LODTime;
 		};
-		
+
 		static CullingStats GetStats();
-		
+
 		/**
 		 * @brief Clear all renderable objects
 		 */
@@ -378,16 +364,16 @@ namespace Zgine {
 			int currentLOD;
 			float distanceToCamera;
 		};
-		
+
 		static std::unordered_map<uint32_t, RenderableData> s_Renderables;
 		static Frustum s_Frustum;
 		static bool s_FrustumCullingEnabled;
 		static bool s_LODEnabled;
 		static bool s_OcclusionCullingEnabled;
 		static bool s_Initialized;
-		
+
 		static CullingStats s_Stats;
-		
+
 		static void PerformFrustumCulling();
 		static void PerformLODSelection();
 		static void PerformOcclusionCulling();
@@ -406,53 +392,53 @@ namespace Zgine {
 		 * @param cellSize Cell size
 		 */
 		explicit SpatialPartition(const glm::vec3& worldSize, const glm::vec3& cellSize);
-		
+
 		/**
 		 * @brief Add object to spatial partition
 		 * @param id Object ID
 		 * @param boundingBox Object bounding box
 		 */
 		void AddObject(uint32_t id, const BoundingBox& boundingBox);
-		
+
 		/**
 		 * @brief Remove object from spatial partition
 		 * @param id Object ID
 		 */
 		void RemoveObject(uint32_t id);
-		
+
 		/**
 		 * @brief Update object position in spatial partition
 		 * @param id Object ID
 		 * @param boundingBox New bounding box
 		 */
 		void UpdateObject(uint32_t id, const BoundingBox& boundingBox);
-		
+
 		/**
 		 * @brief Get objects in frustum
 		 * @param frustum Frustum for culling
 		 * @return Vector of object IDs
 		 */
 		std::vector<uint32_t> GetObjectsInFrustum(const Frustum& frustum) const;
-		
+
 		/**
 		 * @brief Get objects in bounding box
 		 * @param boundingBox Bounding box for query
 		 * @return Vector of object IDs
 		 */
 		std::vector<uint32_t> GetObjectsInBox(const BoundingBox& boundingBox) const;
-		
+
 		/**
 		 * @brief Get objects in sphere
 		 * @param sphere Bounding sphere for query
 		 * @return Vector of object IDs
 		 */
 		std::vector<uint32_t> GetObjectsInSphere(const BoundingSphere& sphere) const;
-		
+
 		/**
 		 * @brief Clear all objects
 		 */
 		void Clear();
-		
+
 		/**
 		 * @brief Get partition statistics
 		 */
@@ -464,7 +450,7 @@ namespace Zgine {
 			uint32_t MaxObjectsPerCell;
 			double AverageObjectsPerCell;
 		};
-		
+
 		PartitionStats GetStats() const;
 
 	private:
@@ -472,12 +458,12 @@ namespace Zgine {
 		{
 			std::vector<uint32_t> objects;
 		};
-		
+
 		glm::vec3 m_WorldSize;
 		glm::vec3 m_CellSize;
 		glm::ivec3 m_CellCount;
 		std::vector<std::vector<std::vector<Cell>>> m_Cells;
-		
+
 		glm::ivec3 GetCellIndex(const glm::vec3& position) const;
 		bool IsValidCellIndex(const glm::ivec3& index) const;
 	};

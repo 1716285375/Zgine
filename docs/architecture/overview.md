@@ -1,367 +1,145 @@
-# Engine Architecture Overview
+# Zgine 引擎架构文档
 
-This document provides a comprehensive overview of the Zgine game engine architecture, including design principles, module organization, and system interactions.
+## 项目概述
 
-## Design Principles
+Zgine 是一个基于 C++ 的现代游戏引擎，采用模块化设计，支持 2D 和 3D 渲染。引擎使用 OpenGL 作为底层渲染 API，并提供了完整的平台抽象层。
 
-### Core Philosophy
+## 整体架构
 
-Zgine is built on the following design principles:
+### 核心设计原则
+- **分层架构**: 采用分层设计，每层职责明确
+- **平台无关**: 通过抽象层实现跨平台支持
+- **事件驱动**: 基于事件系统的松耦合设计
+- **模块化**: 各功能模块独立，便于维护和扩展
 
-1. **Modularity**: Clean separation of concerns with well-defined interfaces
-2. **Performance**: High-performance rendering with modern C++ practices
-3. **Simplicity**: Easy-to-use API with minimal complexity
-4. **Extensibility**: Designed for easy extension and modification
-5. **Memory Safety**: Modern C++ memory management with smart pointers
+### 主要模块
 
-### Architecture Goals
+1. **核心层 (Core Layer)**
+   - 基础类型定义和宏
+   - 内存管理
+   - 日志系统
+   - 智能指针
 
-- **Cross-platform Compatibility**: Windows, Linux, macOS support
-- **High Performance**: Efficient rendering and resource management
-- **Developer Friendly**: Clear APIs and comprehensive documentation
-- **Maintainable**: Clean code structure and separation of concerns
+2. **平台抽象层 (Platform Abstraction Layer)**
+   - 窗口管理
+   - 输入处理
+   - 图形上下文
+   - 渲染 API 抽象
 
-## System Architecture
+3. **渲染层 (Renderer Layer)**
+   - 高级渲染接口
+   - 批处理渲染器
+   - 着色器管理
+   - 纹理和材质系统
 
-### High-Level Architecture
+4. **应用层 (Application Layer)**
+   - 主应用程序类
+   - 层栈管理
+   - 事件分发
+   - ImGui 集成
 
-```mermaid
-graph TB
-    subgraph "Application Layer"
-        A[Sandbox App]
-        B[Game Application]
-    end
-    
-    subgraph "Engine Core"
-        C[Application]
-        D[Layer System]
-        E[Event System]
-        F[Input System]
-    end
-    
-    subgraph "Rendering System"
-        G[BatchRenderer2D]
-        H[Shader System]
-        I[Texture System]
-        J[Camera System]
-    end
-    
-    subgraph "Platform Layer"
-        K[Window Management]
-        L[OpenGL Context]
-        M[Input Handling]
-    end
-    
-    A --> C
-    B --> C
-    C --> D
-    C --> E
-    C --> F
-    D --> G
-    G --> H
-    G --> I
-    G --> J
-    C --> K
-    K --> L
-    F --> M
+5. **Sandbox 层 (Sandbox Layer)**
+   - 测试和演示应用
+   - UI 管理
+   - 场景管理
+   - 设置管理
+
+## 文件组织结构
+
+```
+Zgine/
+├── src/
+│   ├── Zgine/                    # 引擎核心代码
+│   │   ├── Core/                 # 核心功能
+│   │   ├── Events/               # 事件系统
+│   │   ├── ImGui/                # ImGui 集成
+│   │   ├── Renderer/             # 渲染系统
+│   │   ├── Application.h/cpp     # 主应用程序
+│   │   ├── Layer.h/cpp          # 层基类
+│   │   ├── LayerStack.h/cpp     # 层栈管理
+│   │   ├── Window.h             # 窗口抽象
+│   │   ├── Input.h              # 输入抽象
+│   │   └── Log.h/cpp            # 日志系统
+│   ├── Platform/                 # 平台特定实现
+│   │   ├── OpenGL/              # OpenGL 实现
+│   │   ├── Windows/             # Windows 平台
+│   │   └── Direct3D/            # Direct3D 实现
+│   └── vendor/                   # 第三方库
+│       ├── glfw/                # GLFW 窗口库
+│       ├── glad/                # OpenGL 加载器
+│       ├── imgui/               # ImGui UI 库
+│       ├── glm/                 # 数学库
+│       └── spdlog/              # 日志库
+└── Sandbox/                      # 测试应用
+    └── src/
+        ├── SandboxApp.cpp       # 应用入口
+        ├── MainControlLayer.h/cpp # 主控制层
+        ├── Test2DLayer.h/cpp    # 2D 测试层
+        ├── Test3DLayer.h/cpp    # 3D 测试层
+        ├── UI/                  # UI 管理
+        ├── Rendering/           # 渲染管理
+        ├── Scene/               # 场景管理
+        ├── Settings/            # 设置管理
+        └── Testing/             # 测试模块
 ```
 
-## Module Organization
-
-### Core Modules
-
-#### Application Module
-- **Purpose**: Application lifecycle management
-- **Components**: Application class, main loop, window management
-- **Dependencies**: Platform layer, Event system
-
-#### Layer System
-- **Purpose**: Hierarchical application organization
-- **Components**: Layer, LayerStack, Overlay management
-- **Dependencies**: Event system
-
-#### Event System
-- **Purpose**: Decoupled communication between systems
-- **Components**: Event, EventDispatcher, specific event types
-- **Dependencies**: None (core system)
-
-#### Input System
-- **Purpose**: Cross-platform input handling
-- **Components**: Input class, key/mouse event handling
-- **Dependencies**: Platform layer, Event system
-
-### Rendering Modules
-
-#### BatchRenderer2D
-- **Purpose**: High-performance 2D rendering
-- **Components**: Batch rendering, primitive drawing, statistics
-- **Dependencies**: Shader system, Texture system, Camera system
-
-#### Shader System
-- **Purpose**: Shader compilation and management
-- **Components**: Shader class, uniform management
-- **Dependencies**: OpenGL context
-
-#### Texture System
-- **Purpose**: Texture loading and management
-- **Components**: Texture2D class, texture caching
-- **Dependencies**: OpenGL context
-
-#### Camera System
-- **Purpose**: View and projection management
-- **Components**: OrthographicCamera, matrix calculations
-- **Dependencies**: GLM mathematics library
-
-### Platform Modules
-
-#### Window Management
-- **Purpose**: Cross-platform window creation and management
-- **Components**: Window class, platform-specific implementations
-- **Dependencies**: GLFW library
-
-#### OpenGL Context
-- **Purpose**: OpenGL context management
-- **Components**: GraphicsContext, OpenGL-specific implementations
-- **Dependencies**: GLAD library
-
-## Data Flow Architecture
-
-### Rendering Pipeline
-
-```mermaid
-sequenceDiagram
-    participant App as Application
-    participant BR as BatchRenderer2D
-    participant Shader as Shader System
-    participant GPU as GPU
-    
-    App->>BR: BeginScene(camera)
-    BR->>Shader: Bind shader
-    BR->>Shader: Upload uniforms
-    
-    loop Draw Primitives
-        App->>BR: DrawQuad/DrawLine/DrawCircle
-        BR->>BR: Add vertices to buffer
-    end
-    
-    App->>BR: EndScene()
-    BR->>BR: Flush batch
-    BR->>GPU: DrawIndexed()
-    GPU-->>BR: Render complete
-```
-
-### Event Flow
-
-```mermaid
-sequenceDiagram
-    participant Window as Window
-    participant EventSys as Event System
-    participant App as Application
-    participant Layer as Layer
-    
-    Window->>EventSys: Input event
-    EventSys->>App: Dispatch event
-    App->>Layer: OnEvent(event)
-    Layer->>Layer: Handle event
-    Layer-->>App: Event handled
-```
-
-## Memory Management Architecture
-
-### Smart Pointer Strategy
-
-The engine uses modern C++ smart pointers for automatic memory management:
-
-```cpp
-// Unique ownership
-Scope<Window> m_Window;
-Scope<ImGuiLayer> m_ImGuiLayer;
-
-// Shared ownership
-Ref<Texture2D> texture;
-Ref<Shader> shader;
-
-// Array management
-ScopeArray<QuadVertex> s_QuadVertexBufferBase;
-```
-
-**Smart Pointer Aliases**:
-- `Ref<T>`: Alias for `std::shared_ptr<T>` (shared ownership)
-- `Scope<T>`: Alias for `std::unique_ptr<T>` (unique ownership)
-- `ScopeArray<T>`: Alias for `std::unique_ptr<T[]>` (unique array ownership)
-
-**Helper Functions**:
-- `CreateRef<T>(...)`: Creates a `Ref<T>` using `std::make_shared`
-- `CreateScope<T>(...)`: Creates a `Scope<T>` using `std::make_unique`
-- `CreateScopeArray<T>(size)`: Creates a `ScopeArray<T>` using `std::make_unique<T[]>`
-
-### RAII Principles
-
-All resources follow RAII (Resource Acquisition Is Initialization) principles:
-
-- **Automatic Cleanup**: Destructors handle resource cleanup
-- **Exception Safety**: Resources are cleaned up even if exceptions occur
-- **No Manual Management**: No explicit new/delete calls
-
-### Memory Layout
-
-#### Static Data
-- **Global State**: Renderer statistics, singleton instances
-- **Constants**: Buffer limits, shader sources
-- **Configuration**: Engine settings
-
-#### Dynamic Data
-- **Vertex Buffers**: Dynamic vertex data
-- **Texture Data**: Loaded texture information
-- **Event Data**: Temporary event objects
-
-## Threading Model
-
-### Current Implementation
-- **Single-threaded**: All operations on main thread
-- **Event-driven**: Asynchronous event handling
-- **Non-blocking**: Rendering doesn't block input
-
-### Future Considerations
-- **Multi-threading**: Parallel batch processing
-- **Worker Threads**: Background resource loading
-- **Thread Safety**: Synchronization mechanisms
-
-## Extension Points
-
-### Plugin Architecture
-
-The engine is designed for easy extension:
-
-#### Custom Layers
-```cpp
-class CustomLayer : public Zgine::Layer
-{
-public:
-    virtual void OnUpdate() override;
-    virtual void OnImGuiRender() override;
-    virtual void OnEvent(Event& e) override;
-};
-```
-
-#### Custom Renderers
-```cpp
-class CustomRenderer
-{
-public:
-    virtual void BeginScene() = 0;
-    virtual void EndScene() = 0;
-    virtual void DrawPrimitive() = 0;
-};
-```
-
-#### Custom Input Handlers
-```cpp
-class CustomInputHandler
-{
-public:
-    virtual bool HandleKeyEvent(KeyEvent& e) = 0;
-    virtual bool HandleMouseEvent(MouseEvent& e) = 0;
-};
-```
-
-## Performance Architecture
-
-### Rendering Performance
-
-1. **Batch Rendering**: Minimize draw calls
-2. **Texture Batching**: Multiple textures per batch
-3. **Vertex Buffer Optimization**: Large pre-allocated buffers
-4. **Index Reuse**: Pre-computed index patterns
-
-### Memory Performance
-
-1. **Smart Pointers**: Automatic memory management
-2. **Buffer Reuse**: Reuse buffers across frames
-3. **Texture Caching**: Cache frequently used textures
-4. **Statistics Tracking**: Monitor memory usage
-
-### CPU Performance
-
-1. **Event System**: Efficient event dispatching
-2. **Layer System**: Minimal overhead layer management
-3. **Input Handling**: Direct input processing
-4. **Statistics**: Minimal performance impact
-
-## Security Considerations
-
-### Memory Safety
-- **Smart Pointers**: Prevent memory leaks
-- **RAII**: Automatic resource cleanup
-- **Bounds Checking**: Array bounds validation
-- **Exception Safety**: Safe exception handling
-
-### Input Validation
-- **Parameter Validation**: Validate all input parameters
-- **Range Checking**: Clamp values to valid ranges
-- **Error Handling**: Graceful error handling
-
-## Testing Architecture
-
-### Unit Testing
-- **Module Testing**: Individual module testing
-- **Integration Testing**: Module interaction testing
-- **Performance Testing**: Rendering performance testing
-
-### Test Structure
-```
-tests/
-├── unit/           # Unit tests
-├── integration/    # Integration tests
-├── performance/    # Performance tests
-└── fixtures/       # Test data and fixtures
-```
-
-## Documentation Architecture
-
-### Documentation Structure
-```
-docs/
-├── api/            # API reference
-├── architecture/   # Architecture documentation
-├── algorithms/     # Algorithm documentation
-├── guides/         # Developer guides
-└── examples/       # Code examples
-```
-
-### Documentation Standards
-- **API Documentation**: OpenAPI 3.0 specification
-- **Code Examples**: C++ and usage examples
-- **Architecture Diagrams**: Mermaid diagrams
-- **Version Control**: Documentation versioned with code
-
-## Future Architecture Plans
-
-### Planned Modules
-
-#### 3D Rendering System
-- **3D Batch Renderer**: Extend to 3D primitives
-- **3D Camera System**: Perspective camera support
-- **3D Transformations**: 3D matrix operations
-
-#### Physics System
-- **Box2D Integration**: 2D physics support
-- **Bullet3D Integration**: 3D physics support
-- **Collision Detection**: Efficient collision detection
-
-#### Audio System
-- **OpenAL Integration**: 3D audio support
-- **Audio Sources**: Sound source management
-- **Audio Effects**: Reverb, echo, etc.
-
-#### Scripting System
-- **Lua Integration**: Scripting support
-- **C++ Bindings**: Native function binding
-- **Hot Reloading**: Runtime script reloading
-
-### Architecture Evolution
-
-1. **Modular Design**: Maintain modular architecture
-2. **Plugin System**: Extensible plugin architecture
-3. **Multi-threading**: Parallel processing support
-4. **Cross-platform**: Enhanced platform support
+## 核心类关系
+
+### 应用程序生命周期
+- `Application`: 主应用程序类，管理整个引擎生命周期
+- `LayerStack`: 管理应用层的栈结构
+- `Layer`: 所有应用层的基类
+- `ImGuiLayer`: ImGui 调试界面层
+
+### 渲染系统
+- `Renderer`: 高级渲染接口
+- `RenderCommand`: 渲染命令抽象
+- `RendererAPI`: 渲染 API 抽象基类
+- `OpenGLRendererAPI`: OpenGL 实现
+- `BatchRenderer2D`: 2D 批处理渲染器
+- `BatchRenderer3D`: 3D 批处理渲染器
+
+### 平台抽象
+- `Window`: 窗口抽象接口
+- `WindowsWindow`: Windows 平台窗口实现
+- `GraphicsContext`: 图形上下文抽象
+- `OpenGLContext`: OpenGL 上下文实现
+
+### 事件系统
+- `Event`: 事件基类
+- `EventDispatcher`: 事件分发器
+- `WindowCloseEvent`, `KeyPressedEvent` 等: 具体事件类型
+
+## 设计模式
+
+1. **单例模式**: `Application` 类使用单例模式
+2. **工厂模式**: `Window::Create()` 使用工厂模式创建平台特定窗口
+3. **观察者模式**: 事件系统使用观察者模式
+4. **策略模式**: 渲染 API 使用策略模式
+5. **命令模式**: `RenderCommand` 使用命令模式
+
+## 性能优化特性
+
+1. **批处理渲染**: 2D 和 3D 批处理渲染器减少绘制调用
+2. **内存池**: 使用内存池优化内存分配
+3. **纹理缓存**: 纹理索引缓存减少状态切换
+4. **性能监控**: 内置性能监控和基准测试
+5. **剔除系统**: 视锥剔除优化渲染性能
+
+## 扩展性
+
+- **插件系统**: 通过层系统支持插件
+- **多渲染 API**: 支持 OpenGL，预留 Direct3D 接口
+- **跨平台**: 支持 Windows，可扩展至 Linux/macOS
+- **模块化**: 各模块独立，便于替换和扩展
+
+## 技术栈
+
+- **语言**: C++17
+- **构建系统**: Premake5
+- **渲染 API**: OpenGL 3.3+
+- **窗口管理**: GLFW
+- **UI 框架**: ImGui
+- **数学库**: GLM
+- **日志系统**: spdlog
+- **图像加载**: stb_image

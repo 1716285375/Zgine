@@ -78,7 +78,7 @@ namespace Zgine {
 
 		// Create 3D shader
 		std::string vertexSrc = R"(
-			#version 330 core
+			#version 420 core
 			
 			layout(location = 0) in vec3 a_Position;
 			layout(location = 1) in vec4 a_Color;
@@ -108,7 +108,7 @@ namespace Zgine {
 		)";
 
 		std::string fragmentSrc = R"(
-			#version 330 core
+			#version 420 core
 			
 			layout(location = 0) out vec4 color;
 			
@@ -118,7 +118,7 @@ namespace Zgine {
 			in vec3 v_Normal;
 			in vec3 v_WorldPos;
 
-			uniform sampler2D u_Textures[32];
+			layout(binding = 0) uniform sampler2D u_Textures[32];
 			
 			// Only declare uniforms that are actually used
 			uniform vec3 u_Material_albedo;
@@ -162,11 +162,6 @@ namespace Zgine {
 		
 		// Set default material (only what we actually use)
 		s_Shader->UploadUniformFloat3("u_Material_albedo", { 0.8f, 0.8f, 0.8f });
-		s_Shader->UploadUniformFloat("u_Material_metallic", 0.0f);
-		s_Shader->UploadUniformFloat("u_Material_roughness", 0.5f);
-		s_Shader->UploadUniformFloat("u_Material_emissive", 0.0f);
-		s_Shader->UploadUniformFloat3("u_Material_emissiveColor", { 1.0f, 1.0f, 1.0f });
-		s_Shader->UploadUniformFloat("u_Material_transparency", 1.0f);
 		s_Shader->UploadUniformInt("u_Material_hasAlbedoTexture", 0);
 		
 		// Set default lighting

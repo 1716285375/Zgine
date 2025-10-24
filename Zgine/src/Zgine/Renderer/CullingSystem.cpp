@@ -3,6 +3,8 @@
 #include "../Core.h"
 #include <algorithm>
 #include <cmath>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Zgine {
 
@@ -119,16 +121,16 @@ namespace Zgine {
 		m_Planes[TOP].distance = viewProj[3][3] - viewProj[3][1];
 		
 		// Near plane
-		m_Planes[NEAR].normal.x = viewProj[0][3] + viewProj[0][2];
-		m_Planes[NEAR].normal.y = viewProj[1][3] + viewProj[1][2];
-		m_Planes[NEAR].normal.z = viewProj[2][3] + viewProj[2][2];
-		m_Planes[NEAR].distance = viewProj[3][3] + viewProj[3][2];
+		m_Planes[NEAR_PLANE].normal.x = viewProj[0][3] + viewProj[0][2];
+		m_Planes[NEAR_PLANE].normal.y = viewProj[1][3] + viewProj[1][2];
+		m_Planes[NEAR_PLANE].normal.z = viewProj[2][3] + viewProj[2][2];
+		m_Planes[NEAR_PLANE].distance = viewProj[3][3] + viewProj[3][2];
 		
 		// Far plane
-		m_Planes[FAR].normal.x = viewProj[0][3] - viewProj[0][2];
-		m_Planes[FAR].normal.y = viewProj[1][3] - viewProj[1][2];
-		m_Planes[FAR].normal.z = viewProj[2][3] - viewProj[2][2];
-		m_Planes[FAR].distance = viewProj[3][3] - viewProj[3][2];
+		m_Planes[FAR_PLANE].normal.x = viewProj[0][3] - viewProj[0][2];
+		m_Planes[FAR_PLANE].normal.y = viewProj[1][3] - viewProj[1][2];
+		m_Planes[FAR_PLANE].normal.z = viewProj[2][3] - viewProj[2][2];
+		m_Planes[FAR_PLANE].distance = viewProj[3][3] - viewProj[3][2];
 		
 		// Normalize all planes
 		for (int i = 0; i < COUNT; ++i)

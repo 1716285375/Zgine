@@ -1,11 +1,8 @@
 #pragma once
 
-#include <memory>
-#include <vector>
-#include <unordered_map>
-#include <mutex>
-#include <atomic>
-#include <functional>
+#include "zgpch.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace Zgine {
 

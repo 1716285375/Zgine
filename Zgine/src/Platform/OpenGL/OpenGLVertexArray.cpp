@@ -71,8 +71,8 @@ namespace Zgine {
 		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
 		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
 		
-		ZG_CORE_TRACE("OpenGLVertexArray::Bind - VAO {} bound, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
-			m_RendererID, attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
+		//ZG_CORE_TRACE("OpenGLVertexArray::Bind - VAO {} bound, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
+		//	m_RendererID, attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
 	}
 
 	/**

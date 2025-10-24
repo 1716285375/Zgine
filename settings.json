@@ -1,0 +1,19 @@
+{
+  "advancedRendering": {
+    "enabled": false,
+    "currentPreset": 3,
+    "hdrExposure": 1,
+    "hdrGamma": 2.2,
+    "bloomIntensity": 1,
+    "bloomThreshold": 1,
+    "vignetteStrength": 0.5,
+    "vignetteRadius": 0.5,
+    "chromaticAberrationStrength": 0.02,
+    "filmGrainStrength": 0.1,
+    "shadowMapResolution": 1,
+    "softShadowsEnabled": true,
+    "cascadedShadowsEnabled": false,
+    "shadowBias": 0.005,
+    "shadowNormalBias": 0.01
+  }
+}

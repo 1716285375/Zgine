@@ -188,6 +188,18 @@ namespace Zgine {
 		 * @details Sets the camera's pitch rotation
 		 */
 		void SetPitch(float pitch);
+		
+		/**
+		 * @brief Get the near clipping plane distance
+		 * @return float The near clipping plane distance
+		 */
+		float GetNearPlane() const { return m_NearClip; }
+		
+		/**
+		 * @brief Get the far clipping plane distance
+		 * @return float The far clipping plane distance
+		 */
+		float GetFarPlane() const { return m_FarClip; }
 
 	private:
 		/**
