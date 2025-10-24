@@ -16,21 +16,40 @@ A modern, lightweight 2D/3D game engine built with C++17, OpenGL, and ImGui.
 - **Modern C++17**: Leveraging modern C++ features for clean, maintainable code
 - **Modular Architecture**: Clean separation between engine core and application code
 - **Event System**: Robust event-driven architecture with type-safe event dispatching
+- **Memory Management**: Advanced memory pooling and optimization systems
+- **Performance Monitoring**: Built-in performance profiling and benchmarking
 
 ### Rendering System
 - **2D Batch Renderer**: High-performance 2D rendering with texture batching
-- **3D Batch Renderer**: Modern 3D rendering with cubes, spheres, and planes
+  - Quad, line, circle, triangle, ellipse, arc, and gradient rendering
+  - Texture batching with up to 32 texture slots
+  - Wireframe and point rendering modes
+  - Animated shapes and performance stress testing
+- **3D Batch Renderer**: Modern 3D rendering with advanced features
+  - Cube, sphere, and plane primitives
+  - 3D transformations and rotations
+  - Depth testing and 3D camera controls
+  - Lighting system with ambient and directional lighting
+- **Advanced Rendering Features**:
+  - **HDR Rendering**: High Dynamic Range with tone mapping (ACES, Reinhard, Uncharted)
+  - **Post-Processing**: Bloom, blur, vignette, chromatic aberration, film grain, motion blur, depth of field, SSAO
+  - **Anti-Aliasing**: FXAA, SMAA, TAA support
+  - **Shadow Mapping**: Soft shadows and cascaded shadow maps
+  - **Frustum Culling**: Automatic object culling for performance
 - **Dual Camera System**: Orthographic (2D) and perspective (3D) camera support
-- **OpenGL Backend**: Modern OpenGL 3.3+ rendering pipeline
-- **Shader System**: Flexible shader management with hot-reloading support
+- **OpenGL Backend**: Modern OpenGL 4.2+ rendering pipeline
+- **Shader System**: Flexible shader management with uniform uploading
 - **Texture Management**: Efficient texture loading and caching
-- **Lighting System**: Basic ambient and diffuse lighting support
+- **Lighting System**: Advanced lighting with material support
 
 ### Developer Tools
-- **ImGui Integration**: Built-in debug UI and editor tools
+- **ImGui Integration**: Comprehensive debug UI and editor tools
 - **Layer System**: Flexible application layer architecture
 - **Input System**: Cross-platform keyboard and mouse input handling
 - **Logging System**: Comprehensive logging with multiple severity levels
+- **Performance Profiler**: Real-time performance monitoring and optimization suggestions
+- **Memory Profiler**: GPU and CPU memory usage tracking
+- **Quality Assessment**: Automatic performance scoring and recommendations
 
 ## 📁 Project Structure
 
@@ -132,7 +151,59 @@ Zgine::BatchRenderer2D::DrawQuad(
     {1.0f, 1.0f, 1.0f, 1.0f}  // White tint
 );
 
+// Draw advanced shapes
+Zgine::BatchRenderer2D::DrawCircle({0.0f, 0.0f, 0.0f}, 0.5f, {0.0f, 1.0f, 0.0f, 1.0f});
+Zgine::BatchRenderer2D::DrawLine({-1.0f, 0.0f, 0.0f}, {1.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 0.0f, 1.0f}, 0.05f);
+
 Zgine::BatchRenderer2D::EndScene();
+```
+
+### Basic 3D Rendering
+
+```cpp
+// In your layer's OnUpdate method
+Zgine::BatchRenderer3D::BeginScene(camera);
+
+// Draw 3D cubes
+Zgine::BatchRenderer3D::DrawCube(
+    {0.0f, 0.0f, 0.0f}, 
+    {1.0f, 1.0f, 1.0f}, 
+    {1.0f, 0.0f, 0.0f, 1.0f}  // Red cube
+);
+
+// Draw 3D spheres
+Zgine::BatchRenderer3D::DrawSphere(
+    {2.0f, 0.0f, 0.0f}, 
+    0.5f, 
+    {0.0f, 1.0f, 0.0f, 1.0f}  // Green sphere
+);
+
+// Draw planes
+Zgine::BatchRenderer3D::DrawPlane(
+    {0.0f, -1.0f, 0.0f}, 
+    {10.0f, 10.0f}, 
+    {0.5f, 0.5f, 0.5f, 1.0f}  // Gray ground plane
+);
+
+Zgine::BatchRenderer3D::EndScene();
+```
+
+### Advanced Rendering Features
+
+```cpp
+// Enable HDR rendering
+Zgine::AdvancedRenderingManager::SetConfig({
+    .enableHDR = true,
+    .enablePostProcessing = true,
+    .enableBloom = true,
+    .enableShadowMapping = true,
+    .enableFrustumCulling = true
+});
+
+// Begin advanced scene rendering
+Zgine::AdvancedRenderingManager::BeginScene(camera);
+// ... your rendering code ...
+Zgine::AdvancedRenderingManager::EndScene();
 ```
 
 ## 🎯 Roadmap
@@ -144,24 +215,38 @@ Zgine::BatchRenderer2D::EndScene();
 - [x] 2D batch renderer
 - [x] Shader system
 - [x] Texture management
+- [x] Memory management
+- [x] Performance monitoring
 
-### Phase 2: Enhanced Rendering 🚧
-- [ ] Line and circle rendering
-- [ ] 3D rendering support
-- [ ] Advanced camera system
-- [ ] Material system improvements
+### Phase 2: Enhanced Rendering ✅
+- [x] Line and circle rendering
+- [x] 3D rendering support
+- [x] Advanced camera system
+- [x] HDR rendering system
+- [x] Post-processing pipeline
+- [x] Shadow mapping
+- [x] Anti-aliasing support
+- [x] Frustum culling
 
-### Phase 3: Game Systems 📋
+### Phase 3: Advanced Features ✅
+- [x] Advanced rendering features (HDR, post-processing, shadows)
+- [x] Performance optimization systems
+- [x] Memory profiling and optimization
+- [x] Quality assessment tools
+- [x] Sandbox application with comprehensive testing
+
+### Phase 4: Game Systems 📋
 - [ ] Entity Component System (ECS)
 - [ ] Resource management
 - [ ] Scene management
 - [ ] Physics integration
+- [ ] Audio system
 
-### Phase 4: Developer Tools 📋
+### Phase 5: Developer Tools 📋
 - [ ] Scene editor
 - [ ] Asset pipeline
 - [ ] Scripting support
-- [ ] Performance profiling
+- [ ] Advanced profiling tools
 
 ## 🤝 Contributing
 
