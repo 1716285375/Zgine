@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Zgine/Layer.h"
+#include "Zgine/ImGui/ImGuiLayer.h"
 #include "Testing/Test2DModule.h"
 #include "imgui.h"
 
 namespace Sandbox {
 
-	class Test2DLayer : public Zgine::Layer
+	class Test2DLayer : public Zgine::ImGuiLayer
 	{
 	public:
 		Test2DLayer();

@@ -4,6 +4,7 @@
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Events/KeyEvent.h"
 #include "Zgine/Events/MouseEvent.h"
+#include "Zgine/ImGui/ImGuiWrapper.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
 #include <GL/gl.h>
@@ -176,70 +177,70 @@ namespace Sandbox {
 
 	void Test2DModule::RenderConfigWindow()
 	{
-		if (ImGui::Begin("2D Test Configuration", &m_ShowConfigWindow))
+		if (Zgine::IG::Begin("2D Test Configuration", &m_ShowConfigWindow))
 		{
-			ImGui::Text("Render Options");
-			ImGui::Separator();
-			ImGui::Checkbox("Show Quads", &m_Config.showQuads);
-			ImGui::Checkbox("Show Lines", &m_Config.showLines);
-			ImGui::Checkbox("Show Circles", &m_Config.showCircles);
-			ImGui::Checkbox("Show Advanced", &m_Config.showAdvanced);
-			ImGui::Checkbox("Show Triangles", &m_Config.showTriangles);
-			ImGui::Checkbox("Show Ellipses", &m_Config.showEllipses);
-			ImGui::Checkbox("Show Arcs", &m_Config.showArcs);
-			ImGui::Checkbox("Show Gradients", &m_Config.showGradients);
+			Zgine::IG::Text("Render Options");
+			Zgine::IG::Separator();
+			Zgine::IG::Checkbox("Show Quads", &m_Config.showQuads);
+			Zgine::IG::Checkbox("Show Lines", &m_Config.showLines);
+			Zgine::IG::Checkbox("Show Circles", &m_Config.showCircles);
+			Zgine::IG::Checkbox("Show Advanced", &m_Config.showAdvanced);
+			Zgine::IG::Checkbox("Show Triangles", &m_Config.showTriangles);
+			Zgine::IG::Checkbox("Show Ellipses", &m_Config.showEllipses);
+			Zgine::IG::Checkbox("Show Arcs", &m_Config.showArcs);
+			Zgine::IG::Checkbox("Show Gradients", &m_Config.showGradients);
 
-			ImGui::Separator();
-			ImGui::Text("Animation Options");
-			ImGui::Checkbox("Animate Circles", &m_Config.animateCircles);
-			ImGui::Checkbox("Animate Quads", &m_Config.animateQuads);
-			ImGui::SliderFloat("Animation Speed", &m_Config.animationSpeed, 0.1f, 5.0f);
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Animation Options");
+			Zgine::IG::Checkbox("Animate Circles", &m_Config.animateCircles);
+			Zgine::IG::Checkbox("Animate Quads", &m_Config.animateQuads);
+			Zgine::IG::SliderFloat("Animation Speed", &m_Config.animationSpeed, 0.1f, 5.0f);
 
-			ImGui::Separator();
-			ImGui::Text("Settings");
-			ImGui::SliderFloat("Line Thickness", &m_Config.lineThickness, 0.01f, 0.2f);
-			ImGui::SliderFloat("Circle Radius", &m_Config.circleRadius, 0.1f, 1.0f);
-			ImGui::SliderInt("Circle Segments", &m_Config.circleSegments, 8, 64);
-			ImGui::SliderInt("Ellipse Segments", &m_Config.ellipseSegments, 8, 32);
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Settings");
+			Zgine::IG::SliderFloat("Line Thickness", &m_Config.lineThickness, 0.01f, 0.2f);
+			Zgine::IG::SliderFloat("Circle Radius", &m_Config.circleRadius, 0.1f, 1.0f);
+			Zgine::IG::SliderInt("Circle Segments", &m_Config.circleSegments, 8, 64);
+			Zgine::IG::SliderInt("Ellipse Segments", &m_Config.ellipseSegments, 8, 32);
 
-			ImGui::Separator();
-			ImGui::Text("Camera Settings");
-			ImGui::SliderFloat("Camera Speed", &m_Config.cameraSpeed, 0.5f, 10.0f);
-			ImGui::SliderFloat3("Camera Position", &m_Config.cameraPosition.x, -5.0f, 5.0f);
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Camera Settings");
+			Zgine::IG::SliderFloat("Camera Speed", &m_Config.cameraSpeed, 0.5f, 10.0f);
+			Zgine::IG::SliderFloat3("Camera Position", &m_Config.cameraPosition.x, -5.0f, 5.0f);
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test2DModule::RenderPerformanceWindow()
 	{
-		if (ImGui::Begin("2D Performance", &m_ShowPerformanceWindow))
+		if (Zgine::IG::Begin("2D Performance", &m_ShowPerformanceWindow))
 		{
-			ImGui::Text("Performance Metrics");
-			ImGui::Separator();
-			ImGui::Text("FPS: %.1f", m_FPS);
-			ImGui::Text("Objects Rendered: %d", m_ObjectCount);
-			ImGui::Text("Active Scene: %s", m_ActiveScene.c_str());
+			Zgine::IG::Text("Performance Metrics");
+			Zgine::IG::Separator();
+			Zgine::IG::Text("FPS: %.1f", m_FPS);
+			Zgine::IG::Text("Objects Rendered: %d", m_ObjectCount);
+			Zgine::IG::Text("Active Scene: %s", m_ActiveScene.c_str());
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test2DModule::RenderSceneSelector()
 	{
-		if (ImGui::Begin("2D Scene Selector", &m_ShowSceneSelector))
+		if (Zgine::IG::Begin("2D Scene Selector", &m_ShowSceneSelector))
 		{
-			ImGui::Text("Select 2D Test Scene");
-			ImGui::Separator();
+			Zgine::IG::Text("Select 2D Test Scene");
+			Zgine::IG::Separator();
 
 			for (const auto& scene : m_Scenes)
 			{
 				bool isSelected = (scene.GetName() == m_ActiveScene);
-				if (ImGui::Selectable(scene.GetName().c_str(), isSelected))
+				if (Zgine::IG::Selectable(scene.GetName().c_str(), isSelected))
 				{
 					SetActiveScene(scene.GetName());
 				}
 			}
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test2DModule::RenderBasicShapesScene(const Test2DConfig& config)

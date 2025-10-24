@@ -4,6 +4,7 @@
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Events/KeyEvent.h"
 #include "Zgine/Events/MouseEvent.h"
+#include "Zgine/ImGui/ImGuiWrapper.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <random>
 #include <GL/gl.h>
@@ -15,8 +16,29 @@ namespace Sandbox {
 		, m_Time(0.0f)
 		, m_ActiveScene("Basic Shapes")
 	{
+		// Explicitly set default configuration values
+		m_Config.showCubes = true;
+		m_Config.showSpheres = true;
+		m_Config.showPlanes = true;
+		m_Config.showEnvironment = false; // Changed from true to false
+		m_Config.animateObjects = false; // Changed from true to false
+		m_Config.wireframeMode = false;
+		
 		m_Camera.SetPosition(m_Config.cameraPosition);
 		m_Camera.SetRotation(m_Config.cameraRotation);
+		
+		// Debug: Log camera setup
+		ZG_CORE_INFO("Test3DModule - Camera Position: ({}, {}, {})", 
+			m_Config.cameraPosition.x, m_Config.cameraPosition.y, m_Config.cameraPosition.z);
+		ZG_CORE_INFO("Test3DModule - Camera Rotation: ({}, {}, {})", 
+			m_Config.cameraRotation.x, m_Config.cameraRotation.y, m_Config.cameraRotation.z);
+		ZG_CORE_INFO("Test3DModule - Camera Forward: ({}, {}, {})", 
+			m_Camera.GetForward().x, m_Camera.GetForward().y, m_Camera.GetForward().z);
+		
+		// Debug: Log initial configuration values
+		ZG_CORE_INFO("Test3DModule created - Initial config: showCubes={}, showSpheres={}, showPlanes={}", 
+			m_Config.showCubes, m_Config.showSpheres, m_Config.showPlanes);
+		
 		ZG_CORE_INFO("Test3DModule created");
 	}
 
@@ -53,6 +75,12 @@ namespace Sandbox {
 
 	void Test3DModule::OnUpdate(float ts)
 	{
+		// Handle camera input
+		if (m_CameraControlEnabled)
+		{
+			HandleCameraInput(ts);
+		}
+
 		UpdateCamera(ts);
 		UpdateAnimations(ts);
 
@@ -110,10 +138,21 @@ namespace Sandbox {
 
 	void Test3DModule::RenderActiveScene()
 	{
+		// Debug: Log current configuration and active scene
+		ZG_CORE_INFO("RenderActiveScene called - ActiveScene: {}, showCubes={}, showSpheres={}, showPlanes={}", 
+			m_ActiveScene, m_Config.showCubes, m_Config.showSpheres, m_Config.showPlanes);
+		
+		// Debug: Check if configuration was modified
+		if (!m_Config.showCubes && !m_Config.showSpheres && !m_Config.showPlanes)
+		{
+			ZG_CORE_WARN("All 3D shapes are disabled! This might be a configuration issue.");
+		}
+		
 		for (auto& scene : m_Scenes)
 		{
 			if (scene.GetName() == m_ActiveScene)
 			{
+				ZG_CORE_INFO("Found matching scene: {}, calling render function", scene.GetName());
 				scene.Render(m_Config);
 				break;
 			}
@@ -122,49 +161,7 @@ namespace Sandbox {
 
 	void Test3DModule::UpdateCamera(float ts)
 	{
-		// Update camera position based on input
-		glm::vec3 front = m_Camera.GetForward();
-		glm::vec3 right = m_Camera.GetRight();
-		glm::vec3 up = m_Camera.GetUp();
-
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
-			m_Config.cameraPosition += front * m_Config.cameraSpeed * ts;
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
-			m_Config.cameraPosition -= front * m_Config.cameraSpeed * ts;
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
-			m_Config.cameraPosition -= right * m_Config.cameraSpeed * ts;
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
-			m_Config.cameraPosition += right * m_Config.cameraSpeed * ts;
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_SPACE))
-			m_Config.cameraPosition += up * m_Config.cameraSpeed * ts;
-		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT_SHIFT))
-			m_Config.cameraPosition -= up * m_Config.cameraSpeed * ts;
-
-		// Update camera rotation based on mouse input
-		if (Zgine::Input::IsMouseButtonPressed(ZG_MOUSE_BUTTON_RIGHT))
-		{
-		auto mousePos = Zgine::Input::GetMousePosition();
-		static auto lastMousePos = mousePos;
-		
-		float deltaX = mousePos.first - lastMousePos.first;
-		float deltaY = mousePos.second - lastMousePos.second;
-			
-			m_Config.cameraRotation.y += deltaX * m_Config.rotationSpeed * ts;
-			m_Config.cameraRotation.x -= deltaY * m_Config.rotationSpeed * ts;
-			
-			// Clamp pitch
-			m_Config.cameraRotation.x = glm::clamp(m_Config.cameraRotation.x, -89.0f, 89.0f);
-			
-			lastMousePos = mousePos;
-		}
-		else
-		{
-			auto mousePos = Zgine::Input::GetMousePosition();
-			static auto lastMousePos = mousePos;
-			lastMousePos = mousePos;
-		}
-
-		// Update camera
+		// Update camera with current configuration
 		m_Camera.SetPosition(m_Config.cameraPosition);
 		m_Camera.SetRotation(m_Config.cameraRotation);
 	}
@@ -186,67 +183,75 @@ namespace Sandbox {
 
 	void Test3DModule::RenderConfigWindow()
 	{
-		if (ImGui::Begin("3D Test Configuration", &m_ShowConfigWindow))
+		if (Zgine::IG::Begin("3D Test Configuration", &m_ShowConfigWindow))
 		{
-			ImGui::Text("Render Options");
-			ImGui::Separator();
-			ImGui::Checkbox("Show Cubes", &m_Config.showCubes);
-			ImGui::Checkbox("Show Spheres", &m_Config.showSpheres);
-			ImGui::Checkbox("Show Planes", &m_Config.showPlanes);
-			ImGui::Checkbox("Show Environment", &m_Config.showEnvironment);
-			ImGui::Checkbox("Animate Objects", &m_Config.animateObjects);
-			ImGui::Checkbox("Wireframe Mode", &m_Config.wireframeMode);
+			Zgine::IG::Text("Render Options");
+			Zgine::IG::Separator();
+			Zgine::IG::Checkbox("Show Cubes", &m_Config.showCubes);
+			Zgine::IG::Checkbox("Show Spheres", &m_Config.showSpheres);
+			Zgine::IG::Checkbox("Show Planes", &m_Config.showPlanes);
+			Zgine::IG::Checkbox("Show Environment", &m_Config.showEnvironment);
+			Zgine::IG::Checkbox("Animate Objects", &m_Config.animateObjects);
+			Zgine::IG::Checkbox("Wireframe Mode", &m_Config.wireframeMode);
 
-			ImGui::Separator();
-			ImGui::Text("Lighting");
-			ImGui::SliderFloat("Light Intensity", &m_Config.lightIntensity, 0.0f, 5.0f);
-			ImGui::SliderFloat3("Light Position", &m_Config.lightPosition.x, -20.0f, 20.0f);
-			ImGui::ColorEdit3("Light Color", &m_Config.lightColor.x);
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Lighting");
+			Zgine::IG::SliderFloat("Light Intensity", &m_Config.lightIntensity, 0.0f, 5.0f);
+			Zgine::IG::SliderFloat3("Light Position", &m_Config.lightPosition.x, -20.0f, 20.0f);
+			Zgine::IG::ColorEdit3("Light Color", &m_Config.lightColor.x);
 
-			ImGui::Separator();
-			ImGui::Text("Camera Settings");
-			ImGui::SliderFloat("Camera Speed", &m_Config.cameraSpeed, 1.0f, 20.0f);
-			ImGui::SliderFloat("Rotation Speed", &m_Config.rotationSpeed, 10.0f, 180.0f);
-			ImGui::SliderFloat3("Camera Position", &m_Config.cameraPosition.x, -50.0f, 50.0f);
-			ImGui::SliderFloat3("Camera Rotation", &m_Config.cameraRotation.x, -180.0f, 180.0f);
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Camera Settings");
+			Zgine::IG::SliderFloat("Camera Speed", &m_Config.cameraSpeed, 1.0f, 20.0f);
+			Zgine::IG::SliderFloat("Rotation Speed", &m_Config.rotationSpeed, 10.0f, 180.0f);
+			Zgine::IG::SliderFloat3("Camera Position", &m_Config.cameraPosition.x, -50.0f, 50.0f);
+			Zgine::IG::SliderFloat3("Camera Rotation", &m_Config.cameraRotation.x, -180.0f, 180.0f);
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test3DModule::RenderPerformanceWindow()
 	{
-		if (ImGui::Begin("3D Performance", &m_ShowPerformanceWindow))
+		if (Zgine::IG::Begin("3D Performance", &m_ShowPerformanceWindow))
 		{
-			ImGui::Text("Performance Metrics");
-			ImGui::Separator();
-			ImGui::Text("FPS: %.1f", m_FPS);
-			ImGui::Text("Objects Rendered: %d", m_ObjectCount);
-			ImGui::Text("Active Scene: %s", m_ActiveScene.c_str());
+			Zgine::IG::Text("Performance Metrics");
+			Zgine::IG::Separator();
+			Zgine::IG::Text("FPS: %.1f", m_FPS);
+			Zgine::IG::Text("Objects Rendered: %d", m_ObjectCount);
+			Zgine::IG::Text("Active Scene: %s", m_ActiveScene.c_str());
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test3DModule::RenderSceneSelector()
 	{
-		if (ImGui::Begin("3D Scene Selector", &m_ShowSceneSelector))
+		if (Zgine::IG::Begin("3D Scene Selector", &m_ShowSceneSelector))
 		{
-			ImGui::Text("Select 3D Test Scene");
-			ImGui::Separator();
+			Zgine::IG::Text("Select 3D Test Scene");
+			Zgine::IG::Separator();
 
 			for (const auto& scene : m_Scenes)
 			{
 				bool isSelected = (scene.GetName() == m_ActiveScene);
-				if (ImGui::Selectable(scene.GetName().c_str(), isSelected))
+				if (Zgine::IG::Selectable(scene.GetName().c_str(), isSelected))
 				{
 					SetActiveScene(scene.GetName());
 				}
 			}
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void Test3DModule::RenderBasicShapesScene(const Test3DConfig& config)
 	{
+		// Debug: Log camera information
+		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Position: ({}, {}, {})", 
+			m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z);
+		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Rotation: ({}, {}, {})", 
+			m_Camera.GetRotation().x, m_Camera.GetRotation().y, m_Camera.GetRotation().z);
+		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Forward: ({}, {}, {})", 
+			m_Camera.GetForward().x, m_Camera.GetForward().y, m_Camera.GetForward().z);
+
 		// Apply render mode settings
 		if (config.wireframeMode)
 		{
@@ -270,7 +275,8 @@ namespace Sandbox {
 					float x = -2.0f + i * 2.0f;
 					float z = -2.0f + j * 2.0f;
 					
-					Zgine::BatchRenderer3D::DrawCube({ x, 0.0f, z }, { 1.0f, 1.0f, 1.0f }, 
+					ZG_CORE_INFO("3D Basic Shapes Scene - Drawing cube at ({}, {}, {})", x, 0.0f, z);
+					Zgine::BatchRenderer3D::DrawCube({ x, 0.0f, z }, { 0.5f, 0.5f, 0.5f }, 
 						{ 1.0f, 0.0f, 0.0f, 1.0f });
 					IncrementObjectCount();
 				}
@@ -289,8 +295,8 @@ namespace Sandbox {
 			{
 				for (int j = 0; j < 2; j++)
 				{
-					float x = -1.0f + i * 2.0f;
-					float z = -1.0f + j * 2.0f;
+					float x = -2.0f + i * 2.0f;
+					float z = -2.0f + j * 2.0f;
 					
 					Zgine::BatchRenderer3D::DrawSphere({ x, 2.0f, z }, 0.5f, 
 						{ 0.0f, 1.0f, 0.0f, 1.0f });
@@ -307,7 +313,7 @@ namespace Sandbox {
 		if (config.showPlanes)
 		{
 			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering planes (showPlanes=true)");
-			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 10.0f, 10.0f }, 
+			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 8.0f, 8.0f }, 
 				{ 0.5f, 0.5f, 0.5f, 1.0f });
 			IncrementObjectCount();
 		}
@@ -426,6 +432,115 @@ namespace Sandbox {
 		Zgine::BatchRenderer3D::DrawSphere(m_Config.lightPosition, 0.2f, 
 			{ m_Config.lightColor.x, m_Config.lightColor.y, m_Config.lightColor.z, 1.0f });
 		IncrementObjectCount();
+	}
+
+	void Test3DModule::HandleCameraInput(float ts)
+	{
+		HandleKeyboardInput(ts);
+		HandleMouseInput(ts);
+	}
+
+	void Test3DModule::HandleKeyboardInput(float ts)
+	{
+		if (!m_Config.enableKeyboardMovement)
+			return;
+
+		glm::vec3 front = m_Camera.GetForward();
+		glm::vec3 right = m_Camera.GetRight();
+		glm::vec3 up = m_Camera.GetUp();
+
+		// Movement controls
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_W))
+			m_Config.cameraPosition += front * m_Config.cameraSpeed * ts;
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_S))
+			m_Config.cameraPosition -= front * m_Config.cameraSpeed * ts;
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
+			m_Config.cameraPosition -= right * m_Config.cameraSpeed * ts;
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
+			m_Config.cameraPosition += right * m_Config.cameraSpeed * ts;
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_SPACE))
+			m_Config.cameraPosition += up * m_Config.cameraSpeed * ts;
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT_SHIFT))
+			m_Config.cameraPosition -= up * m_Config.cameraSpeed * ts;
+
+		// Speed controls
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_Q))
+			m_Config.cameraSpeed = glm::max(0.1f, m_Config.cameraSpeed - 2.0f * ts);
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_E))
+			m_Config.cameraSpeed = glm::min(50.0f, m_Config.cameraSpeed + 2.0f * ts);
+
+		// Reset camera
+		if (Zgine::Input::IsKeyPressed(ZG_KEY_R))
+			ResetCamera();
+	}
+
+	void Test3DModule::HandleMouseInput(float ts)
+	{
+		if (!m_Config.enableMouseLook)
+			return;
+
+		// Check if right mouse button is pressed for mouse look
+		if (Zgine::Input::IsMouseButtonPressed(ZG_MOUSE_BUTTON_RIGHT))
+		{
+			auto mousePos = Zgine::Input::GetMousePosition();
+			
+			if (m_FirstMouse)
+			{
+				m_LastMouseX = mousePos.first;
+				m_LastMouseY = mousePos.second;
+				m_FirstMouse = false;
+				m_MouseCaptured = true;
+			}
+
+			float deltaX = mousePos.first - m_LastMouseX;
+			float deltaY = mousePos.second - m_LastMouseY;
+
+			// Apply mouse sensitivity
+			deltaX *= m_Config.mouseSensitivity;
+			deltaY *= m_Config.mouseSensitivity;
+
+			// Update rotation
+			m_Config.cameraRotation.y += deltaX;
+			m_Config.cameraRotation.x -= deltaY;
+
+			// Clamp pitch to prevent over-rotation
+			m_Config.cameraRotation.x = glm::clamp(m_Config.cameraRotation.x, -89.0f, 89.0f);
+
+			// Keep yaw in reasonable range
+			if (m_Config.cameraRotation.y > 360.0f)
+				m_Config.cameraRotation.y -= 360.0f;
+			if (m_Config.cameraRotation.y < -360.0f)
+				m_Config.cameraRotation.y += 360.0f;
+
+			m_LastMouseX = mousePos.first;
+			m_LastMouseY = mousePos.second;
+		}
+		else
+		{
+			m_FirstMouse = true;
+			m_MouseCaptured = false;
+		}
+	}
+
+	void Test3DModule::ResetCamera()
+	{
+		m_Config.cameraPosition = { 0.0f, 2.0f, 8.0f };
+		m_Config.cameraRotation = { -15.0f, 0.0f, 0.0f };
+		m_FirstMouse = true;
+		m_MouseCaptured = false;
+		ZG_CORE_INFO("3D Camera reset to default position");
+	}
+
+	void Test3DModule::SetCameraLookAt(const glm::vec3& target)
+	{
+		glm::vec3 direction = glm::normalize(target - m_Config.cameraPosition);
+		
+		// Calculate yaw and pitch from direction vector
+		float yaw = glm::degrees(atan2(direction.z, direction.x));
+		float pitch = glm::degrees(asin(-direction.y));
+		
+		m_Config.cameraRotation = { pitch, yaw, 0.0f };
+		ZG_CORE_INFO("3D Camera looking at target: ({}, {}, {})", target.x, target.y, target.z);
 	}
 
 }

@@ -1,16 +1,15 @@
 #pragma once
 
 #include "Zgine/ImGui/ImGuiLayer.h"
-#include "Testing/Test3DModule.h"
-#include "imgui.h"
+#include "Test2DModule.h"
 
 namespace Sandbox {
 
-	class Test3DLayer : public Zgine::ImGuiLayer
+	class Test2DLayer : public Zgine::ImGuiLayer
 	{
 	public:
-		Test3DLayer();
-		virtual ~Test3DLayer();
+		Test2DLayer();
+		virtual ~Test2DLayer();
 
 		virtual void OnAttach() override;
 		virtual void OnUpdate(Zgine::Timestep ts) override;
@@ -18,11 +17,11 @@ namespace Sandbox {
 		virtual void OnEvent(Zgine::Event& e) override;
 
 		// Test module access
-		Test3DModule& GetTest3DModule() { return m_Test3DModule; }
-		const Test3DModule& GetTest3DModule() const { return m_Test3DModule; }
+		Test2DModule& GetTest2DModule() { return m_Test2DModule; }
+		const Test2DModule& GetTest2DModule() const { return m_Test2DModule; }
 
 	private:
-		Test3DModule m_Test3DModule;
+		Test2DModule m_Test2DModule;
 	};
 
 }

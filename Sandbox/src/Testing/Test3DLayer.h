@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Zgine/ImGui/ImGuiLayer.h"
-#include "Testing/Test3DModule.h"
-#include "imgui.h"
+#include "Test3DModule.h"
 
 namespace Sandbox {
 
