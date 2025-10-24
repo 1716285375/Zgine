@@ -3,6 +3,7 @@
 #include "Zgine/Renderer/OrthographicCamera.h"
 #include "Zgine/Renderer/PerspectiveCamera.h"
 #include "Zgine/Events/Event.h"
+#include "Zgine/Core/SmartPointers.h"
 #include <glm/glm.hpp>
 
 namespace Sandbox {
@@ -44,9 +45,9 @@ namespace Sandbox {
 		Zgine::PerspectiveCamera m_3DCamera;
 		float m_Time = 0.0f;
 
-		// Test modules - using pointers to avoid incomplete type issues
-		Test2DModule* m_Test2DModule = nullptr;
-		Test3DModule* m_Test3DModule = nullptr;
+		// Test modules - using smart pointers for automatic memory management
+		Zgine::Scope<Test2DModule> m_Test2DModule;
+		Zgine::Scope<Test3DModule> m_Test3DModule;
 	};
 
 }

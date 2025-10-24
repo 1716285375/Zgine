@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Zgine/Layer.h"
+#include "Zgine/Core/SmartPointers.h"
 #include "UI/UIManager.h"
 #include "Rendering/RenderManager.h"
 #include "Scene/SceneManager.h"
@@ -8,6 +9,7 @@
 #include "Zgine/Renderer/PerformanceMonitorUI.h"
 #include "Zgine/Renderer/PerformanceBenchmark.h"
 #include "Zgine/Events/ApplicationEvent.h"
+#include "Testing/ECSTestLayer.h"
 
 namespace Sandbox {
 
@@ -31,6 +33,9 @@ namespace Sandbox {
 
 		// Performance monitoring
 		bool m_PerformanceMonitoringEnabled = true;
+		
+		// ECS testing
+		Zgine::Scope<ECSTestLayer> m_ECSTestLayer;
 
 		// Event handling
 		bool OnWindowResize(Zgine::WindowResizeEvent& e);

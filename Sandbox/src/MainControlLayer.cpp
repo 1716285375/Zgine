@@ -2,6 +2,7 @@
 #include "Zgine/Log.h"
 #include "Zgine/Events/Event.h"
 #include "Zgine/Application.h"
+#include "Zgine/Core/SmartPointers.h"
 
 namespace Sandbox {
 
@@ -12,6 +13,7 @@ namespace Sandbox {
 
 	MainControlLayer::~MainControlLayer()
 	{
+		// Smart pointer automatically cleans up ECS test layer
 		ZG_CORE_INFO("MainControlLayer destroyed!");
 	}
 
@@ -42,6 +44,11 @@ namespace Sandbox {
 			Zgine::PerformanceBenchmark::Init();
 			ZG_CORE_INFO("Performance monitoring initialized");
 		}
+		
+		// Initialize ECS test layer
+		m_ECSTestLayer = Zgine::CreateScope<ECSTestLayer>();
+		m_ECSTestLayer->OnAttach();
+		ZG_CORE_INFO("ECS Test Layer initialized");
 	}
 
 	void MainControlLayer::OnUpdate(Zgine::Timestep ts)
@@ -51,6 +58,12 @@ namespace Sandbox {
 		m_RenderManager.OnUpdate(ts);
 		m_SceneManager.OnUpdate(ts);
 		m_SettingsManager.OnUpdate(ts);
+		
+		// Update ECS test layer
+		if (m_ECSTestLayer)
+		{
+			m_ECSTestLayer->OnUpdate(ts);
+		}
 		
 		// Render test modules
 		m_RenderManager.Render2D();
@@ -69,6 +82,17 @@ namespace Sandbox {
 		m_UIManager.OnImGuiRender();
 		m_SceneManager.OnImGuiRender();
 		m_SettingsManager.OnImGuiRender();
+		
+		// Render ECS test layer
+		if (m_ECSTestLayer)
+		{
+			ZG_CORE_INFO("MainControlLayer::OnImGuiRender - Calling ECSTestLayer::OnImGuiRender");
+			m_ECSTestLayer->OnImGuiRender();
+		}
+		else
+		{
+			ZG_CORE_WARN("MainControlLayer::OnImGuiRender - m_ECSTestLayer is null!");
+		}
 
 		// Render performance monitoring
 		if (m_PerformanceMonitoringEnabled)
@@ -82,6 +106,12 @@ namespace Sandbox {
 		// Forward events to managers
 		m_UIManager.OnEvent(e);
 		m_RenderManager.OnEvent(e);
+		
+		// Forward events to ECS test layer
+		if (m_ECSTestLayer)
+		{
+			m_ECSTestLayer->OnEvent(e);
+		}
 
 		// Handle specific events
 		Zgine::EventDispatcher dispatcher(e);

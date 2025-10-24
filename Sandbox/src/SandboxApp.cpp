@@ -2,6 +2,7 @@
 #include <Zgine.h>
 #include "MainControlLayer.h"
 #include "Zgine/Log.h"
+#include "Zgine/Core/SmartPointers.h"
 
 class SandboxApp : public Zgine::Application
 {
@@ -21,7 +22,7 @@ public:
 	{
 		ZG_CORE_INFO("SandboxApp::OnApplicationStart called - Creating MainControlLayer");
 		// Push main control layer after Application and Renderer are fully initialized
-		PushLayer(new Sandbox::MainControlLayer());
+		PushLayer(Zgine::CreateScope<Sandbox::MainControlLayer>().release());
 		ZG_CORE_INFO("MainControlLayer created and pushed to layer stack");
 	}
 };
@@ -29,5 +30,5 @@ public:
 Zgine::Application* Zgine::CreateApplication()
 {
 	ZG_CORE_INFO("CreateApplication called - Creating SandboxApp");
-	return new SandboxApp();
+	return Zgine::CreateScope<SandboxApp>().release();
 }

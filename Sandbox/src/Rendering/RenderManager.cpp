@@ -3,6 +3,7 @@
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/BatchRenderer3D.h"
+#include "Zgine/Core/SmartPointers.h"
 #include "../Testing/Test2DModule.h"
 #include "../Testing/Test3DModule.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -26,8 +27,8 @@ namespace Sandbox {
 		ZG_CORE_INFO("RenderManager attached");
 		
 		// Initialize test modules
-		m_Test2DModule = new Test2DModule();
-		m_Test3DModule = new Test3DModule();
+		m_Test2DModule = Zgine::CreateScope<Test2DModule>();
+		m_Test3DModule = Zgine::CreateScope<Test3DModule>();
 		m_Test2DModule->OnAttach();
 		m_Test3DModule->OnAttach();
 	}
@@ -74,11 +75,19 @@ namespace Sandbox {
 
 	void RenderManager::Render3D()
 	{
+		ZG_CORE_TRACE("RenderManager::Render3D called");
 		if (m_Test3DModule)
 		{
+			ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::BeginScene");
 			Zgine::BatchRenderer3D::BeginScene(m_Test3DModule->GetCamera());
+			ZG_CORE_TRACE("RenderManager::Render3D - Calling Test3DModule::RenderActiveScene");
 			m_Test3DModule->RenderActiveScene();
+			ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::EndScene");
 			Zgine::BatchRenderer3D::EndScene();
+		}
+		else
+		{
+			ZG_CORE_WARN("RenderManager::Render3D called but m_Test3DModule is null!");
 		}
 	}
 
