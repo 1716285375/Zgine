@@ -156,9 +156,15 @@ print "总体统计:\n";
 print "-" x 50 . "\n";
 printf "总文件数:     %6d 个\n", scalar keys %stats;
 printf "总行数:       %6d 行\n", $total_lines;
-printf "代码行数:     %6d 行 (%.1f%%)\n", $total_code_lines, ($total_code_lines / $total_lines) * 100;
-printf "注释行数:     %6d 行 (%.1f%%)\n", $total_comment_lines, ($total_comment_lines / $total_lines) * 100;
-printf "空行数:       %6d 行 (%.1f%%)\n", $total_empty_lines, ($total_empty_lines / $total_lines) * 100;
+if ($total_lines > 0) {
+    printf "代码行数:     %6d 行 (%.1f%%)\n", $total_code_lines, ($total_code_lines / $total_lines) * 100;
+    printf "注释行数:     %6d 行 (%.1f%%)\n", $total_comment_lines, ($total_comment_lines / $total_lines) * 100;
+    printf "空行数:       %6d 行 (%.1f%%)\n", $total_empty_lines, ($total_empty_lines / $total_lines) * 100;
+} else {
+    printf "代码行数:     %6d 行\n", $total_code_lines;
+    printf "注释行数:     %6d 行\n", $total_comment_lines;
+    printf "空行数:       %6d 行\n", $total_empty_lines;
+}
 
 print "\n按编程语言分类:\n";
 print "-" x 80 . "\n";
@@ -179,7 +185,7 @@ foreach my $language (sort keys %stats) {
 print "\n";
 
 # 计算平均每个文件的代码行数
-if ($total_lines > 0) {
+if ($total_lines > 0 && scalar keys %stats > 0) {
     my $avg_lines_per_file = $total_lines / scalar keys %stats;
     printf "平均每个文件: %.1f 行\n", $avg_lines_per_file;
 }

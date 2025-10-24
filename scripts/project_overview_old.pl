@@ -4,7 +4,7 @@ use warnings;
 use File::Find;
 use File::Spec;
 
-# 简化的项目概览统计脚本
+# 项目概览统计脚本
 # 提供项目的全面统计信息
 
 my $project_root = ".";
@@ -12,6 +12,10 @@ my %file_stats = ();
 my %dir_stats = ();
 my $total_files = 0;
 my $total_size = 0;
+my $oldest_file = "";
+my $newest_file = "";
+my $oldest_time = time();
+my $newest_time = 0;
 
 # 排除的目录
 my @exclude_dirs = qw(
@@ -26,7 +30,6 @@ my @exclude_dirs = qw(
     obj
     Debug
     Release
-    .vs
 );
 
 # 主要文件类型
@@ -43,6 +46,7 @@ print "=== Zgine 项目概览统计 ===\n\n";
 
 # 获取项目信息
 my $project_name = "Zgine";
+my $current_time = localtime();
 print "项目名称: $project_name\n";
 print "统计时间: " . scalar(localtime()) . "\n";
 print "项目根目录: " . File::Spec->rel2abs($project_root) . "\n\n";
@@ -71,6 +75,16 @@ find(sub {
         my $size = -s $full_path;
         $total_size += $size if $size;
         
+        my $mtime = (stat($full_path))[9];
+        if ($mtime < $oldest_time) {
+            $oldest_time = $mtime;
+            $oldest_file = $full_path;
+        }
+        if ($mtime > $newest_time) {
+            $newest_time = $mtime;
+            $newest_file = $full_path;
+        }
+        
         # 按扩展名统计
         $file_stats{$ext}++;
         
@@ -96,6 +110,18 @@ print "-" x 40 . "\n";
 printf "总文件数:     %6d 个\n", $total_files;
 printf "总目录数:    %6d 个\n", scalar keys %dir_stats;
 printf "总大小:      %6.2f MB\n", $total_size / (1024 * 1024);
+
+if ($oldest_file) {
+    my $oldest_date = scalar(localtime($oldest_time));
+    print "最旧文件:    $oldest_file\n";
+    print "修改时间:    $oldest_date\n";
+}
+
+if ($newest_file) {
+    my $newest_date = scalar(localtime($newest_time));
+    print "最新文件:    $newest_file\n";
+    print "修改时间:    $newest_date\n";
+}
 
 print "\n";
 
@@ -123,40 +149,54 @@ foreach my $type (sort keys %main_types) {
 
 print "\n";
 
-# 输出扩展名统计（前10个）
+# 按扩展名统计（前10个）
 print "文件扩展名统计 (前10个):\n";
 print "-" x 30 . "\n";
 my @sorted_exts = sort { $file_stats{$b} <=> $file_stats{$a} } keys %file_stats;
 my $count = 0;
 foreach my $ext (@sorted_exts) {
     last if $count >= 10;
-    printf "%-15s %6d 文件\n", $ext || "(无扩展名)", $file_stats{$ext};
+    printf "%-8s %6d 文件\n", $ext || "(无扩展名)", $file_stats{$ext};
     $count++;
 }
 
 print "\n";
 
-# 分析项目特点
-print "项目特点分析:\n";
+# 目录结构统计
+print "主要目录:\n";
+print "-" x 40 . "\n";
+my @sorted_dirs = sort keys %dir_stats;
+foreach my $dir (@sorted_dirs) {
+    next if $dir eq '.';
+    printf "%-30s\n", $dir;
+}
+
+print "\n";
+
+# 项目健康度评估
+print "项目健康度评估:\n";
 print "-" x 40 . "\n";
 
-my $cpp_files = ($file_stats{'.cpp'} || 0) + ($file_stats{'.h'} || 0) + ($file_stats{'.hpp'} || 0);
-my $script_files = ($file_stats{'.pl'} || 0) + ($file_stats{'.lua'} || 0) + ($file_stats{'.bat'} || 0);
-my $config_files = ($file_stats{'.json'} || 0) + ($file_stats{'.ini'} || 0);
-my $doc_files = $file_stats{'.md'} || 0;
+my $cpp_files = 0;
+my $h_files = 0;
+foreach my $ext ('.cpp', '.c', '.cxx', '.cc') {
+    $cpp_files += $file_stats{$ext} if exists $file_stats{$ext};
+}
+foreach my $ext ('.h', '.hpp') {
+    $h_files += $file_stats{$ext} if exists $file_stats{$ext};
+}
 
-printf "C++ 项目文件: %6d 个 (%.1f%%)\n", $cpp_files, ($cpp_files / $total_files) * 100;
-printf "脚本文件:     %6d 个 (%.1f%%)\n", $script_files, ($script_files / $total_files) * 100;
-printf "配置文件:     %6d 个 (%.1f%%)\n", $config_files, ($config_files / $total_files) * 100;
-printf "文档文件:     %6d 个 (%.1f%%)\n", $doc_files, ($doc_files / $total_files) * 100;
+my $ratio = $h_files > 0 ? $cpp_files / $h_files : 0;
+printf "C++ 源文件:   %6d 个\n", $cpp_files;
+printf "C++ 头文件:   %6d 个\n", $h_files;
+printf "源/头比例:    %6.2f\n", $ratio;
 
-# 项目类型判断
-if ($cpp_files > $total_files * 0.3) {
-    print "\n项目类型: C++ 项目\n";
-} elsif ($script_files > $total_files * 0.2) {
-    print "\n项目类型: 脚本项目\n";
+if ($ratio > 0.5 && $ratio < 2.0) {
+    print "代码结构:     良好\n";
+} elsif ($ratio > 2.0) {
+    print "代码结构:     头文件偏少\n";
 } else {
-    print "\n项目类型: 混合项目\n";
+    print "代码结构:     头文件偏多\n";
 }
 
 print "\n脚本执行完成!\n";
