@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "ECSTestLayer.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/OrthographicCamera.h"
 #include "Zgine/ECS/ECSSerialization.h"
@@ -42,13 +43,13 @@ void ECSTestLayer::OnUpdate(Zgine::Timestep ts)
 
 void ECSTestLayer::RenderCustomUI()
 {
-    ZG_CORE_INFO("ECSTestLayer::RenderCustomUI called - m_ShowECSWindow: {}", m_ShowECSWindow);
+    // ZG_CORE_INFO("ECSTestLayer::RenderCustomUI called - m_ShowECSWindow: {}", m_ShowECSWindow);
     
     if (m_ShowECSWindow)
     {
         if (Zgine::IG::Begin("ECS Test Window", &m_ShowECSWindow))
         {
-            ZG_CORE_INFO("ECS Test Window is open and rendering");
+            // ZG_CORE_INFO("ECS Test Window is open and rendering");
             
             // ECS Statistics
             Zgine::IG::Text("ECS Statistics:");
@@ -301,7 +302,7 @@ void ECSTestLayer::RenderEntities()
     // Render ECS entities using BatchRenderer2D
     Zgine::BatchRenderer2D::BeginScene(camera);
     
-    ZG_CORE_INFO("Rendering {} entities", m_Entities.size());
+    // ZG_CORE_INFO("Rendering {} entities", m_Entities.size());
     
     // Render all entities in the dynamic list
     for (size_t i = 0; i < m_Entities.size(); ++i)

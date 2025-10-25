@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "SettingsManager.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include <fstream>
 #include <sstream>
 

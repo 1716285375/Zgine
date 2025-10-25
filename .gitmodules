@@ -20,3 +20,6 @@
 [submodule "Zgine/vendor/json/nlohmann"]
 	path = Zgine/vendor/json/nlohmann
 	url = https://github.com/1716285375/json.git
+[submodule "Zgine/vendor/miniaudio"]
+	path = Zgine/vendor/miniaudio
+	url = https://github.com/1716285375/miniaudio.git

@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "RenderManager.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Renderer/BatchRenderer2D.h"
 #include "Zgine/Renderer/BatchRenderer3D.h"
@@ -75,14 +76,14 @@ namespace Sandbox {
 
 	void RenderManager::Render3D()
 	{
-		ZG_CORE_TRACE("RenderManager::Render3D called");
+		// ZG_CORE_TRACE("RenderManager::Render3D called");
 		if (m_Test3DModule)
 		{
-			ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::BeginScene");
+			// ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::BeginScene");
 			Zgine::BatchRenderer3D::BeginScene(m_Test3DModule->GetCamera());
-			ZG_CORE_TRACE("RenderManager::Render3D - Calling Test3DModule::RenderActiveScene");
+			// ZG_CORE_TRACE("RenderManager::Render3D - Calling Test3DModule::RenderActiveScene");
 			m_Test3DModule->RenderActiveScene();
-			ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::EndScene");
+			// ZG_CORE_TRACE("RenderManager::Render3D - Calling BatchRenderer3D::EndScene");
 			Zgine::BatchRenderer3D::EndScene();
 		}
 		else

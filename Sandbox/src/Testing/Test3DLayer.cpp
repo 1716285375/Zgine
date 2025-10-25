@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "Test3DLayer.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 
 namespace Sandbox {
 

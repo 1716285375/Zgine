@@ -49,8 +49,8 @@ namespace Zgine {
 		}
 		
 		// Debug: Check if index buffer is bound
-		GLint currentIBO = 0;
-		glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &currentIBO);
+		// GLint currentIBO = 0;
+		// glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &currentIBO);
 		// ZG_CORE_TRACE("OpenGLRendererAPI::DrawIndexed - Current IBO: {}, Drawing {} indices", currentIBO, indexCount);
 		
 		glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, nullptr);

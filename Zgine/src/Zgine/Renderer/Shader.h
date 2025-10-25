@@ -22,6 +22,21 @@ namespace Zgine {
 		Shader(const std::string& vertexSrc, const std::string& fragmentSrc);
 		
 		/**
+		 * @brief Create a shader from source code
+		 * @param vertexSrc The vertex shader source code
+		 * @param fragmentSrc The fragment shader source code
+		 * @return Ref<Shader> A reference to the created shader
+		 */
+		static Ref<Shader> Create(const std::string& vertexSrc, const std::string& fragmentSrc);
+		
+		/**
+		 * @brief Create a shader from a single source file
+		 * @param source The combined shader source code
+		 * @return Ref<Shader> A reference to the created shader
+		 */
+		static Ref<Shader> Create(const std::string& source);
+		
+		/**
 		 * @brief Destroy the Shader object
 		 * @details Properly cleans up the shader program resources
 		 */
@@ -44,6 +59,12 @@ namespace Zgine {
 		 * @return uint32_t The OpenGL shader program ID
 		 */
 		uint32_t GetRendererID() const { return m_RendererID; }
+
+		/**
+		 * @brief Get the size of the shader program
+		 * @return size_t The estimated size of the shader program in bytes
+		 */
+		size_t GetSize() const;
 
 		/**
 		 * @brief Upload a float uniform to the shader

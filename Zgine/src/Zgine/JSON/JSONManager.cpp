@@ -2,7 +2,7 @@
 #include "JSONManager.h"
 #include "NlohmannJSONBackend.h"
 #include "RapidJSONBackend.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Core/SmartPointers.h"
 #include <fstream>
 #include <sstream>

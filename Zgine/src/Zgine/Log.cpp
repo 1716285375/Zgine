@@ -1,5 +1,5 @@
 #include "zgpch.h"
-#include "Log.h"
+#include "Zgine/Logging/Log.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace Zgine {

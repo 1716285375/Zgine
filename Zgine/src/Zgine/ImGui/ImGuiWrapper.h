@@ -2,6 +2,7 @@
 
 #include "Zgine/Core.h"
 #include <glm/glm.hpp>
+#include <imgui.h>
 
 namespace Zgine {
 	namespace ImGui {
@@ -20,6 +21,8 @@ namespace Zgine {
 
 			// Text and labels
 			static void Text(const char* fmt, ...);
+			static void TextUnformatted(const char* text);
+			static void TextUnformatted(const char* text, const char* text_end);
 			static void TextColored(const glm::vec4& color, const char* fmt, ...);
 			static void TextDisabled(const char* fmt, ...);
 			static void TextWrapped(const char* fmt, ...);
@@ -67,6 +70,14 @@ namespace Zgine {
 			static bool ColorEdit4(const char* label, float col[4], int flags = 0);
 			static bool ColorPicker3(const char* label, float col[3], int flags = 0);
 			static bool ColorPicker4(const char* label, float col[4], int flags = 0);
+
+			// Tabs
+			static bool BeginTabBar(const char* str_id, int flags = 0);
+			static void EndTabBar();
+			static bool BeginTabItem(const char* label, bool* p_open = nullptr, int flags = 0);
+			static void EndTabItem();
+			static bool TabItemButton(const char* label, int flags = 0);
+			static void SetTabItemClosed(const char* tab_or_docked_window_label);
 
 			// Layout
 			static void SameLine(float offset_from_start_x = 0.0f, float spacing = -1.0f);
@@ -116,6 +127,10 @@ namespace Zgine {
 			static float GetTreeNodeToLabelSpacing();
 			static bool CollapsingHeader_TreeNodeFlags(const char* label, int flags = 0);
 
+			// Child windows
+			static bool BeginChild(const char* str_id, const ImVec2& size = ImVec2(0, 0), bool border = false, int flags = 0);
+			static void EndChild();
+
 			// Popups
 			static bool BeginPopup(const char* str_id, int flags = 0);
 			static bool BeginPopupModal(const char* name, bool* p_open = nullptr, int flags = 0);
@@ -151,6 +166,7 @@ namespace Zgine {
 			static void TableSetupColumn(const char* label, int flags = 0, float init_width_or_weight = 0.0f, uint32_t user_id = 0);
 			static void TableSetupScrollFreeze(int cols, int rows);
 			static void TableHeadersRow();
+			static void TableAngledHeadersRow();
 			static void TableHeader(const char* label);
 			static int TableGetColumnCount();
 			static int TableGetColumnIndex();
@@ -159,14 +175,6 @@ namespace Zgine {
 			static int TableGetColumnFlags(int column = -1);
 			static void TableSetColumnEnabled(int column, bool enabled);
 			static void TableSetBgColor(int target, uint32_t color, int column = -1);
-
-			// Tab bars
-			static bool BeginTabBar(const char* str_id, int flags = 0);
-			static void EndTabBar();
-			static bool BeginTabItem(const char* label, bool* p_open = nullptr, int flags = 0);
-			static void EndTabItem();
-			static bool TabItemButton(const char* label, int flags = 0);
-			static void SetTabItemClosed(const char* tab_or_docked_window_label);
 
 			// Logging
 			static void LogToTTY(int auto_open_depth = -1);
@@ -181,7 +189,7 @@ namespace Zgine {
 			static bool SetDragDropPayload(const char* type, const void* data, size_t sz, int cond = 0);
 			static void EndDragDropSource();
 			static bool BeginDragDropTarget();
-			static const void* AcceptDragDropPayload(const char* type, int flags = 0);
+			static const ImGuiPayload* AcceptDragDropPayload(const char* type, int flags = 0);
 			static void EndDragDropTarget();
 			static const void* GetDragDropPayload();
 
@@ -218,6 +226,7 @@ namespace Zgine {
 			static void SetNextWindowContentSize(const glm::vec2& size);
 			static void SetNextWindowCollapsed(bool collapsed, int cond = 0);
 			static void SetNextWindowFocus();
+			static void SetNextWindowScroll(const glm::vec2& scroll);
 			static void SetNextWindowBgAlpha(float alpha);
 			static void SetNextWindowViewport(uint32_t viewport_id);
 			static void SetWindowPos(const glm::vec2& pos, int cond = 0);
@@ -232,6 +241,7 @@ namespace Zgine {
 
 			// Style
 			static void PushStyleColor(int idx, uint32_t col);
+			static void PushStyleColor(int idx, const glm::vec4& col);
 			static void PopStyleColor(int count = 1);
 			static void PushStyleVar(int idx, float val);
 			static void PushStyleVar(int idx, const glm::vec2& val);

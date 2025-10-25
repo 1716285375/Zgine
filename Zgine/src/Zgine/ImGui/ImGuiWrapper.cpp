@@ -1,6 +1,7 @@
 #include "zgpch.h" // Precompiled header
 #include "ImGuiWrapper.h"
 #include "imgui.h"
+#include <cstdarg>
 #include <glm/glm.hpp>
 
 namespace Zgine {
@@ -21,6 +22,14 @@ void ImGuiWrapper::Text(const char* fmt, ...) {
     va_start(args, fmt);
     ::ImGui::TextV(fmt, args);
     va_end(args);
+}
+
+void ImGuiWrapper::TextUnformatted(const char* text) {
+    ::ImGui::TextUnformatted(text);
+}
+
+void ImGuiWrapper::TextUnformatted(const char* text, const char* text_end) {
+    ::ImGui::TextUnformatted(text, text_end);
 }
 
 void ImGuiWrapper::TextColored(const glm::vec4& color, const char* fmt, ...) {
@@ -288,6 +297,406 @@ bool ImGuiWrapper::ColorPicker3(const char* label, float col[3], int flags) {
 
 bool ImGuiWrapper::ColorPicker4(const char* label, float col[4], int flags) {
     return ::ImGui::ColorPicker4(label, col, flags);
+}
+
+// Trees
+bool ImGuiWrapper::TreeNode(const char* label) {
+    return ::ImGui::TreeNode(label);
+}
+
+bool ImGuiWrapper::TreeNode(const char* str_id, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    bool result = ::ImGui::TreeNodeV(str_id, fmt, args);
+    va_end(args);
+    return result;
+}
+
+bool ImGuiWrapper::TreeNodeEx(const char* label, int flags) {
+    return ::ImGui::TreeNodeEx(label, flags);
+}
+
+bool ImGuiWrapper::TreeNodeEx(const char* str_id, int flags, const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    bool result = ::ImGui::TreeNodeExV(str_id, flags, fmt, args);
+    va_end(args);
+    return result;
+}
+
+void ImGuiWrapper::TreePush(const char* str_id) {
+    ::ImGui::TreePush(str_id);
+}
+
+void ImGuiWrapper::TreePop() {
+    ::ImGui::TreePop();
+}
+
+float ImGuiWrapper::GetTreeNodeToLabelSpacing() {
+    return ::ImGui::GetTreeNodeToLabelSpacing();
+}
+
+bool ImGuiWrapper::CollapsingHeader_TreeNodeFlags(const char* label, int flags) {
+    return ::ImGui::CollapsingHeader(label, flags);
+}
+
+// Child windows
+bool ImGuiWrapper::BeginChild(const char* str_id, const ImVec2& size, bool border, int flags) {
+    return ::ImGui::BeginChild(str_id, size, border, flags);
+}
+
+void ImGuiWrapper::EndChild() {
+    ::ImGui::EndChild();
+}
+
+// Tabs
+bool ImGuiWrapper::BeginTabBar(const char* str_id, int flags) {
+    return ::ImGui::BeginTabBar(str_id, flags);
+}
+
+void ImGuiWrapper::EndTabBar() {
+    ::ImGui::EndTabBar();
+}
+
+bool ImGuiWrapper::BeginTabItem(const char* label, bool* p_open, int flags) {
+    return ::ImGui::BeginTabItem(label, p_open, flags);
+}
+
+void ImGuiWrapper::EndTabItem() {
+    ::ImGui::EndTabItem();
+}
+
+bool ImGuiWrapper::TabItemButton(const char* label, int flags) {
+    return ::ImGui::TabItemButton(label, flags);
+}
+
+void ImGuiWrapper::SetTabItemClosed(const char* tab_or_docked_window_label) {
+    ::ImGui::SetTabItemClosed(tab_or_docked_window_label);
+}
+
+// Input methods
+bool ImGuiWrapper::InputTextMultiline(const char* label, char* buf, size_t buf_size, const glm::vec2& size, int flags) {
+    return ::ImGui::InputTextMultiline(label, buf, buf_size, ImVec2(size.x, size.y), flags);
+}
+
+bool ImGuiWrapper::InputFloat(const char* label, float* v, float step, float step_fast, const char* format, int flags) {
+    return ::ImGui::InputFloat(label, v, step, step_fast, format, flags);
+}
+
+bool ImGuiWrapper::InputFloat2(const char* label, float v[2], const char* format, int flags) {
+    return ::ImGui::InputFloat2(label, v, format, flags);
+}
+
+bool ImGuiWrapper::InputFloat3(const char* label, float v[3], const char* format, int flags) {
+    return ::ImGui::InputFloat3(label, v, format, flags);
+}
+
+bool ImGuiWrapper::InputFloat4(const char* label, float v[4], const char* format, int flags) {
+    return ::ImGui::InputFloat4(label, v, format, flags);
+}
+
+bool ImGuiWrapper::InputInt(const char* label, int* v, int step, int step_fast, int flags) {
+    return ::ImGui::InputInt(label, v, step, step_fast, flags);
+}
+
+bool ImGuiWrapper::InputInt2(const char* label, int v[2], int flags) {
+    return ::ImGui::InputInt2(label, v, flags);
+}
+
+bool ImGuiWrapper::InputInt3(const char* label, int v[3], int flags) {
+    return ::ImGui::InputInt3(label, v, flags);
+}
+
+bool ImGuiWrapper::InputInt4(const char* label, int v[4], int flags) {
+    return ::ImGui::InputInt4(label, v, flags);
+}
+
+// Popup methods
+bool ImGuiWrapper::BeginPopup(const char* str_id, int flags) {
+    return ::ImGui::BeginPopup(str_id, flags);
+}
+
+bool ImGuiWrapper::BeginPopupModal(const char* name, bool* p_open, int flags) {
+    return ::ImGui::BeginPopupModal(name, p_open, flags);
+}
+
+void ImGuiWrapper::EndPopup() {
+    ::ImGui::EndPopup();
+}
+
+void ImGuiWrapper::OpenPopup(const char* str_id, int popup_flags) {
+    ::ImGui::OpenPopup(str_id, popup_flags);
+}
+
+void ImGuiWrapper::OpenPopupOnItemClick(const char* str_id, int popup_flags) {
+    ::ImGui::OpenPopupOnItemClick(str_id, popup_flags);
+}
+
+bool ImGuiWrapper::BeginPopupContextItem(const char* str_id, int popup_flags) {
+    return ::ImGui::BeginPopupContextItem(str_id, popup_flags);
+}
+
+bool ImGuiWrapper::BeginPopupContextWindow(const char* str_id, int popup_flags) {
+    return ::ImGui::BeginPopupContextWindow(str_id, popup_flags);
+}
+
+bool ImGuiWrapper::BeginPopupContextVoid(const char* str_id, int popup_flags) {
+    return ::ImGui::BeginPopupContextVoid(str_id, popup_flags);
+}
+
+// Table methods
+bool ImGuiWrapper::BeginTable(const char* str_id, int column, int flags, const glm::vec2& outer_size, float inner_width) {
+    return ::ImGui::BeginTable(str_id, column, flags, ImVec2(outer_size.x, outer_size.y), inner_width);
+}
+
+void ImGuiWrapper::EndTable() {
+    ::ImGui::EndTable();
+}
+
+void ImGuiWrapper::TableNextRow(int row_flags, float min_row_height) {
+    ::ImGui::TableNextRow(row_flags, min_row_height);
+}
+
+bool ImGuiWrapper::TableNextColumn() {
+    return ::ImGui::TableNextColumn();
+}
+
+bool ImGuiWrapper::TableSetColumnIndex(int column_n) {
+    return ::ImGui::TableSetColumnIndex(column_n);
+}
+
+void ImGuiWrapper::TableSetupColumn(const char* label, int flags, float init_width_or_weight, uint32_t user_id) {
+    ::ImGui::TableSetupColumn(label, flags, init_width_or_weight, user_id);
+}
+
+void ImGuiWrapper::TableSetupScrollFreeze(int cols, int rows) {
+    ::ImGui::TableSetupScrollFreeze(cols, rows);
+}
+
+void ImGuiWrapper::TableHeader(const char* label) {
+    ::ImGui::TableHeader(label);
+}
+
+void ImGuiWrapper::TableHeadersRow() {
+    ::ImGui::TableHeadersRow();
+}
+
+void ImGuiWrapper::TableAngledHeadersRow() {
+    ::ImGui::TableAngledHeadersRow();
+}
+
+void ImGuiWrapper::TableSetBgColor(int target, uint32_t color, int column_n) {
+    ::ImGui::TableSetBgColor(target, color, column_n);
+}
+
+// Drag and Drop methods
+bool ImGuiWrapper::BeginDragDropSource(int flags) {
+    return ::ImGui::BeginDragDropSource(flags);
+}
+
+bool ImGuiWrapper::SetDragDropPayload(const char* type, const void* data, size_t sz, int cond) {
+    return ::ImGui::SetDragDropPayload(type, data, sz, cond);
+}
+
+void ImGuiWrapper::EndDragDropSource() {
+    ::ImGui::EndDragDropSource();
+}
+
+bool ImGuiWrapper::BeginDragDropTarget() {
+    return ::ImGui::BeginDragDropTarget();
+}
+
+const ImGuiPayload* ImGuiWrapper::AcceptDragDropPayload(const char* type, int flags) {
+    return ::ImGui::AcceptDragDropPayload(type, flags);
+}
+
+void ImGuiWrapper::EndDragDropTarget() {
+    ::ImGui::EndDragDropTarget();
+}
+
+// Item methods
+bool ImGuiWrapper::IsItemHovered(int flags) {
+    return ::ImGui::IsItemHovered(flags);
+}
+
+bool ImGuiWrapper::IsItemActive() {
+    return ::ImGui::IsItemActive();
+}
+
+bool ImGuiWrapper::IsItemFocused() {
+    return ::ImGui::IsItemFocused();
+}
+
+bool ImGuiWrapper::IsItemClicked(int mouse_button) {
+    return ::ImGui::IsItemClicked(mouse_button);
+}
+
+bool ImGuiWrapper::IsItemVisible() {
+    return ::ImGui::IsItemVisible();
+}
+
+bool ImGuiWrapper::IsItemEdited() {
+    return ::ImGui::IsItemEdited();
+}
+
+bool ImGuiWrapper::IsItemActivated() {
+    return ::ImGui::IsItemActivated();
+}
+
+bool ImGuiWrapper::IsItemDeactivated() {
+    return ::ImGui::IsItemDeactivated();
+}
+
+bool ImGuiWrapper::IsItemDeactivatedAfterEdit() {
+    return ::ImGui::IsItemDeactivatedAfterEdit();
+}
+
+bool ImGuiWrapper::IsItemToggledOpen() {
+    return ::ImGui::IsItemToggledOpen();
+}
+
+bool ImGuiWrapper::IsAnyItemHovered() {
+    return ::ImGui::IsAnyItemHovered();
+}
+
+bool ImGuiWrapper::IsAnyItemActive() {
+    return ::ImGui::IsAnyItemActive();
+}
+
+bool ImGuiWrapper::IsAnyItemFocused() {
+    return ::ImGui::IsAnyItemFocused();
+}
+
+// Window methods
+bool ImGuiWrapper::IsWindowFocused(int flags) {
+    return ::ImGui::IsWindowFocused(flags);
+}
+
+bool ImGuiWrapper::IsWindowHovered(int flags) {
+    return ::ImGui::IsWindowHovered(flags);
+}
+
+bool ImGuiWrapper::IsWindowCollapsed() {
+    return ::ImGui::IsWindowCollapsed();
+}
+
+bool ImGuiWrapper::IsWindowAppearing() {
+    return ::ImGui::IsWindowAppearing();
+}
+
+void ImGuiWrapper::SetNextWindowPos(const glm::vec2& pos, int cond, const glm::vec2& pivot) {
+    ::ImGui::SetNextWindowPos(ImVec2(pos.x, pos.y), cond, ImVec2(pivot.x, pivot.y));
+}
+
+void ImGuiWrapper::SetNextWindowSize(const glm::vec2& size, int cond) {
+    ::ImGui::SetNextWindowSize(ImVec2(size.x, size.y), cond);
+}
+
+void ImGuiWrapper::SetNextWindowContentSize(const glm::vec2& size) {
+    ::ImGui::SetNextWindowContentSize(ImVec2(size.x, size.y));
+}
+
+void ImGuiWrapper::SetNextWindowCollapsed(bool collapsed, int cond) {
+    ::ImGui::SetNextWindowCollapsed(collapsed, cond);
+}
+
+void ImGuiWrapper::SetNextWindowFocus() {
+    ::ImGui::SetNextWindowFocus();
+}
+
+void ImGuiWrapper::SetNextWindowScroll(const glm::vec2& scroll) {
+    ::ImGui::SetNextWindowScroll(ImVec2(scroll.x, scroll.y));
+}
+
+void ImGuiWrapper::SetNextWindowBgAlpha(float alpha) {
+    ::ImGui::SetNextWindowBgAlpha(alpha);
+}
+
+void ImGuiWrapper::SetNextWindowViewport(uint32_t viewport_id) {
+    ::ImGui::SetNextWindowViewport(viewport_id);
+}
+
+void ImGuiWrapper::SetWindowPos(const glm::vec2& pos, int cond) {
+    ::ImGui::SetWindowPos(ImVec2(pos.x, pos.y), cond);
+}
+
+void ImGuiWrapper::SetWindowSize(const glm::vec2& size, int cond) {
+    ::ImGui::SetWindowSize(ImVec2(size.x, size.y), cond);
+}
+
+void ImGuiWrapper::SetWindowCollapsed(bool collapsed, int cond) {
+    ::ImGui::SetWindowCollapsed(collapsed, cond);
+}
+
+void ImGuiWrapper::SetWindowFocus() {
+    ::ImGui::SetWindowFocus();
+}
+
+void ImGuiWrapper::SetWindowFontScale(float scale) {
+    ::ImGui::SetWindowFontScale(scale);
+}
+
+void ImGuiWrapper::SetWindowPos(const char* name, const glm::vec2& pos, int cond) {
+    ::ImGui::SetWindowPos(name, ImVec2(pos.x, pos.y), cond);
+}
+
+void ImGuiWrapper::SetWindowSize(const char* name, const glm::vec2& size, int cond) {
+    ::ImGui::SetWindowSize(name, ImVec2(size.x, size.y), cond);
+}
+
+void ImGuiWrapper::SetWindowCollapsed(const char* name, bool collapsed, int cond) {
+    ::ImGui::SetWindowCollapsed(name, collapsed, cond);
+}
+
+void ImGuiWrapper::SetWindowFocus(const char* name) {
+    ::ImGui::SetWindowFocus(name);
+}
+
+// Style methods
+void ImGuiWrapper::PushStyleColor(int idx, uint32_t col) {
+    ::ImGui::PushStyleColor(idx, col);
+}
+
+void ImGuiWrapper::PushStyleColor(int idx, const glm::vec4& col) {
+    ::ImGui::PushStyleColor(idx, ImVec4(col.r, col.g, col.b, col.a));
+}
+
+void ImGuiWrapper::PopStyleColor(int count) {
+    ::ImGui::PopStyleColor(count);
+}
+
+void ImGuiWrapper::PushStyleVar(int idx, float val) {
+    ::ImGui::PushStyleVar(idx, val);
+}
+
+void ImGuiWrapper::PushStyleVar(int idx, const glm::vec2& val) {
+    ::ImGui::PushStyleVar(idx, ImVec2(val.x, val.y));
+}
+
+void ImGuiWrapper::PopStyleVar(int count) {
+    ::ImGui::PopStyleVar(count);
+}
+
+const glm::vec4& ImGuiWrapper::GetStyleColorVec4(int idx) {
+    const ImVec4& color = ::ImGui::GetStyleColorVec4(idx);
+    static glm::vec4 result;
+    result.r = color.x;
+    result.g = color.y;
+    result.b = color.z;
+    result.a = color.w;
+    return result;
+}
+
+uint32_t ImGuiWrapper::GetColorU32(int idx, float alpha_mul) {
+    return ::ImGui::GetColorU32(idx, alpha_mul);
+}
+
+uint32_t ImGuiWrapper::GetColorU32(const glm::vec4& col) {
+    return ::ImGui::GetColorU32(ImVec4(col.r, col.g, col.b, col.a));
+}
+
+uint32_t ImGuiWrapper::GetColorU32(uint32_t col) {
+    return ::ImGui::GetColorU32(col);
 }
 
 // 其他方法的实现可以按需添加...

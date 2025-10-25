@@ -3,7 +3,7 @@
 
 #include "Zgine/Application.h"
 #include "Zgine/Layer.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Timestep.h"
 
 #include "Zgine/Input.h"
@@ -26,6 +26,15 @@
 #include "Zgine/Renderer/VertexArray.h"
 #include "Zgine/Renderer/OrthographicCamera.h"
 #include "Zgine/Renderer/PerspectiveCamera.h"
+
+	// Resource Management System
+	#include "Zgine/Resources/IResource.h"
+	#include "Zgine/Resources/ResourceManager.h"
+	#include "Zgine/Resources/TextureManager.h"
+	#include "Zgine/Resources/ShaderManager.h"
+	#include "Zgine/Resources/ModelManager.h"
+	#include "Zgine/Resources/AudioManager.h"
+	#include "Zgine/Resources/AssetLoader.h"
 
 #include "Zgine/ECS/ECS.h"
 

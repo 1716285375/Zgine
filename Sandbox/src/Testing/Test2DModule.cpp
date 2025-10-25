@@ -1,6 +1,7 @@
+#include "sandbox_pch.h"
 #include "Test2DModule.h"
 #include "Zgine/Core.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Events/KeyEvent.h"
 #include "Zgine/Events/MouseEvent.h"

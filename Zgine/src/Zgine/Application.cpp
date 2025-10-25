@@ -3,7 +3,7 @@
 
 #include <GLFW/glfw3.h>
 #include "Input.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Layer.h"
 #include "imgui.h"
 #include "Zgine/Renderer/Renderer.h"

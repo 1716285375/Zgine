@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "UIManager.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Application.h"
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Renderer/PerformanceMonitorUI.h"
@@ -741,8 +742,8 @@ namespace Sandbox {
 				auto& config = m_Test3DModule->GetConfig();
 				
 				// Debug: Log current configuration values
-				ZG_CORE_INFO("UIManager::Render3DTestWindow - Current config: showCubes={}, showSpheres={}, showPlanes={}", 
-					config.showCubes, config.showSpheres, config.showPlanes);
+				// ZG_CORE_INFO("UIManager::Render3DTestWindow - Current config: showCubes={}, showSpheres={}, showPlanes={}", 
+				//	config.showCubes, config.showSpheres, config.showPlanes);
 				
 				// Debug: Check if all shapes are disabled
 				if (!config.showCubes && !config.showSpheres && !config.showPlanes)

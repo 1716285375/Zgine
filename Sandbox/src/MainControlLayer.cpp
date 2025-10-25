@@ -1,5 +1,6 @@
+#include "sandbox_pch.h"
 #include "MainControlLayer.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Events/Event.h"
 #include "Zgine/Application.h"
 #include "Zgine/Core/SmartPointers.h"
@@ -86,7 +87,7 @@ namespace Sandbox {
 		// Render ECS test layer
 		if (m_ECSTestLayer)
 		{
-			ZG_CORE_INFO("MainControlLayer::OnImGuiRender - Calling ECSTestLayer::OnImGuiRender");
+			// ZG_CORE_INFO("MainControlLayer::OnImGuiRender - Calling ECSTestLayer::OnImGuiRender");
 			m_ECSTestLayer->OnImGuiRender();
 		}
 		else

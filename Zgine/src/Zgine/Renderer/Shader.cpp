@@ -6,6 +6,25 @@
 
 namespace Zgine {
 
+	Ref<Shader> Shader::Create(const std::string& vertexSrc, const std::string& fragmentSrc)
+	{
+		return CreateRef<Shader>(vertexSrc, fragmentSrc);
+	}
+
+	Ref<Shader> Shader::Create(const std::string& source)
+	{
+		// 对于单个源码文件，我们假设它包含顶点和片段着色器
+		// 这里简化处理，实际应用中可能需要解析源码
+		return CreateRef<Shader>(source, source);
+	}
+
+	size_t Shader::GetSize() const
+	{
+		// 返回着色器程序的估算大小
+		// 这里简化处理，实际应用中可能需要更精确的计算
+		return 1024; // 假设每个着色器程序约1KB
+	}
+
 	/**
 	 * @brief Construct a new Shader object
 	 * @param vertexSrc The vertex shader source code

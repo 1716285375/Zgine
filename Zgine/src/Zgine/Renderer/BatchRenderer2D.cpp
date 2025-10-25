@@ -167,7 +167,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene called");
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene called");
 		
 		// Initialize if not already done
 		if (!s_Initialized)
@@ -196,16 +196,16 @@ namespace Zgine {
 		}
 		else
 		{
-			ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Shader program linked successfully");
+			// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Shader program linked successfully");
 		}
 		
 		// Debug: Check camera matrix
 		glm::mat4 viewProj = camera.GetViewProjectionMatrix();
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Camera ViewProjection Matrix:");
-		ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[0][0], viewProj[0][1], viewProj[0][2], viewProj[0][3]);
-		ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[1][0], viewProj[1][1], viewProj[1][2], viewProj[1][3]);
-		ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[2][0], viewProj[2][1], viewProj[2][2], viewProj[2][3]);
-		ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[3][0], viewProj[3][1], viewProj[3][2], viewProj[3][3]);
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Camera ViewProjection Matrix:");
+		// ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[0][0], viewProj[0][1], viewProj[0][2], viewProj[0][3]);
+		// ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[1][0], viewProj[1][1], viewProj[1][2], viewProj[1][3]);
+		// ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[2][0], viewProj[2][1], viewProj[2][2], viewProj[2][3]);
+		// ZG_CORE_TRACE("  [{}, {}, {}, {}]", viewProj[3][0], viewProj[3][1], viewProj[3][2], viewProj[3][3]);
 		
 		s_TextureShader->UploadUniformMat4("u_ViewProjection", viewProj);
 		
@@ -217,26 +217,26 @@ namespace Zgine {
 		}
 		else
 		{
-			ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Uniform 'u_ViewProjection' found at location {}", uniformLocation);
+			// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Uniform 'u_ViewProjection' found at location {}", uniformLocation);
 		}
 		
 		// Debug: Check OpenGL state
-		GLboolean depthTestEnabled;
-		glGetBooleanv(GL_DEPTH_TEST, &depthTestEnabled);
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Depth test enabled: {}", depthTestEnabled ? "true" : "false");
+		// GLboolean depthTestEnabled;
+		// glGetBooleanv(GL_DEPTH_TEST, &depthTestEnabled);
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Depth test enabled: {}", depthTestEnabled ? "true" : "false");
 		
-		GLboolean blendEnabled;
-		glGetBooleanv(GL_BLEND, &blendEnabled);
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Blend enabled: {}", blendEnabled ? "true" : "false");
+		// GLboolean blendEnabled;
+		// glGetBooleanv(GL_BLEND, &blendEnabled);
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Blend enabled: {}", blendEnabled ? "true" : "false");
 		
-		GLint currentProgram;
-		glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Current shader program: {}", currentProgram);
+		// GLint currentProgram;
+		// glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Current shader program: {}", currentProgram);
 		
 		// CRITICAL FIX: Disable depth test for 2D rendering
 		// Depth test causes 2D objects to be culled because they all have Z=0
 		glDisable(GL_DEPTH_TEST);
-		ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Disabled depth test for 2D rendering");
+		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene - Disabled depth test for 2D rendering");
 		
 		// Reset batch state
 		StartBatch();
@@ -907,26 +907,26 @@ namespace Zgine {
 		
 		// Upload vertex data
 		uint32_t dataSize = (uint32_t)((uint8_t*)s_QuadVertexBufferPtr - (uint8_t*)s_QuadVertexBufferBase);
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - Uploading {} bytes of vertex data ({} vertices)", dataSize, actualVertices);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Uploading {} bytes of vertex data ({} vertices)", dataSize, actualVertices);
 		
 		// Debug: Check first vertex data
-		if (actualVertices > 0)
-		{
-			const QuadVertex& firstVertex = s_QuadVertexBufferBase[0];
-			ZG_CORE_TRACE("BatchRenderer2D::Flush - First vertex: pos=({}, {}, {}), color=({}, {}, {}, {}), texCoord=({}, {}), texIndex={}", 
-				firstVertex.Position.x, firstVertex.Position.y, firstVertex.Position.z,
-				firstVertex.Color.r, firstVertex.Color.g, firstVertex.Color.b, firstVertex.Color.a,
-				firstVertex.TexCoord.x, firstVertex.TexCoord.y, firstVertex.TexIndex);
-		}
+		// if (actualVertices > 0)
+		// {
+		//	const QuadVertex& firstVertex = s_QuadVertexBufferBase[0];
+		//	ZG_CORE_TRACE("BatchRenderer2D::Flush - First vertex: pos=({}, {}, {}), color=({}, {}, {}, {}), texCoord=({}, {}), texIndex={}", 
+		//		firstVertex.Position.x, firstVertex.Position.y, firstVertex.Position.z,
+		//		firstVertex.Color.r, firstVertex.Color.g, firstVertex.Color.b, firstVertex.Color.a,
+		//		firstVertex.TexCoord.x, firstVertex.TexCoord.y, firstVertex.TexIndex);
+		// }
 		
 		s_QuadVertexBuffer->SetData(s_QuadVertexBufferBase, dataSize);
 		
 		// Debug: Check vertex attributes after SetData
-		GLint attrib0EnabledAfter = 0, attrib1EnabledAfter = 0, attrib2EnabledAfter = 0, attrib3EnabledAfter = 0;
-		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0EnabledAfter);
-		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1EnabledAfter);
-		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2EnabledAfter);
-		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3EnabledAfter);
+		// GLint attrib0EnabledAfter = 0, attrib1EnabledAfter = 0, attrib2EnabledAfter = 0, attrib3EnabledAfter = 0;
+		// glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0EnabledAfter);
+		// glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1EnabledAfter);
+		// glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2EnabledAfter);
+		// glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3EnabledAfter);
 		
 		// ZG_CORE_TRACE("BatchRenderer2D::Flush - After SetData, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
 		//	attrib0EnabledAfter, attrib1EnabledAfter, attrib2EnabledAfter, attrib3EnabledAfter);
@@ -938,30 +938,30 @@ namespace Zgine {
 		}
 		
 		// Debug: Check vertex array state
-		GLint currentVAO = 0;
-		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
+		// GLint currentVAO = 0;
+		// glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
 		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Current VAO: {}", currentVAO);
 		
 		// Debug: Check vertex attribute state using glGetVertexAttrib
-		GLint attrib0Enabled = 0;
-		GLint attrib1Enabled = 0;
-		GLint attrib2Enabled = 0;
-		GLint attrib3Enabled = 0;
+		// GLint attrib0Enabled = 0;
+		// GLint attrib1Enabled = 0;
+		// GLint attrib2Enabled = 0;
+		// GLint attrib3Enabled = 0;
 		
-		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0Enabled);
-		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1Enabled);
-		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
-		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
+		// glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0Enabled);
+		// glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1Enabled);
+		// glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
+		// glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
 		
-		 //ZG_CORE_TRACE("BatchRenderer2D::Flush - Vertex attributes enabled: 0={}, 1={}, 2={}, 3={}", 
-			//attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Vertex attributes enabled: 0={}, 1={}, 2={}, 3={}", 
+		//	attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
 		
 		// Debug: Check if all required vertex attributes are enabled
-		if (!attrib0Enabled || !attrib1Enabled || !attrib2Enabled || !attrib3Enabled)
-		{
-			ZG_CORE_ERROR("BatchRenderer2D::Flush - Some vertex attributes are not enabled!");
-			return;
-		}
+		// if (!attrib0Enabled || !attrib1Enabled || !attrib2Enabled || !attrib3Enabled)
+		// {
+		//	ZG_CORE_ERROR("BatchRenderer2D::Flush - Some vertex attributes are not enabled!");
+		//	return;
+		// }
 		
 		// Create a temporary index buffer with only the indices we need
 		// This prevents accessing indices beyond the actual vertex data
@@ -989,24 +989,24 @@ namespace Zgine {
 		s_QuadVertexArray->Bind();
 		
 		// Debug: Check final OpenGL state before drawing
-		GLint currentProgram;
-		glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with shader program: {}", currentProgram);
+		// GLint currentProgram;
+		// glGetIntegerv(GL_CURRENT_PROGRAM, &currentProgram);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with shader program: {}", currentProgram);
 		
-		glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with VAO: {}", currentVAO);
+		// glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &currentVAO);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with VAO: {}", currentVAO);
 		
-		GLint currentIBO;
-		glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &currentIBO);
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with IBO: {}", currentIBO);
+		// GLint currentIBO;
+		// glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &currentIBO);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Drawing with IBO: {}", currentIBO);
 		
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - About to draw {} indices", actualIndices);
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - About to draw {} indices", actualIndices);
 		
 		
 		RenderCommand::DrawIndexed(s_QuadVertexArray, actualIndices);
 		RenderCommand::CheckOpenGLError("BatchRenderer2D::Flush - DrawIndexed");
 		
-		ZG_CORE_TRACE("BatchRenderer2D::Flush - Draw call completed");
+		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Draw call completed");
 
 		s_Stats.DrawCalls++;
 	}

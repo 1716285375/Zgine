@@ -1,6 +1,7 @@
+#include "sandbox_pch.h"
 #include "Test3DModule.h"
 #include "Zgine/Core.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Events/ApplicationEvent.h"
 #include "Zgine/Events/KeyEvent.h"
 #include "Zgine/Events/MouseEvent.h"
@@ -245,12 +246,12 @@ namespace Sandbox {
 	void Test3DModule::RenderBasicShapesScene(const Test3DConfig& config)
 	{
 		// Debug: Log camera information
-		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Position: ({}, {}, {})", 
-			m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z);
-		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Rotation: ({}, {}, {})", 
-			m_Camera.GetRotation().x, m_Camera.GetRotation().y, m_Camera.GetRotation().z);
-		ZG_CORE_INFO("3D Basic Shapes Scene - Camera Forward: ({}, {}, {})", 
-			m_Camera.GetForward().x, m_Camera.GetForward().y, m_Camera.GetForward().z);
+		// ZG_CORE_INFO("3D Basic Shapes Scene - Camera Position: ({}, {}, {})", 
+		//	m_Camera.GetPosition().x, m_Camera.GetPosition().y, m_Camera.GetPosition().z);
+		// ZG_CORE_INFO("3D Basic Shapes Scene - Camera Rotation: ({}, {}, {})", 
+		//	m_Camera.GetRotation().x, m_Camera.GetRotation().y, m_Camera.GetRotation().z);
+		// ZG_CORE_INFO("3D Basic Shapes Scene - Camera Forward: ({}, {}, {})", 
+		//	m_Camera.GetForward().x, m_Camera.GetForward().y, m_Camera.GetForward().z);
 
 		// Apply render mode settings
 		if (config.wireframeMode)
@@ -267,7 +268,7 @@ namespace Sandbox {
 		// Render cubes
 		if (config.showCubes)
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering cubes (showCubes=true)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering cubes (showCubes=true)");
 			for (int i = 0; i < 3; i++)
 			{
 				for (int j = 0; j < 3; j++)
@@ -275,7 +276,7 @@ namespace Sandbox {
 					float x = -2.0f + i * 2.0f;
 					float z = -2.0f + j * 2.0f;
 					
-					ZG_CORE_INFO("3D Basic Shapes Scene - Drawing cube at ({}, {}, {})", x, 0.0f, z);
+					// ZG_CORE_INFO("3D Basic Shapes Scene - Drawing cube at ({}, {}, {})", x, 0.0f, z);
 					Zgine::BatchRenderer3D::DrawCube({ x, 0.0f, z }, { 0.5f, 0.5f, 0.5f }, 
 						{ 1.0f, 0.0f, 0.0f, 1.0f });
 					IncrementObjectCount();
@@ -284,13 +285,13 @@ namespace Sandbox {
 		}
 		else
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping cubes (showCubes=false)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping cubes (showCubes=false)");
 		}
 
 		// Render spheres
 		if (config.showSpheres)
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering spheres (showSpheres=true)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering spheres (showSpheres=true)");
 			for (int i = 0; i < 2; i++)
 			{
 				for (int j = 0; j < 2; j++)
@@ -306,20 +307,20 @@ namespace Sandbox {
 		}
 		else
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping spheres (showSpheres=false)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping spheres (showSpheres=false)");
 		}
 
 		// Render planes
 		if (config.showPlanes)
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering planes (showPlanes=true)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Rendering planes (showPlanes=true)");
 			Zgine::BatchRenderer3D::DrawPlane({ 0.0f, -1.0f, 0.0f }, { 8.0f, 8.0f }, 
 				{ 0.5f, 0.5f, 0.5f, 1.0f });
 			IncrementObjectCount();
 		}
 		else
 		{
-			ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping planes (showPlanes=false)");
+			// ZG_CORE_TRACE("3D Basic Shapes Scene: Skipping planes (showPlanes=false)");
 		}
 	}
 

@@ -1,7 +1,7 @@
-#include "zgpch.h"
+#include "sandbox_pch.h"
 #include <Zgine.h>
 #include "MainControlLayer.h"
-#include "Zgine/Log.h"
+#include "Zgine/Logging/Log.h"
 #include "Zgine/Core/SmartPointers.h"
 
 class SandboxApp : public Zgine::Application
