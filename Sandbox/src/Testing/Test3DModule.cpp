@@ -140,8 +140,8 @@ namespace Sandbox {
 	void Test3DModule::RenderActiveScene()
 	{
 		// Debug: Log current configuration and active scene
-		ZG_CORE_INFO("RenderActiveScene called - ActiveScene: {}, showCubes={}, showSpheres={}, showPlanes={}", 
-			m_ActiveScene, m_Config.showCubes, m_Config.showSpheres, m_Config.showPlanes);
+		// ZG_CORE_INFO("RenderActiveScene called - ActiveScene: {}, showCubes={}, showSpheres={}, showPlanes={}", 
+		// 	m_ActiveScene, m_Config.showCubes, m_Config.showSpheres, m_Config.showPlanes);
 		
 		// Debug: Check if configuration was modified
 		if (!m_Config.showCubes && !m_Config.showSpheres && !m_Config.showPlanes)
@@ -153,7 +153,7 @@ namespace Sandbox {
 		{
 			if (scene.GetName() == m_ActiveScene)
 			{
-				ZG_CORE_INFO("Found matching scene: {}, calling render function", scene.GetName());
+				// ZG_CORE_INFO("Found matching scene: {}, calling render function", scene.GetName());
 				scene.Render(m_Config);
 				break;
 			}

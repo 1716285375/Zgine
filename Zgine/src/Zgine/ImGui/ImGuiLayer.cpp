@@ -89,7 +89,7 @@ namespace Zgine {
 		// }
 		
 		// Call custom UI rendering
-		ZG_CORE_INFO("ImGuiLayer::OnImGuiRender - Calling RenderCustomUI");
+		// ZG_CORE_INFO("ImGuiLayer::OnImGuiRender - Calling RenderCustomUI");
 		RenderCustomUI();
 		
 		// Don't show demo window to allow custom UI
