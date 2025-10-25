@@ -29,8 +29,6 @@ workspace "Zgine"
 	include "Zgine/vendor/glfw"
 	include "Zgine/vendor/glad"
 	include "Zgine/vendor/imgui"
-	include "Zgine/vendor/json/rapidjson"
-	include "Zgine/vendor/miniaudio"
 	
 project "Zgine"
     location "Zgine"
