@@ -353,9 +353,9 @@ void ECSTestLayer::RenderEntities()
             }
             else // Random entities (index 7+) - render as colored circles
             {
-                ZG_CORE_INFO("Rendering random entity {} at position ({}, {}, {}) with color ({}, {}, {}, {}) and scale {}", 
-                             i, pos.position.x, pos.position.y, pos.position.z, 
-                             renderable.color.r, renderable.color.g, renderable.color.b, renderable.color.a, renderable.scale);
+                //ZG_CORE_INFO("Rendering random entity {} at position ({}, {}, {}) with color ({}, {}, {}, {}) and scale {}", 
+                //             i, pos.position.x, pos.position.y, pos.position.z, 
+                //             renderable.color.r, renderable.color.g, renderable.color.b, renderable.color.a, renderable.scale);
                 Zgine::BatchRenderer2D::DrawCircle(
                     glm::vec3(pos.position.x, pos.position.y, pos.position.z),
                     renderable.scale,
