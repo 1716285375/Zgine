@@ -23,3 +23,6 @@
 [submodule "Zgine/vendor/miniaudio"]
 	path = Zgine/vendor/miniaudio
 	url = https://github.com/1716285375/miniaudio.git
+[submodule "Zgine/vendor/joltphysics"]
+	path = Zgine/vendor/joltphysics
+	url = https://github.com/1716285375/JoltPhysics.git
