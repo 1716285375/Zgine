@@ -29,6 +29,42 @@ workspace "Zgine"
 	include "Zgine/vendor/glfw"
 	include "Zgine/vendor/glad"
 	include "Zgine/vendor/imgui"
+
+project "MiniAudio"
+    location "Zgine/vendor/miniaudio"
+    kind "StaticLib"
+    language "C"
+    staticruntime "on"
+
+    targetdir ("%{rootdir}/bin/" .. outputdir .. "/%{prj.name}")
+    objdir ("%{rootdir}/bin-int/" .. outputdir .. "/%{prj.name}")
+
+    files
+    {
+        "Zgine/vendor/miniaudio/miniaudio.c"
+    }
+
+    includedirs
+    {
+        "Zgine/vendor/miniaudio"
+    }
+
+    filter "system:windows"
+        systemversion "latest"
+        buildoptions "/utf-8"
+
+    filter "configurations:Debug"
+        defines "MA_DEBUG_OUTPUT"
+        symbols "On"
+        optimize "Off"
+
+    filter "configurations:Release"
+        symbols "On"
+        optimize "Speed"
+
+    filter "configurations:Dist"
+        symbols "Off"
+        optimize "Speed"
 	
 project "Zgine"
     location "Zgine"
