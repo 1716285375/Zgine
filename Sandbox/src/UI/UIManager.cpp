@@ -21,6 +21,12 @@ namespace Sandbox {
 	UIManager::~UIManager()
 	{
 		ZG_CORE_INFO("UIManager destroyed!");
+		
+		// Clear windows and menu categories to prevent dangling pointer issues
+		// The lambda expressions in m_Windows and m_MenuCategories hold [this] captures
+		// which become invalid when this object is destroyed
+		m_Windows.clear();
+		m_MenuCategories.clear();
 	}
 
 	void UIManager::OnAttach()

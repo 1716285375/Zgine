@@ -46,6 +46,11 @@ namespace Sandbox {
 	Test3DModule::~Test3DModule()
 	{
 		ZG_CORE_INFO("Test3DModule destroyed");
+		
+		// Clear scenes to prevent dangling pointer issues
+		// The lambda expressions in m_Scenes hold [this] captures
+		// which become invalid when this object is destroyed
+		m_Scenes.clear();
 	}
 
 	void Test3DModule::OnAttach()

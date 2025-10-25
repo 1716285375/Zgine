@@ -18,6 +18,11 @@ namespace Sandbox {
 	SceneManager::~SceneManager()
 	{
 		ZG_CORE_INFO("SceneManager destroyed");
+		
+		// Clear example scenes to prevent dangling pointer issues
+		// The lambda expressions in m_ExampleScenes hold [this] captures
+		// which become invalid when this object is destroyed
+		m_ExampleScenes.clear();
 	}
 
 	void SceneManager::OnAttach()
