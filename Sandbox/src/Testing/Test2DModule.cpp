@@ -458,7 +458,7 @@ namespace Sandbox {
 		}
 		else
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Skipping quads (showQuads=false)");
+		// ZG_CORE_TRACE("Advanced Shapes Scene: Skipping quads (showQuads=false)");
 		}
 
 		if (config.showLines)
@@ -475,7 +475,7 @@ namespace Sandbox {
 		}
 		else
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Skipping lines (showLines=false)");
+		// ZG_CORE_TRACE("Advanced Shapes Scene: Skipping lines (showLines=false)");
 		}
 
 		if (config.showCircles)
@@ -503,7 +503,7 @@ namespace Sandbox {
 		}
 		else
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Skipping circles (showCircles=false)");
+		// ZG_CORE_TRACE("Advanced Shapes Scene: Skipping circles (showCircles=false)");
 		}
 
 		// Render triangles
