@@ -1,6 +1,7 @@
 #include "sandbox_pch.h"
 #include <Zgine.h>
 #include "MainControlLayer.h"
+#include "Testing/ResourceTestLayer.h"
 #include "Zgine/Logging/Log.h"
 #include "Zgine/Core/SmartPointers.h"
 
@@ -24,6 +25,10 @@ public:
 		// Push main control layer after Application and Renderer are fully initialized
 		PushLayer(Zgine::CreateScope<Sandbox::MainControlLayer>().release());
 		ZG_CORE_INFO("MainControlLayer created and pushed to layer stack");
+		
+		// Push Resource Test Layer for testing audio and resource management
+		PushLayer(Zgine::CreateScope<Sandbox::ResourceTestLayer>().release());
+		ZG_CORE_INFO("ResourceTestLayer created and pushed to layer stack");
 	}
 };
 

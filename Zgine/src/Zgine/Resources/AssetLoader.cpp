@@ -4,6 +4,8 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <future>
+#include <chrono>
 
 namespace Zgine {
 namespace Resources {
@@ -579,6 +581,80 @@ namespace Resources {
         }
         
         return ResourceType::Unknown;
+    }
+
+    uint32_t AssetLoader::LoadAsync(const std::string& path, ResourceType type, std::function<void(ResourceRef)> callback) {
+        std::lock_guard<std::mutex> lock(m_TaskMutex);
+        
+        uint32_t taskID = m_NextTaskID++;
+        
+        // 创建加载任务
+        LoadTask task;
+        task.id = taskID;
+        task.path = path;
+        task.type = type;
+        task.callback = callback;
+        task.completed = false;
+        
+        // 启动异步加载
+        task.future = std::async(std::launch::async, [this, taskID, path = task.path, type = task.type]() -> ResourceRef {
+            try {
+                ResourceRef resource;
+                
+                switch (type) {
+                    case ResourceType::Texture:
+                        resource = m_TextureManager->LoadTexture(path);
+                        break;
+                    case ResourceType::Shader:
+                        resource = m_ShaderManager->LoadShader(path);
+                        break;
+                    case ResourceType::Model:
+                        resource = m_ModelManager->LoadModel(path);
+                        break;
+                    case ResourceType::Audio:
+                        resource = m_AudioManager->LoadAudio(path);
+                        break;
+                    default:
+                        ZG_CORE_ERROR("Unsupported resource type for async loading: {}", static_cast<int>(type));
+                        return nullptr;
+                }
+                
+                // 标记任务完成并调用回调
+                {
+                    std::lock_guard<std::mutex> lock(m_TaskMutex);
+                    auto it = m_LoadTasks.find(taskID);
+                    if (it != m_LoadTasks.end()) {
+                        it->second.completed = true;
+                        // 调用回调函数
+                        if (it->second.callback) {
+                            ZG_CORE_INFO("Calling callback for task {}", taskID);
+                            it->second.callback(resource);
+                        }
+                    }
+                }
+                
+                return resource;
+            } catch (const std::exception& e) {
+                ZG_CORE_ERROR("Async loading failed for {}: {}", path, e.what());
+                
+                // 即使失败也要调用回调
+                {
+                    std::lock_guard<std::mutex> lock(m_TaskMutex);
+                    auto it = m_LoadTasks.find(taskID);
+                    if (it != m_LoadTasks.end() && it->second.callback) {
+                        it->second.callback(nullptr);
+                    }
+                }
+                
+                return nullptr;
+            }
+        });
+        
+        // 存储任务（使用移动语义）
+        m_LoadTasks.emplace(taskID, std::move(task));
+        
+        ZG_CORE_INFO("Started async loading task {} for {}", taskID, path);
+        return taskID;
     }
 
 } // namespace Resources

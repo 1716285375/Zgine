@@ -278,20 +278,54 @@ namespace Sandbox {
             
             if (Zgine::IG::Button("Play Test Audio"))
             {
-                if (m_CurrentPlayID != 0) {
-                    m_AssetLoader.GetAsset("audio://test")->GetType(); // 简化调用
-                }
-                ZG_CORE_INFO("Playing test audio");
+                // 异步加载音频文件
+                auto callback = [this](Zgine::Resources::ResourceRef resource) {
+                    ZG_CORE_INFO("Audio loading callback called");
+                    if (resource && resource->GetState() == Zgine::Resources::ResourceState::Loaded) {
+                        ZG_CORE_INFO("Audio resource loaded successfully, attempting to play");
+                        // 获取AudioManager并播放音频
+                        auto audioManager = m_AssetLoader.GetAudioManager();
+                        if (audioManager) {
+                            ZG_CORE_INFO("AudioManager found, calling PlayAudio");
+                            m_CurrentPlayID = audioManager->PlayAudio(resource->GetPath(), m_AudioVolume, m_AudioLoop);
+                            ZG_CORE_INFO("Audio playback started with ID: {}", m_CurrentPlayID);
+                        } else {
+                            ZG_CORE_ERROR("AudioManager is null!");
+                        }
+                    } else {
+                        ZG_CORE_ERROR("Failed to load audio resource - resource: {}, state: {}", 
+                                     resource ? "valid" : "null", 
+                                     resource ? static_cast<int>(resource->GetState()) : -1);
+                    }
+                };
+                
+                m_AssetLoader.LoadAsync("assets/audio/test.wav", Zgine::Resources::ResourceType::Audio, callback);
+                ZG_CORE_INFO("Loading audio file: assets/audio/test.wav");
             }
             
             Zgine::IG::SameLine();
             if (Zgine::IG::Button("Stop Audio"))
             {
                 if (m_CurrentPlayID != 0) {
-                    // 停止音频播放
+                    auto audioManager = m_AssetLoader.GetAudioManager();
+                    if (audioManager) {
+                        audioManager->StopAudio(m_CurrentPlayID);
+                        ZG_CORE_INFO("Stopped audio with ID: {}", m_CurrentPlayID);
+                    }
                     m_CurrentPlayID = 0;
                 }
-                ZG_CORE_INFO("Stopped audio");
+            }
+            
+            Zgine::IG::SameLine();
+            if (Zgine::IG::Button("Pause Audio"))
+            {
+                if (m_CurrentPlayID != 0) {
+                    auto audioManager = m_AssetLoader.GetAudioManager();
+                    if (audioManager) {
+                        audioManager->PauseAudio(m_CurrentPlayID);
+                        ZG_CORE_INFO("Paused audio with ID: {}", m_CurrentPlayID);
+                    }
+                }
             }
         }
         

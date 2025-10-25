@@ -67,6 +67,19 @@ namespace Resources {
          */
         ResourceRef LoadAudio(const std::string& path);
 
+        // ============================================================================
+        // 异步加载接口
+        // ============================================================================
+
+        /**
+         * @brief 异步加载资源
+         * @param path 资源路径
+         * @param type 资源类型
+         * @param callback 加载完成回调
+         * @return 任务ID
+         */
+        uint32_t LoadAsync(const std::string& path, ResourceType type, std::function<void(ResourceRef)> callback);
+
         /**
          * @brief 加载资源（自动检测类型）
          * @param path 资源路径
@@ -218,6 +231,34 @@ namespace Resources {
          */
         uint32_t GetActiveTaskCount() const;
 
+        // ============================================================================
+        // 管理器访问接口
+        // ============================================================================
+
+        /**
+         * @brief 获取纹理管理器
+         * @return 纹理管理器指针
+         */
+        TextureManager* GetTextureManager() const { return m_TextureManager.get(); }
+
+        /**
+         * @brief 获取着色器管理器
+         * @return 着色器管理器指针
+         */
+        ShaderManager* GetShaderManager() const { return m_ShaderManager.get(); }
+
+        /**
+         * @brief 获取模型管理器
+         * @return 模型管理器指针
+         */
+        ModelManager* GetModelManager() const { return m_ModelManager.get(); }
+
+        /**
+         * @brief 获取音频管理器
+         * @return 音频管理器指针
+         */
+        AudioManager* GetAudioManager() const { return m_AudioManager.get(); }
+
     private:
         /**
          * @brief 检测资源类型
@@ -236,6 +277,15 @@ namespace Resources {
             std::function<void(ResourceRef)> callback;
             std::future<ResourceRef> future;
             bool completed = false;
+            
+            // 禁用复制构造函数和赋值操作符，因为std::future不可复制
+            LoadTask() = default;
+            LoadTask(const LoadTask&) = delete;
+            LoadTask& operator=(const LoadTask&) = delete;
+            
+            // 启用移动构造函数和赋值操作符
+            LoadTask(LoadTask&&) = default;
+            LoadTask& operator=(LoadTask&&) = default;
         };
 
         // 资源管理器
