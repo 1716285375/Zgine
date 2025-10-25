@@ -1,39 +1,13 @@
 #pragma once
 
 #include "Zgine/Core/SmartPointers.h"
+#include "ResourceTypes.h"
 #include <string>
 #include <memory>
 #include <functional>
 
 namespace Zgine {
 namespace Resources {
-
-    /**
-     * @brief 资源状态枚举
-     */
-    enum class ResourceState {
-        Unloaded,       // 未加载
-        Loading,        // 加载中
-        Loaded,         // 已加载
-        Failed,         // 加载失败
-        Unloading,      // 卸载中
-        Error           // 错误状态
-    };
-
-    /**
-     * @brief 资源类型枚举
-     */
-    enum class ResourceType {
-        Texture,        // 纹理
-        Shader,         // 着色器
-        Model,          // 模型
-        Audio,          // 音频
-        Font,           // 字体
-        Material,       // 材质
-        Animation,      // 动画
-        Config,         // 配置文件
-        Unknown         // 未知类型
-    };
 
     /**
      * @brief 基础资源接口
@@ -63,19 +37,19 @@ namespace Resources {
 
         /**
          * @brief 获取资源类型
-         * @return 资源类型
+         * @return 资源类型枚举
          */
         virtual ResourceType GetType() const = 0;
 
         /**
          * @brief 获取资源状态
-         * @return 当前资源状态
+         * @return 资源状态枚举
          */
         virtual ResourceState GetState() const = 0;
 
         /**
-         * @brief 获取资源大小（字节）
-         * @return 资源占用内存大小
+         * @brief 获取资源大小
+         * @return 资源大小（字节）
          */
         virtual size_t GetSize() const = 0;
 
@@ -158,7 +132,7 @@ namespace Resources {
     /**
      * @brief 资源状态变化回调类型
      */
-    using ResourceStateCallback = std::function<void(ResourceRef, ResourceState, ResourceState)>;
+    using ResourceStateCallback = std::function<void(ResourceRef, ResourceState)>;
 
 } // namespace Resources
 } // namespace Zgine

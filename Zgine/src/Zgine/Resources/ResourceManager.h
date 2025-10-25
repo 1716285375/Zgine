@@ -1,18 +1,17 @@
 #pragma once
 
+#include "zgpch.h"
+#include "Core/IResourceBackend.h"
+#include "Core/ResourceBackendRegistry.h"
+#include "ResourceTypes.h"
 #include "IResource.h"
-#include "Zgine/Core/SmartPointers.h"
+#include "Zgine/Logging/Log.h"
 #include <unordered_map>
 #include <mutex>
+#include <atomic>
 #include <thread>
 #include <queue>
-#include <atomic>
 #include <condition_variable>
-#include <future>
-#include <vector>
-#include <string>
-#include <sstream>
-#include <iomanip>
 
 namespace Zgine {
 namespace Resources {
@@ -23,227 +22,180 @@ namespace Resources {
     struct LoadTask {
         std::string path;
         ResourceType type;
+        ResourceLoadConfig config;
         ResourceLoadCallback callback;
-        std::shared_ptr<std::promise<bool>> promise;
+        std::atomic<bool> completed{false};
+        std::atomic<bool> success{false};
+        ResourceRef resource{nullptr};
         
-        LoadTask(const std::string& p, ResourceType t, ResourceLoadCallback cb = nullptr)
-            : path(p), type(t), callback(cb), promise(std::make_shared<std::promise<bool>>()) {}
+        LoadTask(const std::string& p, ResourceType t, const ResourceLoadConfig& cfg, ResourceLoadCallback cb)
+            : path(p), type(t), config(cfg), callback(std::move(cb)) {}
     };
 
     /**
-     * @brief 资源管理器基类
-     * @details 提供资源管理的通用功能，包括缓存、异步加载、引用计数等
+     * @brief 资源管理器
+     * 支持多后端、热拔插的模块化资源管理系统
      */
     class ResourceManager {
     public:
         ResourceManager();
         virtual ~ResourceManager();
 
-        // 禁用拷贝构造和赋值
-        ResourceManager(const ResourceManager&) = delete;
-        ResourceManager& operator=(const ResourceManager&) = delete;
-
         /**
          * @brief 初始化资源管理器
-         * @return true如果初始化成功，false否则
+         * @return true如果初始化成功
          */
-        virtual bool Initialize();
+        bool Initialize();
 
         /**
          * @brief 关闭资源管理器
          */
-        virtual void Shutdown();
+        void Shutdown();
 
         /**
          * @brief 更新资源管理器
          * @param deltaTime 时间间隔
          */
-        virtual void Update(float deltaTime);
+        void Update(float deltaTime);
 
         /**
-         * @brief 异步加载资源
-         * @param path 资源路径
-         * @param type 资源类型
-         * @param callback 加载完成回调
-         * @return 资源引用，如果资源已存在则直接返回
+         * @brief 注册资源后端
+         * @param name 后端名称
+         * @param backend 后端实例
+         * @param priority 优先级
+         * @return true如果注册成功
          */
-        virtual ResourceRef LoadAsync(const std::string& path, ResourceType type, 
-                                    ResourceLoadCallback callback = nullptr);
+        bool RegisterBackend(const std::string& name, Core::ResourceBackendRef backend, int priority = 0);
+
+        /**
+         * @brief 注销资源后端
+         * @param name 后端名称
+         * @return true如果注销成功
+         */
+        bool UnregisterBackend(const std::string& name);
+
+        /**
+         * @brief 设置默认后端
+         * @param name 后端名称
+         * @return true如果设置成功
+         */
+        bool SetDefaultBackend(const std::string& name);
 
         /**
          * @brief 同步加载资源
          * @param path 资源路径
          * @param type 资源类型
-         * @return 资源引用，如果加载失败返回nullptr
+         * @param config 加载配置
+         * @return 资源引用
          */
-        virtual ResourceRef LoadSync(const std::string& path, ResourceType type);
+        ResourceRef LoadSync(const std::string& path, ResourceType type, 
+                           const ResourceLoadConfig& config = {});
+
+        /**
+         * @brief 异步加载资源
+         * @param path 资源路径
+         * @param type 资源类型
+         * @param config 加载配置
+         * @param callback 加载完成回调
+         * @return 资源引用
+         */
+        ResourceRef LoadAsync(const std::string& path, ResourceType type,
+                             const ResourceLoadConfig& config,
+                             ResourceLoadCallback callback = nullptr);
 
         /**
          * @brief 获取已加载的资源
          * @param path 资源路径
-         * @return 资源引用，如果不存在返回nullptr
+         * @return 资源引用
          */
-        virtual ResourceRef GetResource(const std::string& path);
+        ResourceRef GetResource(const std::string& path);
 
         /**
          * @brief 检查资源是否已加载
          * @param path 资源路径
-         * @return true如果已加载，false否则
+         * @return true如果已加载
          */
-        virtual bool IsLoaded(const std::string& path);
-
-        /**
-         * @brief 卸载资源
-         * @param path 资源路径
-         * @return true如果卸载成功，false否则
-         */
-        virtual bool Unload(const std::string& path);
-
-        /**
-         * @brief 卸载所有资源
-         */
-        virtual void UnloadAll();
-
-        /**
-         * @brief 重新加载资源
-         * @param path 资源路径
-         * @return true如果重新加载成功，false否则
-         */
-        virtual bool Reload(const std::string& path);
-
-        /**
-         * @brief 重新加载所有资源
-         */
-        virtual void ReloadAll();
-
-        /**
-         * @brief 获取资源统计信息
-         * @return 包含资源数量、内存使用等信息的字符串
-         */
-        virtual std::string GetStats() const;
-
-        /**
-         * @brief 设置资源状态变化回调
-         * @param callback 状态变化回调
-         */
-        virtual void SetStateCallback(ResourceStateCallback callback);
-
-        /**
-         * @brief 设置最大缓存大小（字节）
-         * @param maxSize 最大缓存大小
-         */
-        virtual void SetMaxCacheSize(size_t maxSize);
-
-        /**
-         * @brief 获取当前缓存大小（字节）
-         * @return 当前缓存大小
-         */
-        virtual size_t GetCurrentCacheSize() const;
-
-        /**
-         * @brief 清理未使用的资源
-         * @return 清理的资源数量
-         */
-        virtual size_t CleanupUnusedResources();
-
-        /**
-         * @brief 获取所有已加载资源的路径
-         * @return 资源路径列表
-         */
-        virtual std::vector<std::string> GetLoadedResourcePaths() const;
+        bool IsLoaded(const std::string& path);
 
         /**
          * @brief 卸载资源
          * @param path 资源路径
          * @return true如果卸载成功
          */
-        virtual bool UnloadResource(const std::string& path);
+        bool UnloadResource(const std::string& path);
 
         /**
-         * @brief 获取所有资源
+         * @brief 获取所有已加载的资源
          * @return 资源列表
          */
-        virtual std::vector<ResourceRef> GetAllResources() const;
-
-    protected:
-        // Friend classes for accessing protected members
-        friend class TextureManager;
-        friend class ShaderManager;
-        
-        /**
-         * @brief 创建资源对象
-         * @param path 资源路径
-         * @param type 资源类型
-         * @return 资源引用
-         */
-        virtual ResourceRef CreateResource(const std::string& path, ResourceType type) = 0;
+        std::vector<ResourceRef> GetAllResources() const;
 
         /**
-         * @brief 验证资源文件
-         * @param path 资源路径
-         * @param type 资源类型
-         * @return true如果文件有效，false否则
+         * @brief 清理未使用的资源
+         * @return 清理的资源数量
          */
-        virtual bool ValidateResourceFile(const std::string& path, ResourceType type);
+        uint32_t CleanupUnusedResources();
 
         /**
-         * @brief 获取资源文件大小
-         * @param path 资源路径
-         * @return 文件大小（字节）
+         * @brief 获取统计信息
+         * @return 统计信息字符串
          */
-        virtual size_t GetResourceFileSize(const std::string& path);
+        std::string GetStatistics() const;
 
         /**
-         * @brief 生成资源ID
-         * @param path 资源路径
-         * @return 唯一资源ID
+         * @brief 获取指定类型的后端
+         * @param name 后端名称
+         * @return 后端引用
          */
-        virtual uint32_t GenerateResourceID(const std::string& path);
+        Core::ResourceBackendRef GetBackend(const std::string& name);
 
         /**
-         * @brief 工作线程函数
+         * @brief 获取所有已注册的后端
+         * @return 后端名称列表
          */
-        void WorkerThread();
+        std::vector<std::string> GetRegisteredBackends() const;
+
+    private:
+        /**
+         * @brief 异步加载工作线程
+         */
+        void LoadWorkerThread();
 
         /**
          * @brief 处理加载任务
          * @param task 加载任务
          */
-        void ProcessLoadTask(const LoadTask& task);
+        void ProcessLoadTask(std::shared_ptr<LoadTask> task);
 
         /**
-         * @brief 通知状态变化
-         * @param resource 资源引用
-         * @param oldState 旧状态
-         * @param newState 新状态
+         * @brief 选择最佳后端
+         * @param path 资源路径
+         * @param type 资源类型
+         * @return 后端名称
          */
-        void NotifyStateChange(ResourceRef resource, ResourceState oldState, ResourceState newState);
+        std::string SelectBestBackend(const std::string& path, ResourceType type);
 
-    protected:
-        // 资源缓存（供子类访问）
+        // 资源缓存
         std::unordered_map<std::string, ResourceRef> m_ResourceCache;
         mutable std::mutex m_CacheMutex;
 
-    private:
+        // 后端管理
+        std::unordered_map<std::string, Core::ResourceBackendRef> m_ActiveBackends;
+        std::string m_DefaultBackend;
+        mutable std::mutex m_BackendMutex;
+
         // 异步加载
-        std::queue<LoadTask> m_LoadQueue;
+        std::queue<std::shared_ptr<LoadTask>> m_LoadQueue;
         std::mutex m_QueueMutex;
         std::condition_variable m_QueueCondition;
         std::vector<std::thread> m_WorkerThreads;
-        std::atomic<bool> m_ShouldStop{false};
+        std::atomic<bool> m_Shutdown{false};
 
-        // 配置
-        size_t m_MaxCacheSize{1024 * 1024 * 1024}; // 1GB
-        std::atomic<size_t> m_CurrentCacheSize{0};
-
-        // 回调
-        ResourceStateCallback m_StateCallback;
-
-        // 统计
+        // 统计信息
         std::atomic<uint32_t> m_TotalLoads{0};
         std::atomic<uint32_t> m_FailedLoads{0};
+        std::atomic<uint32_t> m_AsyncLoads{0};
         std::atomic<uint32_t> m_CacheHits{0};
-        std::atomic<uint32_t> m_CacheMisses{0};
     };
 
 } // namespace Resources

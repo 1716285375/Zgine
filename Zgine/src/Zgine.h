@@ -29,12 +29,12 @@
 
 	// Resource Management System
 	#include "Zgine/Resources/IResource.h"
+	#include "Zgine/Resources/ResourceTypes.h"
 	#include "Zgine/Resources/ResourceManager.h"
-	#include "Zgine/Resources/TextureManager.h"
-	#include "Zgine/Resources/ShaderManager.h"
-	#include "Zgine/Resources/ModelManager.h"
-	#include "Zgine/Resources/AudioManager.h"
-	#include "Zgine/Resources/AssetLoader.h"
+	#include "Zgine/Resources/Core/IResourceBackend.h"
+	#include "Zgine/Resources/Core/ResourceBackendRegistry.h"
+	#include "Zgine/Resources/Audio/IAudioBackend.h"
+	#include "Zgine/Resources/Audio/AudioManager.h"
 
 #include "Zgine/ECS/ECS.h"
 

@@ -1,10 +1,9 @@
 #include "zgpch.h"
 #include "ResourceManager.h"
-#include "Zgine/Logging/Log.h"
-#include <filesystem>
-#include <fstream>
+#include "Core/IResourceBackend.h"
+#include "Core/ResourceBackendRegistry.h"
 #include <algorithm>
-#include <future>
+#include <filesystem>
 
 namespace Zgine {
 namespace Resources {
@@ -19,57 +18,202 @@ namespace Resources {
 
     bool ResourceManager::Initialize() {
         ZG_CORE_INFO("Initializing ResourceManager...");
+
+        // 从ResourceBackendRegistry加载已注册的后端
+        auto& registry = Core::ResourceBackendRegistry::GetInstance();
+        auto registeredBackendNames = registry.GetRegisteredBackends();
         
-        // 启动工作线程
-        m_ShouldStop = false;
-        size_t threadCount = std::thread::hardware_concurrency();
-        if (threadCount == 0) threadCount = 2; // 至少2个线程
-        
-        for (size_t i = 0; i < threadCount; ++i) {
-            m_WorkerThreads.emplace_back(&ResourceManager::WorkerThread, this);
+        for (const auto& backendName : registeredBackendNames) {
+            ZG_CORE_INFO("Loading registered backend: {}", backendName);
+            
+            auto backend = registry.CreateBackend(backendName);
+            if (backend && backend->Initialize()) {
+                m_ActiveBackends[backendName] = backend;
+                ZG_CORE_INFO("Successfully loaded backend: {}", backendName);
+                
+                // 设置第一个后端为默认后端
+                if (m_DefaultBackend.empty()) {
+                    m_DefaultBackend = backendName;
+                    ZG_CORE_INFO("Set default backend to: {}", m_DefaultBackend);
+                }
+            } else {
+                ZG_CORE_ERROR("Failed to initialize backend: {}", backendName);
+            }
         }
-        
+
+        // 启动工作线程
+        m_Shutdown = false;
+        uint32_t threadCount = std::thread::hardware_concurrency();
+        if (threadCount == 0) threadCount = 2; // 至少2个线程
+
+        for (uint32_t i = 0; i < threadCount; ++i) {
+            m_WorkerThreads.emplace_back(&ResourceManager::LoadWorkerThread, this);
+        }
+
         ZG_CORE_INFO("ResourceManager initialized with {} worker threads", threadCount);
         return true;
     }
 
     void ResourceManager::Shutdown() {
         ZG_CORE_INFO("Shutting down ResourceManager...");
-        
+
         // 停止工作线程
-        m_ShouldStop = true;
+        m_Shutdown = true;
         m_QueueCondition.notify_all();
-        
+
         for (auto& thread : m_WorkerThreads) {
             if (thread.joinable()) {
                 thread.join();
             }
         }
         m_WorkerThreads.clear();
-        
-        // 卸载所有资源
-        UnloadAll();
-        
+
+        // 关闭所有后端
+        {
+            std::lock_guard<std::mutex> lock(m_BackendMutex);
+            for (auto& pair : m_ActiveBackends) {
+                pair.second->Shutdown();
+            }
+            m_ActiveBackends.clear();
+        }
+
+        // 清理资源缓存
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_ResourceCache.clear();
+        }
+
         ZG_CORE_INFO("ResourceManager shutdown complete");
     }
 
     void ResourceManager::Update(float deltaTime) {
-        // 定期清理未使用的资源
-        static float cleanupTimer = 0.0f;
-        cleanupTimer += deltaTime;
-        
-        if (cleanupTimer >= 30.0f) { // 每30秒清理一次
-            size_t cleaned = CleanupUnusedResources();
-            if (cleaned > 0) {
-                ZG_CORE_TRACE("Cleaned up {} unused resources", cleaned);
+        // 更新所有后端
+        {
+            std::lock_guard<std::mutex> lock(m_BackendMutex);
+            for (auto& pair : m_ActiveBackends) {
+                // 如果后端支持Update方法，可以在这里调用
+                // pair.second->Update(deltaTime);
             }
-            cleanupTimer = 0.0f;
         }
     }
 
-    ResourceRef ResourceManager::LoadAsync(const std::string& path, ResourceType type, 
+    bool ResourceManager::RegisterBackend(const std::string& name, Core::ResourceBackendRef backend, int priority) {
+        if (!backend) {
+            ZG_CORE_ERROR("Cannot register null backend: {}", name);
+            return false;
+        }
+
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
+        
+        if (m_ActiveBackends.find(name) != m_ActiveBackends.end()) {
+            ZG_CORE_WARN("Backend '{}' is already registered", name);
+            return false;
+        }
+
+        if (!backend->Initialize()) {
+            ZG_CORE_ERROR("Failed to initialize backend: {}", name);
+            return false;
+        }
+
+        m_ActiveBackends[name] = backend;
+        
+        // 如果是第一个后端，设为默认后端
+        if (m_DefaultBackend.empty()) {
+            m_DefaultBackend = name;
+        }
+
+        ZG_CORE_INFO("Registered backend: {} (priority: {})", name, priority);
+        return true;
+    }
+
+    bool ResourceManager::UnregisterBackend(const std::string& name) {
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
+        
+        auto it = m_ActiveBackends.find(name);
+        if (it == m_ActiveBackends.end()) {
+            ZG_CORE_WARN("Backend '{}' is not registered", name);
+            return false;
+        }
+
+        it->second->Shutdown();
+        m_ActiveBackends.erase(it);
+
+        // 如果这是默认后端，选择新的默认后端
+        if (m_DefaultBackend == name) {
+            m_DefaultBackend = m_ActiveBackends.empty() ? "" : m_ActiveBackends.begin()->first;
+        }
+
+        ZG_CORE_INFO("Unregistered backend: {}", name);
+        return true;
+    }
+
+    bool ResourceManager::SetDefaultBackend(const std::string& name) {
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
+        
+        if (m_ActiveBackends.find(name) == m_ActiveBackends.end()) {
+            ZG_CORE_ERROR("Backend '{}' is not registered", name);
+            return false;
+        }
+
+        m_DefaultBackend = name;
+        ZG_CORE_INFO("Set default backend to: {}", name);
+        return true;
+    }
+
+    ResourceRef ResourceManager::LoadSync(const std::string& path, ResourceType type, 
+                                       const ResourceLoadConfig& config) {
+        // 检查缓存
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            auto it = m_ResourceCache.find(path);
+            if (it != m_ResourceCache.end()) {
+                m_CacheHits++;
+                return it->second;
+            }
+        }
+
+        // 选择后端
+        std::string backendName = SelectBestBackend(path, type);
+        if (backendName.empty()) {
+            ZG_CORE_ERROR("No backend available for resource: {} (type: {})", path, static_cast<int>(type));
+            m_FailedLoads++;
+            return nullptr;
+        }
+
+        Core::ResourceBackendRef backend;
+        {
+            std::lock_guard<std::mutex> lock(m_BackendMutex);
+            auto it = m_ActiveBackends.find(backendName);
+            if (it == m_ActiveBackends.end()) {
+                ZG_CORE_ERROR("Backend '{}' is not available", backendName);
+                m_FailedLoads++;
+                return nullptr;
+            }
+            backend = it->second;
+        }
+
+        // 加载资源
+        ResourceRef resource = backend->LoadSync(path, type, config);
+        if (!resource) {
+            m_FailedLoads++;
+            return nullptr;
+        }
+
+        // 添加到缓存
+        {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
+            m_ResourceCache[path] = resource;
+        }
+
+        m_TotalLoads++;
+        ZG_CORE_TRACE("Loaded resource: {} using backend: {}", path, backendName);
+        return resource;
+    }
+
+    ResourceRef ResourceManager::LoadAsync(const std::string& path, ResourceType type,
+                                         const ResourceLoadConfig& config,
                                          ResourceLoadCallback callback) {
-        // 检查资源是否已存在
+        // 检查缓存
         {
             std::lock_guard<std::mutex> lock(m_CacheMutex);
             auto it = m_ResourceCache.find(path);
@@ -81,169 +225,67 @@ namespace Resources {
                 return it->second;
             }
         }
-        
-        m_CacheMisses++;
-        
-        // 验证资源文件
-        if (!ValidateResourceFile(path, type)) {
-            ZG_CORE_ERROR("Invalid resource file: {}", path);
-            if (callback) {
-                callback(nullptr, false);
-            }
-            return nullptr;
-        }
-        
+
         // 创建加载任务
-        LoadTask task(path, type, callback);
+        auto task = std::make_shared<LoadTask>(path, type, config, callback);
         
-        // 添加到加载队列
+        // 添加到队列
         {
             std::lock_guard<std::mutex> lock(m_QueueMutex);
             m_LoadQueue.push(task);
         }
+        
         m_QueueCondition.notify_one();
+        m_AsyncLoads++;
         
-        // 创建资源对象（状态为Loading）
-        ResourceRef resource = CreateResource(path, type);
-        if (resource) {
-            std::lock_guard<std::mutex> lock(m_CacheMutex);
-            m_ResourceCache[path] = resource;
-        }
-        
-        return resource;
-    }
-
-    ResourceRef ResourceManager::LoadSync(const std::string& path, ResourceType type) {
-        // 检查资源是否已存在
-        {
-            std::lock_guard<std::mutex> lock(m_CacheMutex);
-            auto it = m_ResourceCache.find(path);
-            if (it != m_ResourceCache.end()) {
-                m_CacheHits++;
-                return it->second;
-            }
-        }
-        
-        m_CacheMisses++;
-        
-        // 验证资源文件
-        if (!ValidateResourceFile(path, type)) {
-            ZG_CORE_ERROR("Invalid resource file: {}", path);
-            return nullptr;
-        }
-        
-        // 创建资源对象
-        ResourceRef resource = CreateResource(path, type);
-        if (!resource) {
-            return nullptr;
-        }
-        
-        // 同步加载
-        if (resource->LoadSync()) {
-            std::lock_guard<std::mutex> lock(m_CacheMutex);
-            m_ResourceCache[path] = resource;
-            m_TotalLoads++;
-            return resource;
-        } else {
-            m_FailedLoads++;
-            return nullptr;
-        }
+        ZG_CORE_TRACE("Queued async load task: {}", path);
+        return nullptr; // 异步加载不立即返回资源
     }
 
     ResourceRef ResourceManager::GetResource(const std::string& path) {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
         auto it = m_ResourceCache.find(path);
-        if (it != m_ResourceCache.end()) {
-            m_CacheHits++;
-            return it->second;
-        }
-        m_CacheMisses++;
-        return nullptr;
+        return it != m_ResourceCache.end() ? it->second : nullptr;
     }
 
     bool ResourceManager::IsLoaded(const std::string& path) {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
-        auto it = m_ResourceCache.find(path);
-        return it != m_ResourceCache.end() && it->second->IsLoaded();
+        return m_ResourceCache.find(path) != m_ResourceCache.end();
     }
 
-    bool ResourceManager::Unload(const std::string& path) {
+    bool ResourceManager::UnloadResource(const std::string& path) {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
         auto it = m_ResourceCache.find(path);
         if (it != m_ResourceCache.end()) {
-            it->second->Unload();
             m_ResourceCache.erase(it);
+            ZG_CORE_TRACE("Unloaded resource: {}", path);
             return true;
         }
         return false;
     }
 
-    void ResourceManager::UnloadAll() {
+    std::vector<ResourceRef> ResourceManager::GetAllResources() const {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
-        for (auto& pair : m_ResourceCache) {
-            pair.second->Unload();
-        }
-        m_ResourceCache.clear();
-        m_CurrentCacheSize = 0;
-    }
-
-    bool ResourceManager::Reload(const std::string& path) {
-        std::lock_guard<std::mutex> lock(m_CacheMutex);
-        auto it = m_ResourceCache.find(path);
-        if (it != m_ResourceCache.end()) {
-            return it->second->Reload();
-        }
-        return false;
-    }
-
-    void ResourceManager::ReloadAll() {
-        std::lock_guard<std::mutex> lock(m_CacheMutex);
-        for (auto& pair : m_ResourceCache) {
-            pair.second->Reload();
-        }
-    }
-
-    std::string ResourceManager::GetStats() const {
-        std::stringstream ss;
-        ss << "ResourceManager Stats:\n";
-        ss << "  Loaded Resources: " << m_ResourceCache.size() << "\n";
-        ss << "  Cache Size: " << (m_CurrentCacheSize.load() / 1024 / 1024) << " MB\n";
-        ss << "  Max Cache Size: " << (m_MaxCacheSize / 1024 / 1024) << " MB\n";
-        ss << "  Total Loads: " << m_TotalLoads.load() << "\n";
-        ss << "  Failed Loads: " << m_FailedLoads.load() << "\n";
-        ss << "  Cache Hits: " << m_CacheHits.load() << "\n";
-        ss << "  Cache Misses: " << m_CacheMisses.load() << "\n";
         
-        float hitRate = 0.0f;
-        uint32_t totalRequests = m_CacheHits.load() + m_CacheMisses.load();
-        if (totalRequests > 0) {
-            hitRate = (float)m_CacheHits.load() / totalRequests * 100.0f;
+        std::vector<ResourceRef> resources;
+        resources.reserve(m_ResourceCache.size());
+        
+        for (const auto& pair : m_ResourceCache) {
+            resources.push_back(pair.second);
         }
-        ss << "  Cache Hit Rate: " << std::fixed << std::setprecision(2) << hitRate << "%\n";
         
-        return ss.str();
+        return resources;
     }
 
-    void ResourceManager::SetStateCallback(ResourceStateCallback callback) {
-        m_StateCallback = callback;
-    }
-
-    void ResourceManager::SetMaxCacheSize(size_t maxSize) {
-        m_MaxCacheSize = maxSize;
-    }
-
-    size_t ResourceManager::GetCurrentCacheSize() const {
-        return m_CurrentCacheSize.load();
-    }
-
-    size_t ResourceManager::CleanupUnusedResources() {
+    uint32_t ResourceManager::CleanupUnusedResources() {
         std::lock_guard<std::mutex> lock(m_CacheMutex);
-        size_t cleaned = 0;
         
+        uint32_t cleaned = 0;
         auto it = m_ResourceCache.begin();
         while (it != m_ResourceCache.end()) {
-            if (it->second->GetRefCount() == 0) {
-                it->second->Unload();
+            // 检查资源是否只被缓存引用（引用计数为1）
+            if (it->second.use_count() == 1) {
+                ZG_CORE_TRACE("Cleaning up unused resource: {}", it->first);
                 it = m_ResourceCache.erase(it);
                 cleaned++;
             } else {
@@ -254,70 +296,52 @@ namespace Resources {
         return cleaned;
     }
 
-    std::vector<std::string> ResourceManager::GetLoadedResourcePaths() const {
-        std::lock_guard<std::mutex> lock(m_CacheMutex);
-        std::vector<std::string> paths;
-        paths.reserve(m_ResourceCache.size());
+    std::string ResourceManager::GetStatistics() const {
+        std::lock_guard<std::mutex> cacheLock(m_CacheMutex);
+        std::lock_guard<std::mutex> backendLock(m_BackendMutex);
         
-        for (const auto& pair : m_ResourceCache) {
-            paths.push_back(pair.first);
-        }
+        std::ostringstream stats;
+        stats << "ResourceManager Statistics:\n";
+        stats << "  Total Loads: " << m_TotalLoads.load() << "\n";
+        stats << "  Failed Loads: " << m_FailedLoads.load() << "\n";
+        stats << "  Async Loads: " << m_AsyncLoads.load() << "\n";
+        stats << "  Cache Hits: " << m_CacheHits.load() << "\n";
+        stats << "  Cached Resources: " << m_ResourceCache.size() << "\n";
+        stats << "  Active Backends: " << m_ActiveBackends.size() << "\n";
+        stats << "  Default Backend: " << m_DefaultBackend << "\n";
         
-        return paths;
+        return stats.str();
     }
 
-    bool ResourceManager::ValidateResourceFile(const std::string& path, ResourceType type) {
-        if (path.empty()) {
-            return false;
-        }
-        
-        std::filesystem::path filePath(path);
-        if (!std::filesystem::exists(filePath)) {
-            ZG_CORE_ERROR("Resource file does not exist: {}", path);
-            return false;
-        }
-        
-        if (!std::filesystem::is_regular_file(filePath)) {
-            ZG_CORE_ERROR("Resource path is not a file: {}", path);
-            return false;
-        }
-        
-        // 检查文件大小
-        auto fileSize = std::filesystem::file_size(filePath);
-        if (fileSize == 0) {
-            ZG_CORE_ERROR("Resource file is empty: {}", path);
-            return false;
-        }
-        
-        return true;
+    Core::ResourceBackendRef ResourceManager::GetBackend(const std::string& name) {
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
+        auto it = m_ActiveBackends.find(name);
+        return it != m_ActiveBackends.end() ? it->second : nullptr;
     }
 
-    size_t ResourceManager::GetResourceFileSize(const std::string& path) {
-        try {
-            return std::filesystem::file_size(path);
-        } catch (const std::filesystem::filesystem_error& e) {
-            ZG_CORE_ERROR("Failed to get file size for {}: {}", path, e.what());
-            return 0;
+    std::vector<std::string> ResourceManager::GetRegisteredBackends() const {
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
+        
+        std::vector<std::string> backends;
+        backends.reserve(m_ActiveBackends.size());
+        
+        for (const auto& pair : m_ActiveBackends) {
+            backends.push_back(pair.first);
         }
+        
+        return backends;
     }
 
-    uint32_t ResourceManager::GenerateResourceID(const std::string& path) {
-        static std::hash<std::string> hasher;
-        return static_cast<uint32_t>(hasher(path));
-    }
-
-    void ResourceManager::WorkerThread() {
-        while (!m_ShouldStop) {
-            LoadTask task("", ResourceType::Unknown);
+    void ResourceManager::LoadWorkerThread() {
+        while (!m_Shutdown) {
+            std::shared_ptr<LoadTask> task;
             
-            // 等待任务
+            // 获取任务
             {
                 std::unique_lock<std::mutex> lock(m_QueueMutex);
-                m_QueueCondition.wait(lock, [this] { return !m_LoadQueue.empty() || m_ShouldStop; });
+                m_QueueCondition.wait(lock, [this] { return !m_LoadQueue.empty() || m_Shutdown; });
                 
-                if (m_ShouldStop) {
-                    break;
-                }
+                if (m_Shutdown) break;
                 
                 task = m_LoadQueue.front();
                 m_LoadQueue.pop();
@@ -328,78 +352,78 @@ namespace Resources {
         }
     }
 
-    void ResourceManager::ProcessLoadTask(const LoadTask& task) {
-        // 获取资源对象
-        ResourceRef resource;
-        {
-            std::lock_guard<std::mutex> lock(m_CacheMutex);
-            auto it = m_ResourceCache.find(task.path);
-            if (it != m_ResourceCache.end()) {
-                resource = it->second;
+    void ResourceManager::ProcessLoadTask(std::shared_ptr<LoadTask> task) {
+        // 选择后端
+        std::string backendName = SelectBestBackend(task->path, task->type);
+        if (backendName.empty()) {
+            ZG_CORE_ERROR("No backend available for async load: {} (type: {})", task->path, static_cast<int>(task->type));
+            task->success = false;
+            task->completed = true;
+            if (task->callback) {
+                task->callback(nullptr, false);
             }
-        }
-        
-        if (!resource) {
-            ZG_CORE_ERROR("Resource not found for async loading: {}", task.path);
-            if (task.callback) {
-                task.callback(nullptr, false);
-            }
-            task.promise->set_value(false);
             return;
         }
-        
-        // 异步加载
-        bool success = resource->LoadSync();
-        
-        if (success) {
+
+        Core::ResourceBackendRef backend;
+        {
+            std::lock_guard<std::mutex> lock(m_BackendMutex);
+            auto it = m_ActiveBackends.find(backendName);
+            if (it == m_ActiveBackends.end()) {
+                ZG_CORE_ERROR("Backend '{}' is not available for async load", backendName);
+                task->success = false;
+                task->completed = true;
+                if (task->callback) {
+                    task->callback(nullptr, false);
+                }
+                return;
+            }
+            backend = it->second;
+        }
+
+        // 加载资源
+        ResourceRef resource = backend->LoadSync(task->path, task->type, task->config);
+        task->resource = resource;
+        task->success = resource != nullptr;
+        task->completed = true;
+
+        if (task->success) {
+            // 添加到缓存
+            {
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
+                m_ResourceCache[task->path] = resource;
+            }
             m_TotalLoads++;
-            ZG_CORE_TRACE("Successfully loaded resource: {}", task.path);
+            ZG_CORE_TRACE("Async loaded resource: {} using backend: {}", task->path, backendName);
         } else {
             m_FailedLoads++;
-            ZG_CORE_ERROR("Failed to load resource: {}", task.path);
         }
-        
+
         // 调用回调
-        if (task.callback) {
-            task.callback(resource, success);
-        }
-        
-        // 设置promise
-        task.promise->set_value(success);
-    }
-
-    void ResourceManager::NotifyStateChange(ResourceRef resource, ResourceState oldState, ResourceState newState) {
-        if (m_StateCallback) {
-            m_StateCallback(resource, oldState, newState);
+        if (task->callback) {
+            task->callback(resource, task->success);
         }
     }
 
-    bool ResourceManager::UnloadResource(const std::string& path)
-    {
-        std::lock_guard<std::mutex> lock(m_CacheMutex);
+    std::string ResourceManager::SelectBestBackend(const std::string& path, ResourceType type) {
+        std::lock_guard<std::mutex> lock(m_BackendMutex);
         
-        auto it = m_ResourceCache.find(path);
-        if (it != m_ResourceCache.end()) {
-            it->second->Unload();
-            m_ResourceCache.erase(it);
-            return true;
+        // 首先尝试默认后端
+        if (!m_DefaultBackend.empty()) {
+            auto it = m_ActiveBackends.find(m_DefaultBackend);
+            if (it != m_ActiveBackends.end() && it->second->SupportsResourceType(type)) {
+                return m_DefaultBackend;
+            }
         }
-        
-        return false;
-    }
 
-    std::vector<ResourceRef> ResourceManager::GetAllResources() const
-    {
-        std::lock_guard<std::mutex> lock(m_CacheMutex);
-        
-        std::vector<ResourceRef> resources;
-        resources.reserve(m_ResourceCache.size());
-        
-        for (const auto& [path, resource] : m_ResourceCache) {
-            resources.push_back(resource);
+        // 查找支持该资源类型的后端
+        for (const auto& pair : m_ActiveBackends) {
+            if (pair.second->SupportsResourceType(type)) {
+                return pair.first;
+            }
         }
-        
-        return resources;
+
+        return "";
     }
 
 } // namespace Resources
