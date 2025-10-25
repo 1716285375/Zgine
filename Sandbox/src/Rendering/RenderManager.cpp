@@ -21,6 +21,17 @@ namespace Sandbox {
 	RenderManager::~RenderManager()
 	{
 		ZG_CORE_INFO("RenderManager destroyed");
+		
+		// Explicitly clear test modules to ensure proper cleanup order
+		// This prevents any potential issues with lambda captures
+		if (m_Test2DModule)
+		{
+			m_Test2DModule.reset();
+		}
+		if (m_Test3DModule)
+		{
+			m_Test3DModule.reset();
+		}
 	}
 
 	void RenderManager::OnAttach()

@@ -23,6 +23,11 @@ namespace Sandbox {
 	Test2DModule::~Test2DModule()
 	{
 		ZG_CORE_INFO("Test2DModule destroyed");
+		
+		// Clear scenes to prevent dangling pointer issues
+		// The lambda expressions in m_Scenes hold [this] captures
+		// which become invalid when this object is destroyed
+		m_Scenes.clear();
 	}
 
 	void Test2DModule::OnAttach()
@@ -435,7 +440,7 @@ namespace Sandbox {
 		// Render basic shapes if enabled (for Mixed preset)
 		if (config.showQuads)
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Rendering quads (showQuads=true)");
+			// ZG_CORE_TRACE("Advanced Shapes Scene: Rendering quads (showQuads=true)");
 			// Basic colored quads
 			for (int i = 0; i < 3; i++)
 			{
@@ -463,7 +468,7 @@ namespace Sandbox {
 
 		if (config.showLines)
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Rendering lines (showLines=true)");
+			// ZG_CORE_TRACE("Advanced Shapes Scene: Rendering lines (showLines=true)");
 			// Grid lines
 			for (int i = 0; i < 5; i++)
 			{
@@ -480,7 +485,7 @@ namespace Sandbox {
 
 		if (config.showCircles)
 		{
-			ZG_CORE_TRACE("Advanced Shapes Scene: Rendering circles (showCircles=true)");
+			// ZG_CORE_TRACE("Advanced Shapes Scene: Rendering circles (showCircles=true)");
 			// Static filled circles
 			for (int i = 0; i < 2; i++)
 			{
