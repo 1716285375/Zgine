@@ -62,7 +62,8 @@ int main(int argc, char** argv) {
 	
 	// Shutdown logging system
 	Zgine::Log::Shutdown();
-	ZG_CORE_INFO("Log system shutdown completed");
+	// 注意：不要在Log::Shutdown()之后使用任何日志宏
+	// 因为此时日志系统已经被关闭
 	
 	return 0;
 }

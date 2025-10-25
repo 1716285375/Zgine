@@ -402,28 +402,5 @@ namespace Resources {
         return resources;
     }
 
-    void ResourceManager::Shutdown() {
-        ZG_CORE_INFO("Shutting down ResourceManager...");
-        
-        // 停止工作线程
-        m_ShouldStop = true;
-        m_QueueCondition.notify_all();
-        
-        for (auto& thread : m_WorkerThreads) {
-            if (thread.joinable()) {
-                thread.join();
-            }
-        }
-        m_WorkerThreads.clear();
-        
-        // 卸载所有资源
-        {
-            std::lock_guard<std::mutex> lock(m_CacheMutex);
-            m_ResourceCache.clear();
-        }
-        
-        ZG_CORE_INFO("ResourceManager shutdown complete");
-    }
-
 } // namespace Resources
 } // namespace Zgine
