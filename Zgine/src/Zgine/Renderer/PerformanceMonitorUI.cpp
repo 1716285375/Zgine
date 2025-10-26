@@ -393,50 +393,45 @@ namespace Zgine {
 		}
 
 		ImGui::SameLine();
-		// TODO: Fix BenchmarkScenarios namespace access
-		// if (ImGui::Button("Run Stress Test"))
-		// {
-		// 	auto baseScenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
-		// 	auto results = PerformanceBenchmark::RunStressTest(baseScenario, 5.0f, 1.5f);
-		// 	ProcessBenchmarkResults(results);
-		// }
+		if (ImGui::Button("Run Stress Test"))
+		{
+			auto baseScenario = BenchmarkScenarios::Basic2DRendering();
+			auto results = PerformanceBenchmark::RunStressTest(baseScenario, 5.0f, 1.5f);
+			ProcessBenchmarkResults(results);
+		}
 
 		ImGui::Separator();
 
 		// Individual test buttons
-		// TODO: Fix BenchmarkScenarios namespace access
-		// if (ImGui::Button("Basic 2D Test"))
-		// {
-		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic2DRendering();
-		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
-		// 	ProcessBenchmarkResults({result});
-		// }
+		if (ImGui::Button("Basic 2D Test"))
+		{
+			auto scenario = BenchmarkScenarios::Basic2DRendering();
+			auto result = PerformanceBenchmark::RunBenchmark(scenario);
+			ProcessBenchmarkResults({result});
+		}
 
 		ImGui::SameLine();
-		// TODO: Fix BenchmarkScenarios namespace access
-		// if (ImGui::Button("Basic 3D Test"))
-		// {
-		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::Basic3DRendering();
-		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
-		// 	ProcessBenchmarkResults({result});
-		// }
+		if (ImGui::Button("Basic 3D Test"))
+		{
+			auto scenario = BenchmarkScenarios::Basic3DRendering();
+			auto result = PerformanceBenchmark::RunBenchmark(scenario);
+			ProcessBenchmarkResults({result});
+		}
 
-		// TODO: Fix BenchmarkScenarios namespace access
-		// if (ImGui::Button("High Quad Count"))
-		// {
-		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighQuadCount2D(10000);
-		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
-		// 	ProcessBenchmarkResults({result});
-		// }
+		if (ImGui::Button("High Quad Count"))
+		{
+			auto scenario = BenchmarkScenarios::HighQuadCount2D(10000);
+			auto result = PerformanceBenchmark::RunBenchmark(scenario);
+			ProcessBenchmarkResults({result});
+		}
 
 		ImGui::SameLine();
-		// TODO: Fix BenchmarkScenarios namespace access
-		// if (ImGui::Button("High Object Count"))
-		// {
-		// 	auto scenario = PerformanceBenchmark::BenchmarkScenarios::HighObjectCount3D(5000);
-		// 	auto result = PerformanceBenchmark::RunBenchmark(scenario);
-		// 	ProcessBenchmarkResults({result});
-		// }
+		if (ImGui::Button("High Object Count"))
+		{
+			auto scenario = BenchmarkScenarios::HighObjectCount3D(5000);
+			auto result = PerformanceBenchmark::RunBenchmark(scenario);
+			ProcessBenchmarkResults({result});
+		}
 
 		ImGui::End();
 	}

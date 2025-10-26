@@ -497,7 +497,107 @@ template std::vector<Entity> ECSManager::GetEntitiesWith<Position, Velocity>();
 template std::vector<Entity> ECSManager::GetEntitiesWith<Transform, Sprite>();
 template std::vector<Entity> ECSManager::GetEntitiesWith<Physics, Transform>();
 template std::vector<Entity> ECSManager::GetEntitiesWith<Animation, Transform>();
-template std::vector<Entity> ECSManager::GetEntitiesWith<Health, Tag>();
+template<typename Component>
+std::vector<Entity> ECSManager::GetEntitiesWithComponent() {
+    std::vector<Entity> entities;
+    auto view = m_RegistryImpl->registry.view<EntityID, Component>();
+    
+    for (auto enttEntity : view) {
+        EntityID id = view.get<EntityID>(enttEntity);
+        entities.emplace_back(id, this);
+    }
+    
+    return entities;
+}
 
-} // namespace ECS
-} // namespace Zgine
+template<typename Component>
+std::vector<Entity> ECSManager::GetEntitiesWithComponent() const {
+    std::vector<Entity> entities;
+    auto view = m_RegistryImpl->registry.view<EntityID, Component>();
+    
+    for (auto enttEntity : view) {
+        EntityID id = view.get<EntityID>(enttEntity);
+        entities.emplace_back(id, const_cast<ECSManager*>(this));
+    }
+    
+    return entities;
+}
+
+template<typename... Components>
+std::vector<Entity> ECSManager::GetEntitiesWith() {
+    std::vector<Entity> entities;
+    auto view = m_RegistryImpl->registry.view<EntityID, Components...>();
+    
+    for (auto enttEntity : view) {
+        EntityID id = view.get<EntityID>(enttEntity);
+        entities.emplace_back(id, this);
+    }
+    
+    return entities;
+}
+
+std::vector<Entity> ECSManager::GetEntitiesWithTag(const std::string& tag) {
+    std::vector<Entity> entities;
+    auto view = m_RegistryImpl->registry.view<EntityID, Tag>();
+    
+    for (auto enttEntity : view) {
+        EntityID id = view.get<EntityID>(enttEntity);
+        const auto& tagComponent = view.get<Tag>(enttEntity);
+        
+        if (tagComponent.HasTag(tag)) {
+            entities.emplace_back(id, this);
+        }
+    }
+    
+    return entities;
+}
+
+std::vector<Entity> ECSManager::GetEntitiesWithName(const std::string& name) {
+    std::vector<Entity> entities;
+    auto view = m_RegistryImpl->registry.view<EntityID, Tag>();
+    
+    for (auto enttEntity : view) {
+        EntityID id = view.get<EntityID>(enttEntity);
+        const auto& tagComponent = view.get<Tag>(enttEntity);
+        
+        if (tagComponent.name == name) {
+            entities.emplace_back(id, this);
+        }
+    }
+    
+    return entities;
+}
+
+size_t ECSManager::GetEntityCount() const {
+    return m_RegistryImpl->registry.size();
+}
+
+size_t ECSManager::GetComponentCount() const {
+    size_t total = 0;
+    // 遍历所有组件类型并累加
+    total += m_RegistryImpl->registry.size<Position>();
+    total += m_RegistryImpl->registry.size<Velocity>();
+    total += m_RegistryImpl->registry.size<Renderable>();
+    total += m_RegistryImpl->registry.size<Transform>();
+    total += m_RegistryImpl->registry.size<Sprite>();
+    total += m_RegistryImpl->registry.size<Animation>();
+    total += m_RegistryImpl->registry.size<Physics>();
+    total += m_RegistryImpl->registry.size<Audio>();
+    total += m_RegistryImpl->registry.size<Health>();
+    total += m_RegistryImpl->registry.size<Tag>();
+    return total;
+}
+
+size_t ECSManager::GetComponentCount(const std::string& componentName) const {
+    if (componentName == "Position") return m_RegistryImpl->registry.size<Position>();
+    if (componentName == "Velocity") return m_RegistryImpl->registry.size<Velocity>();
+    if (componentName == "Renderable") return m_RegistryImpl->registry.size<Renderable>();
+    if (componentName == "Transform") return m_RegistryImpl->registry.size<Transform>();
+    if (componentName == "Sprite") return m_RegistryImpl->registry.size<Sprite>();
+    if (componentName == "Animation") return m_RegistryImpl->registry.size<Animation>();
+    if (componentName == "Physics") return m_RegistryImpl->registry.size<Physics>();
+    if (componentName == "Audio") return m_RegistryImpl->registry.size<Audio>();
+    if (componentName == "Health") return m_RegistryImpl->registry.size<Health>();
+    if (componentName == "Tag") return m_RegistryImpl->registry.size<Tag>();
+    return 0;
+}
