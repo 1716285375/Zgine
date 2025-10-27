@@ -509,6 +509,7 @@ namespace Sandbox {
 				ImGui::SameLine();
 				if (ImGui::Button("Advanced"))
 				{
+					ZG_CORE_INFO("Advanced button clicked! Setting config...");
 					// Only enable advanced shapes, not basic shapes
 					config.showQuads = false;
 					config.showLines = false;
@@ -524,7 +525,8 @@ namespace Sandbox {
 					config.animationPaused = false;
 					config.animationSpeed = 1.5f;
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
-					ZG_CORE_INFO("Advanced preset applied - Only advanced shapes enabled");
+					ZG_CORE_INFO("Advanced preset applied - showTriangles: {}, showEllipses: {}, showAdvanced: {}", 
+						config.showTriangles, config.showEllipses, config.showAdvanced);
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Mixed"))
