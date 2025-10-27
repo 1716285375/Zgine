@@ -1,3 +1,6 @@
-# Zgine £¨developing)
-a minimal and tidy game engine£¬please switch to the bot/dev branch to check the dev version.
-Ò»¸öĞ¡ÇÉÁáççµÄÓÎÏ·ÒıÇæ£¬¿ª·¢°æ±¾ÇëÒÆ²½£¨bot/dev) ·ÖÖ§¡£
+# Zgine ï¼ˆdeveloping)
+
+a minimal and tidy game engineï¼Œplease switch to the bot/dev branch to check the dev version.
+
+
+ä¸€ä¸ªå°å·§ç²ç‘çš„æ¸¸æˆå¼•æ“ï¼Œå¼€å‘ç‰ˆæœ¬è¯·ç§»æ­¥ï¼ˆbot/dev) åˆ†æ”¯ã€‚
