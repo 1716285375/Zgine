@@ -59,22 +59,8 @@ namespace Zgine {
 	{
 		glBindVertexArray(m_RendererID);
 		
-		// Re-enable vertex attributes for this VAO
-		// This ensures that vertex attributes are properly enabled when the VAO is bound
-		for (int i = 0; i < 4; i++)
-		{
-			glEnableVertexAttribArray(i);
-		}
-		
-		// Debug: Check if vertex attributes are enabled after binding
-		GLint attrib0Enabled = 0, attrib1Enabled = 0, attrib2Enabled = 0, attrib3Enabled = 0;
-		glGetVertexAttribiv(0, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib0Enabled);
-		glGetVertexAttribiv(1, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib1Enabled);
-		glGetVertexAttribiv(2, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib2Enabled);
-		glGetVertexAttribiv(3, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attrib3Enabled);
-		
-		//ZG_CORE_TRACE("OpenGLVertexArray::Bind - VAO {} bound, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
-		//	m_RendererID, attrib0Enabled, attrib1Enabled, attrib2Enabled, attrib3Enabled);
+		// VAO automatically restores the vertex attribute state when bound
+		// No need to manually enable attributes - they are part of the VAO state
 	}
 
 	/**
@@ -100,14 +86,7 @@ namespace Zgine {
 
 		const auto& layout = vertexBuffer->GetLayout();
 		
-		// Clear any existing vertex attribute state for this VAO
-		for (int i = 0; i < 32; i++)
-		{
-			glDisableVertexAttribArray(i);
-		}
-		
-		// Use traditional glVertexAttribPointer for compatibility
-		// This ensures consistent behavior across all OpenGL versions
+		// Configure vertex attributes for this VAO
 		for (const auto& element : layout)
 		{
 			// Get the location from the shader by name
