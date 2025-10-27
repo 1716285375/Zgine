@@ -63,11 +63,10 @@ namespace Sandbox {
 
 	void UIManager::OnImGuiRender()
 	{
-		// Enable docking
-		if (m_EnableDocking)
-		{
-			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport()->ID, ImGui::GetMainViewport(), ImGuiDockNodeFlags_None);
-		}
+		// Create DockSpace over entire viewport
+		ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
+		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 
 		// Render main menu
 		if (m_ShowMainMenu)
