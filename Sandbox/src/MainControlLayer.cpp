@@ -68,7 +68,8 @@ namespace Sandbox {
 		
 		// Render test modules
 		m_RenderManager.Render2D();
-		m_RenderManager.Render3D();
+		// Temporarily disable 3D rendering to debug 2D rendering issue
+		// m_RenderManager.Render3D();
 		
 		// Update performance monitoring
 		if (m_PerformanceMonitoringEnabled)

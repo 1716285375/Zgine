@@ -1,0 +1,45 @@
+{
+  "2D_Rendering_Configuration": {
+    "render_options": {
+      "showQuads": false,
+      "showLines": false,
+      "showCircles": false,
+      "showAdvanced": false,
+      "showTriangles": false,
+      "showEllipses": false,
+      "showArcs": false,
+      "showGradients": false
+    },
+    "animation_options": {
+      "animateCircles": false,
+      "animateQuads": false,
+      "animateAll": false,
+      "animationPaused": false,
+      "animationSpeed": 1
+    },
+    "settings": {
+      "lineThickness": 0.05,
+      "circleRadius": 0.3,
+      "circleSegments": 32,
+      "ellipseSegments": 16
+    },
+    "render_options": {
+      "wireframeMode": false,
+      "showBoundingBoxes": false,
+      "renderMode": 0
+    },
+    "camera_settings": {
+      "cameraSpeed": 2,
+      "cameraPosition": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  "export_info": {
+    "timestamp": "2025-10-27 20:30:45",
+    "engine_version": "Zgine 1.0.0",
+    "active_scene": "Basic Shapes"
+  }
+}

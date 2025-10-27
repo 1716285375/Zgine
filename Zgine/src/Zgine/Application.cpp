@@ -116,7 +116,8 @@ namespace Zgine {
 			Timestep timestep = time - lastFrameTime;
 			lastFrameTime = time;
 
-			RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
+			// Clear with bright orange color to make rendering visible
+			RenderCommand::SetClearColor({0.8f, 0.5f, 0.2f, 1.0f});
 			RenderCommand::Clear();
 
 			for (auto* layer : m_LayerStack) {
