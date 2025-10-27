@@ -80,15 +80,6 @@ namespace Zgine {
 				
 				if (severity == GL_DEBUG_SEVERITY_NOTIFICATION) return;
 				
-				// Ignore texture state usage warnings about undefined base level
-				// This warning occurs when texture image units are bound to texture object 0 (null texture)
-				// We handle this by ensuring all texture slots are bound to valid textures
-				std::string msg(message, length);
-				if (msg.find("Texture state usage warning") != std::string::npos &&
-				    msg.find("does not have a defined base level") != std::string::npos) {
-					return;
-				}
-				
 				if (type == GL_DEBUG_TYPE_ERROR) {
 					ZG_CORE_ERROR("OpenGL Error [{}]: {}", severity, message);
 				} else {
