@@ -465,8 +465,6 @@ namespace Sandbox {
 	{
 		if (m_Test2DModule)
 		{
-			// Make window background transparent to see rendering
-			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.0f);
 			if (ImGui::Begin("2D Rendering Test", &m_Windows["2D Test"].isVisible))
 			{
 				auto& config = m_Test2DModule->GetConfig();
@@ -740,7 +738,6 @@ namespace Sandbox {
 				}
 			}
 			ImGui::End();
-			ImGui::PopStyleVar();
 		}
 	}
 

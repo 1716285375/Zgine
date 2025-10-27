@@ -900,18 +900,20 @@ namespace Sandbox {
 		// Render a minimal test pattern to show that the renderer is working
 		// This helps users understand that they need to enable rendering options
 		
-		// Draw a simple crosshair in the center
+		// Draw a simple crosshair in the center - BRIGHT WHITE for visibility
 		Zgine::BatchRenderer2D::DrawLine({ -1.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, 
-			{ 0.5f, 0.5f, 0.5f, 1.0f }, 0.02f);
+			{ 1.0f, 1.0f, 1.0f, 1.0f }, 0.05f);
 		Zgine::BatchRenderer2D::DrawLine({ 0.0f, -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, 
-			{ 0.5f, 0.5f, 0.5f, 1.0f }, 0.02f);
+			{ 1.0f, 1.0f, 1.0f, 1.0f }, 0.05f);
 		IncrementObjectCount(2);
 		
-		// Draw a simple circle in the center to indicate the renderer is working
-		Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f, 0.0f }, 0.3f, { 0.3f, 0.3f, 0.3f, 0.3f }, 16);
+		// Draw a simple circle in the center - BRIGHT YELLOW for visibility
+		Zgine::BatchRenderer2D::DrawCircle({ 0.0f, 0.0f, 0.0f }, 0.3f, { 1.0f, 1.0f, 0.0f, 1.0f }, 32);
 		IncrementObjectCount();
 		
-		// Note: No quads are rendered by default to avoid confusion with checkboxes
+		// Draw a colorful test quad
+		Zgine::BatchRenderer2D::DrawQuad({ 0.5f, 0.5f, 0.0f }, { 0.5f, 0.5f }, { 1.0f, 0.0f, 0.0f, 1.0f });
+		IncrementObjectCount();
 	}
 
 	void Test2DModule::DrawBoundingBox(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color)
