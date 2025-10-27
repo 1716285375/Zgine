@@ -151,8 +151,17 @@ namespace Zgine {
 		s_TextureShader->Bind();
 		s_TextureShader->UploadUniformIntArray("u_Textures", samplers, MaxTextureSlots);
 
-		// Set all texture slots to 0
-		s_TextureSlots[0] = s_WhiteTexture;
+		// Set all texture slots to white texture to avoid OpenGL warnings
+		for (uint32_t i = 0; i < MaxTextureSlots; i++)
+		{
+			s_TextureSlots[i] = s_WhiteTexture;
+		}
+		
+		// Bind all texture slots to white texture to prevent OpenGL warnings about undefined base level
+		for (uint32_t i = 0; i < MaxTextureSlots; i++)
+		{
+			s_WhiteTexture->Bind(i);
+		}
 		
 		// Initialize other static members
 		s_QuadIndexCount = 0;
