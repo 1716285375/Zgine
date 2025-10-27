@@ -253,7 +253,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::EndScene()
 	{
-		// ZG_CORE_TRACE("BatchRenderer2D::EndScene called");
+		ZG_CORE_INFO("BatchRenderer2D::EndScene - s_QuadIndexCount: {}, About to flush and draw", s_QuadIndexCount);
 		Flush();
 	}
 
@@ -1018,10 +1018,12 @@ namespace Zgine {
 		// ZG_CORE_TRACE("BatchRenderer2D::Flush - About to draw {} indices", actualIndices);
 		
 		
+		ZG_CORE_INFO("BatchRenderer2D::Flush - Drawing {} indices ({} quads), actual vertices: {}", 
+			actualIndices, actualQuads, actualVertices);
 		RenderCommand::DrawIndexed(s_QuadVertexArray, actualIndices);
 		RenderCommand::CheckOpenGLError("BatchRenderer2D::Flush - DrawIndexed");
 		
-		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Draw call completed");
+		ZG_CORE_INFO("BatchRenderer2D::Flush - Draw call completed");
 
 		s_Stats.DrawCalls++;
 	}
