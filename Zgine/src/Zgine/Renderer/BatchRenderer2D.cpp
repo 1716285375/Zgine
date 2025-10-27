@@ -1028,6 +1028,12 @@ namespace Zgine {
 		RenderCommand::CheckOpenGLError("BatchRenderer2D::Flush - DrawIndexed");
 		
 		// ZG_CORE_TRACE("BatchRenderer2D::Flush - Draw call completed");
+		
+		// Re-bind all textures after draw to prevent OpenGL warnings
+		for (uint32_t i = 0; i < MaxTextureSlots; i++)
+		{
+			s_TextureSlots[i]->Bind(i);
+		}
 
 		s_Stats.DrawCalls++;
 	}
