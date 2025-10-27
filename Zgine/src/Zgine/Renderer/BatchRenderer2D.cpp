@@ -940,10 +940,16 @@ namespace Zgine {
 		// ZG_CORE_TRACE("BatchRenderer2D::Flush - After SetData, attributes enabled: 0={}, 1={}, 2={}, 3={}", 
 		//	attrib0EnabledAfter, attrib1EnabledAfter, attrib2EnabledAfter, attrib3EnabledAfter);
 
-		// Bind textures
+		// Bind textures used in this batch
 		for (uint32_t i = 0; i < s_TextureSlotIndex; i++)
 		{
 			s_TextureSlots[i]->Bind(i);
+		}
+		
+		// Bind white texture to unused slots to prevent OpenGL warnings
+		for (uint32_t i = s_TextureSlotIndex; i < MaxTextureSlots; i++)
+		{
+			s_WhiteTexture->Bind(i);
 		}
 		
 		// Debug: Check vertex array state
