@@ -119,23 +119,24 @@ namespace Sandbox {
 		                     m_Config.showAdvanced || m_Config.showTriangles || m_Config.showEllipses || 
 		                     m_Config.showArcs || m_Config.showGradients;
 		
-		// ZG_CORE_TRACE("RenderActiveScene called - ActiveScene: {}, HasAnyEnabled: {}", m_ActiveScene, hasAnyEnabled);
+		ZG_CORE_INFO("RenderActiveScene - ActiveScene: {}, HasAnyEnabled: {}, showTriangles: {}, showEllipses: {}, showAdvanced: {}", 
+			m_ActiveScene, hasAnyEnabled, m_Config.showTriangles, m_Config.showEllipses, m_Config.showAdvanced);
 		
 		if (!hasAnyEnabled)
 		{
 			// Render a default test pattern when no options are selected
-			// ZG_CORE_TRACE("Rendering default test pattern");
+			ZG_CORE_WARN("No rendering options enabled, rendering default test pattern");
 			RenderDefaultTestPattern();
 		}
 		else
 		{
 			// Render the active scene
-			// ZG_CORE_TRACE("Rendering active scene: {}", m_ActiveScene);
+			ZG_CORE_INFO("Rendering active scene: {}", m_ActiveScene);
 			for (const auto& scene : m_Scenes)
 			{
 				if (scene.GetName() == m_ActiveScene)
 				{
-					// ZG_CORE_TRACE("Found scene: {}, calling Render", scene.GetName());
+					ZG_CORE_INFO("Found scene: {}, calling Render", scene.GetName());
 					scene.Render(m_Config);
 					break;
 				}
