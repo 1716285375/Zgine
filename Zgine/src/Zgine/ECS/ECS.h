@@ -5,6 +5,8 @@
 #include <vector>
 #include <string>
 #include <algorithm>
+#include <optional>
+#include <stdexcept>
 
 namespace Zgine {
 namespace ECS {
@@ -252,6 +254,16 @@ private:
     
     // Entity ID counter
     EntityID m_NextEntityID = 1;
+    
+    // Performance optimization: Maintain entity count
+    size_t m_EntityCount = 0;
+    
+    // Helper method to find EnTT entity by EntityID
+    struct EnTTEntity {
+        bool found = false;
+        void* enttEntity = nullptr;
+    };
+    EnTTEntity FindEnTTEntity(EntityID entityID) const;
 };
 
 } // namespace ECS

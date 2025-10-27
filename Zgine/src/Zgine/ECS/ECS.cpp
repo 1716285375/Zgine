@@ -98,6 +98,8 @@ public:
                                 sprite.color = currentValue;
                             }
                             break;
+                        default:
+                            break;
                     }
                 }
             }
@@ -108,8 +110,6 @@ public:
 class ECSManager::PhysicsSystem {
 public:
     void Update(entt::registry& registry, float deltaTime) {
-        const glm::vec3 gravity = {0.0f, -9.81f, 0.0f};
-        
         auto view = registry.view<Physics, Transform>();
         
         for (auto enttEntity : view) {
@@ -120,7 +120,7 @@ public:
             
             // 应用重力
             if (physics.affectedByGravity) {
-                physics.acceleration += gravity;
+                physics.velocity.y -= 9.81f * deltaTime; // 重力加速度
             }
             
             // 更新速度
@@ -133,7 +133,7 @@ public:
             transform.position += physics.velocity * deltaTime;
             
             // 重置加速度
-            physics.acceleration = {0.0f, 0.0f, 0.0f};
+            physics.acceleration = glm::vec3(0.0f);
         }
     }
 };
@@ -141,19 +141,13 @@ public:
 class ECSManager::AudioSystem {
 public:
     void Update(entt::registry& registry, float deltaTime) {
-        auto view = registry.view<Audio, Transform>();
+        auto view = registry.view<Audio>();
         
         for (auto enttEntity : view) {
             auto& audio = view.get<Audio>(enttEntity);
             
-            if (audio.playing) {
-                // 这里应该调用音频引擎播放声音
-                // 对于空间音频，需要根据Transform计算3D位置
-                if (audio.spatial) {
-                    auto& transform = view.get<Transform>(enttEntity);
-                    // 设置3D音频位置
-                }
-            }
+            // 音频系统更新逻辑
+            // 这里可以处理音频的播放状态、音量控制等
         }
     }
 };
@@ -166,16 +160,13 @@ public:
         for (auto enttEntity : view) {
             auto& health = view.get<Health>(enttEntity);
             
-            // 检查生命值状态
-            if (health.current <= 0.0f && health.isAlive) {
-                health.isAlive = false;
-                // 可以触发死亡事件
-            }
+            // 健康系统更新逻辑
+            // 这里可以处理生命值恢复、死亡检测等
         }
     }
 };
 
-// ECSManager implementation
+// ECSManager Implementation
 ECSManager::ECSManager() 
     : m_RegistryImpl(std::make_unique<RegistryImpl>())
     , m_MovementSystem(std::make_unique<MovementSystem>())
@@ -190,8 +181,15 @@ ECSManager::ECSManager()
 ECSManager::~ECSManager() = default;
 
 Entity ECSManager::CreateEntity() {
+    auto enttEntity = m_RegistryImpl->registry.create();
     EntityID id = m_NextEntityID++;
-    m_RegistryImpl->registry.emplace<EntityID>(m_RegistryImpl->registry.create(), id);
+    
+    // 为实体添加EntityID组件
+    m_RegistryImpl->registry.emplace<EntityID>(enttEntity, id);
+    
+    // 更新实体计数（性能优化）
+    m_EntityCount++;
+    
     return Entity(id, this);
 }
 
@@ -203,177 +201,61 @@ void ECSManager::DestroyEntity(Entity entity) {
 
 void ECSManager::DestroyEntity(EntityID entityID) {
     auto view = m_RegistryImpl->registry.view<EntityID>();
+    bool found = false;
     for (auto enttEntity : view) {
         if (view.get<EntityID>(enttEntity) == entityID) {
             m_RegistryImpl->registry.destroy(enttEntity);
+            found = true;
             break;
         }
+    }
+    
+    // 更新实体计数（性能优化）
+    if (found && m_EntityCount > 0) {
+        m_EntityCount--;
     }
 }
 
 void ECSManager::Update(float deltaTime) {
+    // 更新各个系统
     m_MovementSystem->Update(m_RegistryImpl->registry, deltaTime);
     m_AnimationSystem->Update(m_RegistryImpl->registry, deltaTime);
     m_PhysicsSystem->Update(m_RegistryImpl->registry, deltaTime);
     m_AudioSystem->Update(m_RegistryImpl->registry, deltaTime);
     m_HealthSystem->Update(m_RegistryImpl->registry, deltaTime);
-    m_RenderSystem->Update(m_RegistryImpl->registry, deltaTime);
 }
 
-size_t ECSManager::GetEntityCount() const {
-    return m_RegistryImpl->registry.storage<EntityID>().size();
-}
-
-size_t ECSManager::GetComponentCount() const {
-    return m_RegistryImpl->registry.storage<Position>().size() + 
-           m_RegistryImpl->registry.storage<Velocity>().size() + 
-           m_RegistryImpl->registry.storage<Renderable>().size() +
-           m_RegistryImpl->registry.storage<Transform>().size() +
-           m_RegistryImpl->registry.storage<Sprite>().size() +
-           m_RegistryImpl->registry.storage<Animation>().size() +
-           m_RegistryImpl->registry.storage<Physics>().size() +
-           m_RegistryImpl->registry.storage<Audio>().size() +
-           m_RegistryImpl->registry.storage<Health>().size() +
-           m_RegistryImpl->registry.storage<Tag>().size();
-}
-
-size_t ECSManager::GetComponentCount(const std::string& componentName) const {
-    if (componentName == "Position") return m_RegistryImpl->registry.storage<Position>().size();
-    if (componentName == "Velocity") return m_RegistryImpl->registry.storage<Velocity>().size();
-    if (componentName == "Renderable") return m_RegistryImpl->registry.storage<Renderable>().size();
-    if (componentName == "Transform") return m_RegistryImpl->registry.storage<Transform>().size();
-    if (componentName == "Sprite") return m_RegistryImpl->registry.storage<Sprite>().size();
-    if (componentName == "Animation") return m_RegistryImpl->registry.storage<Animation>().size();
-    if (componentName == "Physics") return m_RegistryImpl->registry.storage<Physics>().size();
-    if (componentName == "Audio") return m_RegistryImpl->registry.storage<Audio>().size();
-    if (componentName == "Health") return m_RegistryImpl->registry.storage<Health>().size();
-    if (componentName == "Tag") return m_RegistryImpl->registry.storage<Tag>().size();
-    return 0;
-}
-
-// Entity query implementations
-template<typename... Components>
-std::vector<Entity> ECSManager::GetEntitiesWith() {
-    std::vector<Entity> entities;
-    auto view = m_RegistryImpl->registry.view<Components...>();
-    
-    for (auto enttEntity : view) {
-        // 查找对应的EntityID
-        if (m_RegistryImpl->registry.all_of<EntityID>(enttEntity)) {
-            EntityID id = m_RegistryImpl->registry.get<EntityID>(enttEntity);
-            entities.emplace_back(id, this);
-        }
-    }
-    
-    return entities;
-}
-
-template<typename Component>
-std::vector<Entity> ECSManager::GetEntitiesWithComponent() {
-    std::vector<Entity> entities;
-    auto view = m_RegistryImpl->registry.view<Component>();
-    
-    for (auto enttEntity : view) {
-        if (m_RegistryImpl->registry.all_of<EntityID>(enttEntity)) {
-            EntityID id = m_RegistryImpl->registry.get<EntityID>(enttEntity);
-            entities.emplace_back(id, this);
-        }
-    }
-    
-    return entities;
-}
-
-template<typename Component>
-std::vector<Entity> ECSManager::GetEntitiesWithComponent() const {
-    std::vector<Entity> entities;
-    auto view = m_RegistryImpl->registry.view<Component>();
-    
-    for (auto enttEntity : view) {
-        if (m_RegistryImpl->registry.all_of<EntityID>(enttEntity)) {
-            EntityID id = m_RegistryImpl->registry.get<EntityID>(enttEntity);
-            entities.emplace_back(id, const_cast<ECSManager*>(this));
-        }
-    }
-    
-    return entities;
-}
-
-std::vector<Entity> ECSManager::GetEntitiesWithTag(const std::string& tag) {
-    std::vector<Entity> entities;
-    auto view = m_RegistryImpl->registry.view<Tag>();
-    
-    for (auto enttEntity : view) {
-        auto& tagComponent = view.get<Tag>(enttEntity);
-        if (tagComponent.HasTag(tag)) {
-            if (m_RegistryImpl->registry.all_of<EntityID>(enttEntity)) {
-                EntityID id = m_RegistryImpl->registry.get<EntityID>(enttEntity);
-                entities.emplace_back(id, this);
-            }
-        }
-    }
-    
-    return entities;
-}
-
-std::vector<Entity> ECSManager::GetEntitiesWithName(const std::string& name) {
-    std::vector<Entity> entities;
-    auto view = m_RegistryImpl->registry.view<Tag>();
-    
-    for (auto enttEntity : view) {
-        auto& tagComponent = view.get<Tag>(enttEntity);
-        if (tagComponent.name == name) {
-            if (m_RegistryImpl->registry.all_of<EntityID>(enttEntity)) {
-                EntityID id = m_RegistryImpl->registry.get<EntityID>(enttEntity);
-                entities.emplace_back(id, this);
-            }
-        }
-    }
-    
-    return entities;
-}
-
-// Entity template implementations
+// Entity Implementation
 template<typename Component>
 void Entity::AddComponent(const Component& component) {
-    if (m_Manager && IsValid()) {
+    if (IsValid()) {
         m_Manager->AddComponent(*this, component);
     }
 }
 
 template<typename Component>
 Component& Entity::GetComponent() {
-    if (m_Manager && IsValid()) {
-        return m_Manager->GetComponent<Component>(*this);
-    }
-    static Component dummy;
-    return dummy;
+    return m_Manager->GetComponent<Component>(*this);
 }
 
 template<typename Component>
 const Component& Entity::GetComponent() const {
-    if (m_Manager && IsValid()) {
-        return m_Manager->GetComponent<Component>(*this);
-    }
-    static Component dummy;
-    return dummy;
+    return m_Manager->GetComponent<Component>(*this);
 }
 
 template<typename Component>
 bool Entity::HasComponent() const {
-    if (m_Manager && IsValid()) {
-        return m_Manager->HasComponent<Component>(*this);
-    }
-    return false;
+    return m_Manager->HasComponent<Component>(*this);
 }
 
 template<typename Component>
 void Entity::RemoveComponent() {
-    if (m_Manager && IsValid()) {
+    if (IsValid()) {
         m_Manager->RemoveComponent<Component>(*this);
     }
 }
 
-// ECSManager template implementations
+// ECSManager Template Methods
 template<typename Component>
 void ECSManager::AddComponent(Entity entity, const Component& component) {
     if (entity.IsValid()) {
@@ -386,7 +268,7 @@ void ECSManager::AddComponent(EntityID entityID, const Component& component) {
     auto view = m_RegistryImpl->registry.view<EntityID>();
     for (auto enttEntity : view) {
         if (view.get<EntityID>(enttEntity) == entityID) {
-            m_RegistryImpl->registry.emplace<Component>(enttEntity, component);
+            m_RegistryImpl->registry.emplace_or_replace<Component>(enttEntity, component);
             break;
         }
     }
@@ -402,11 +284,13 @@ Component& ECSManager::GetComponent(EntityID entityID) {
     auto view = m_RegistryImpl->registry.view<EntityID>();
     for (auto enttEntity : view) {
         if (view.get<EntityID>(enttEntity) == entityID) {
+            if (!m_RegistryImpl->registry.all_of<Component>(enttEntity)) {
+                throw std::runtime_error("Entity does not have the requested component");
+            }
             return m_RegistryImpl->registry.get<Component>(enttEntity);
         }
     }
-    static Component dummy;
-    return dummy; // Fallback for invalid entity
+    throw std::runtime_error("Entity not found");
 }
 
 template<typename Component>
@@ -419,11 +303,13 @@ const Component& ECSManager::GetComponent(EntityID entityID) const {
     auto view = m_RegistryImpl->registry.view<EntityID>();
     for (auto enttEntity : view) {
         if (view.get<EntityID>(enttEntity) == entityID) {
+            if (!m_RegistryImpl->registry.all_of<Component>(enttEntity)) {
+                throw std::runtime_error("Entity does not have the requested component");
+            }
             return m_RegistryImpl->registry.get<Component>(enttEntity);
         }
     }
-    static Component dummy;
-    return dummy; // Fallback for invalid entity
+    throw std::runtime_error("Entity not found");
 }
 
 template<typename Component>
@@ -460,43 +346,6 @@ void ECSManager::RemoveComponent(EntityID entityID) {
     }
 }
 
-
-// Explicit template instantiations for all components
-#define INSTANTIATE_COMPONENT_TEMPLATES(ComponentType) \
-    template void Entity::AddComponent<ComponentType>(const ComponentType&); \
-    template ComponentType& Entity::GetComponent<ComponentType>(); \
-    template const ComponentType& Entity::GetComponent<ComponentType>() const; \
-    template bool Entity::HasComponent<ComponentType>() const; \
-    template void Entity::RemoveComponent<ComponentType>(); \
-    template void ECSManager::AddComponent<ComponentType>(Entity, const ComponentType&); \
-    template void ECSManager::AddComponent<ComponentType>(EntityID, const ComponentType&); \
-    template ComponentType& ECSManager::GetComponent<ComponentType>(Entity); \
-    template ComponentType& ECSManager::GetComponent<ComponentType>(EntityID); \
-    template const ComponentType& ECSManager::GetComponent<ComponentType>(Entity) const; \
-    template const ComponentType& ECSManager::GetComponent<ComponentType>(EntityID) const; \
-    template bool ECSManager::HasComponent<ComponentType>(Entity) const; \
-    template bool ECSManager::HasComponent<ComponentType>(EntityID) const; \
-    template void ECSManager::RemoveComponent<ComponentType>(Entity); \
-    template void ECSManager::RemoveComponent<ComponentType>(EntityID); \
-    template std::vector<Entity> ECSManager::GetEntitiesWithComponent<ComponentType>(); \
-    template std::vector<Entity> ECSManager::GetEntitiesWithComponent<ComponentType>() const;
-
-INSTANTIATE_COMPONENT_TEMPLATES(Position)
-INSTANTIATE_COMPONENT_TEMPLATES(Velocity)
-INSTANTIATE_COMPONENT_TEMPLATES(Renderable)
-INSTANTIATE_COMPONENT_TEMPLATES(Transform)
-INSTANTIATE_COMPONENT_TEMPLATES(Sprite)
-INSTANTIATE_COMPONENT_TEMPLATES(Animation)
-INSTANTIATE_COMPONENT_TEMPLATES(Physics)
-INSTANTIATE_COMPONENT_TEMPLATES(Audio)
-INSTANTIATE_COMPONENT_TEMPLATES(Health)
-INSTANTIATE_COMPONENT_TEMPLATES(Tag)
-
-// Multi-component query instantiations
-template std::vector<Entity> ECSManager::GetEntitiesWith<Position, Velocity>();
-template std::vector<Entity> ECSManager::GetEntitiesWith<Transform, Sprite>();
-template std::vector<Entity> ECSManager::GetEntitiesWith<Physics, Transform>();
-template std::vector<Entity> ECSManager::GetEntitiesWith<Animation, Transform>();
 template<typename Component>
 std::vector<Entity> ECSManager::GetEntitiesWithComponent() {
     std::vector<Entity> entities;
@@ -569,35 +418,91 @@ std::vector<Entity> ECSManager::GetEntitiesWithName(const std::string& name) {
 }
 
 size_t ECSManager::GetEntityCount() const {
-    return m_RegistryImpl->registry.size();
+    // 返回维护的实体计数（性能优化：O(1)而不是O(n)）
+    return m_EntityCount;
 }
 
 size_t ECSManager::GetComponentCount() const {
     size_t total = 0;
     // 遍历所有组件类型并累加
-    total += m_RegistryImpl->registry.size<Position>();
-    total += m_RegistryImpl->registry.size<Velocity>();
-    total += m_RegistryImpl->registry.size<Renderable>();
-    total += m_RegistryImpl->registry.size<Transform>();
-    total += m_RegistryImpl->registry.size<Sprite>();
-    total += m_RegistryImpl->registry.size<Animation>();
-    total += m_RegistryImpl->registry.size<Physics>();
-    total += m_RegistryImpl->registry.size<Audio>();
-    total += m_RegistryImpl->registry.size<Health>();
-    total += m_RegistryImpl->registry.size<Tag>();
+    total += m_RegistryImpl->registry.storage<Position>().size();
+    total += m_RegistryImpl->registry.storage<Velocity>().size();
+    total += m_RegistryImpl->registry.storage<Renderable>().size();
+    total += m_RegistryImpl->registry.storage<Transform>().size();
+    total += m_RegistryImpl->registry.storage<Sprite>().size();
+    total += m_RegistryImpl->registry.storage<Animation>().size();
+    total += m_RegistryImpl->registry.storage<Physics>().size();
+    total += m_RegistryImpl->registry.storage<Audio>().size();
+    total += m_RegistryImpl->registry.storage<Health>().size();
+    total += m_RegistryImpl->registry.storage<Tag>().size();
     return total;
 }
 
 size_t ECSManager::GetComponentCount(const std::string& componentName) const {
-    if (componentName == "Position") return m_RegistryImpl->registry.size<Position>();
-    if (componentName == "Velocity") return m_RegistryImpl->registry.size<Velocity>();
-    if (componentName == "Renderable") return m_RegistryImpl->registry.size<Renderable>();
-    if (componentName == "Transform") return m_RegistryImpl->registry.size<Transform>();
-    if (componentName == "Sprite") return m_RegistryImpl->registry.size<Sprite>();
-    if (componentName == "Animation") return m_RegistryImpl->registry.size<Animation>();
-    if (componentName == "Physics") return m_RegistryImpl->registry.size<Physics>();
-    if (componentName == "Audio") return m_RegistryImpl->registry.size<Audio>();
-    if (componentName == "Health") return m_RegistryImpl->registry.size<Health>();
-    if (componentName == "Tag") return m_RegistryImpl->registry.size<Tag>();
+    if (componentName == "Position") return m_RegistryImpl->registry.storage<Position>().size();
+    if (componentName == "Velocity") return m_RegistryImpl->registry.storage<Velocity>().size();
+    if (componentName == "Renderable") return m_RegistryImpl->registry.storage<Renderable>().size();
+    if (componentName == "Transform") return m_RegistryImpl->registry.storage<Transform>().size();
+    if (componentName == "Sprite") return m_RegistryImpl->registry.storage<Sprite>().size();
+    if (componentName == "Animation") return m_RegistryImpl->registry.storage<Animation>().size();
+    if (componentName == "Physics") return m_RegistryImpl->registry.storage<Physics>().size();
+    if (componentName == "Audio") return m_RegistryImpl->registry.storage<Audio>().size();
+    if (componentName == "Health") return m_RegistryImpl->registry.storage<Health>().size();
+    if (componentName == "Tag") return m_RegistryImpl->registry.storage<Tag>().size();
     return 0;
 }
+
+// Helper method to find EnTT entity by EntityID
+ECSManager::EnTTEntity ECSManager::FindEnTTEntity(EntityID entityID) const {
+    EnTTEntity result;
+    auto view = m_RegistryImpl->registry.view<EntityID>();
+    for (auto enttEntity : view) {
+        if (view.get<EntityID>(enttEntity) == entityID) {
+            result.found = true;
+            result.enttEntity = &enttEntity;
+            break;
+        }
+    }
+    return result;
+}
+
+// Explicit template instantiations for all components
+#define INSTANTIATE_COMPONENT_TEMPLATES(ComponentType) \
+    template void Entity::AddComponent<ComponentType>(const ComponentType&); \
+    template ComponentType& Entity::GetComponent<ComponentType>(); \
+    template const ComponentType& Entity::GetComponent<ComponentType>() const; \
+    template bool Entity::HasComponent<ComponentType>() const; \
+    template void Entity::RemoveComponent<ComponentType>(); \
+    template void ECSManager::AddComponent<ComponentType>(Entity, const ComponentType&); \
+    template void ECSManager::AddComponent<ComponentType>(EntityID, const ComponentType&); \
+    template ComponentType& ECSManager::GetComponent<ComponentType>(Entity); \
+    template ComponentType& ECSManager::GetComponent<ComponentType>(EntityID); \
+    template const ComponentType& ECSManager::GetComponent<ComponentType>(Entity) const; \
+    template const ComponentType& ECSManager::GetComponent<ComponentType>(EntityID) const; \
+    template bool ECSManager::HasComponent<ComponentType>(Entity) const; \
+    template bool ECSManager::HasComponent<ComponentType>(EntityID) const; \
+    template void ECSManager::RemoveComponent<ComponentType>(Entity); \
+    template void ECSManager::RemoveComponent<ComponentType>(EntityID); \
+    template std::vector<Entity> ECSManager::GetEntitiesWithComponent<ComponentType>(); \
+    template std::vector<Entity> ECSManager::GetEntitiesWithComponent<ComponentType>() const;
+
+INSTANTIATE_COMPONENT_TEMPLATES(Position)
+INSTANTIATE_COMPONENT_TEMPLATES(Velocity)
+INSTANTIATE_COMPONENT_TEMPLATES(Renderable)
+INSTANTIATE_COMPONENT_TEMPLATES(Transform)
+INSTANTIATE_COMPONENT_TEMPLATES(Sprite)
+INSTANTIATE_COMPONENT_TEMPLATES(Animation)
+INSTANTIATE_COMPONENT_TEMPLATES(Physics)
+INSTANTIATE_COMPONENT_TEMPLATES(Audio)
+INSTANTIATE_COMPONENT_TEMPLATES(Health)
+INSTANTIATE_COMPONENT_TEMPLATES(Tag)
+
+// Multi-component query instantiations
+template std::vector<Entity> ECSManager::GetEntitiesWith<Position, Velocity>();
+template std::vector<Entity> ECSManager::GetEntitiesWith<Transform, Sprite>();
+template std::vector<Entity> ECSManager::GetEntitiesWith<Physics, Transform>();
+template std::vector<Entity> ECSManager::GetEntitiesWith<Animation, Transform>();
+template std::vector<Entity> ECSManager::GetEntitiesWith<Health, Tag>();
+
+} // namespace ECS
+} // namespace Zgine
