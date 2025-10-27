@@ -176,12 +176,22 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-		// ZG_CORE_INFO("BatchRenderer2D::BeginScene called");
+		ZG_CORE_INFO("BatchRenderer2D::BeginScene called");
 		
 		// Initialize if not already done
 		if (!s_Initialized)
 		{
 			Init();
+		}
+		
+		// Set viewport to full window size
+		// TODO: Get actual window size
+		GLint viewport[4];
+		glGetIntegerv(GL_VIEWPORT, viewport);
+		if (viewport[2] > 0 && viewport[3] > 0)
+		{
+			ZG_CORE_INFO("BatchRenderer2D::BeginScene - Viewport: {}x{}", viewport[2], viewport[3]);
+			glViewport(0, 0, viewport[2], viewport[3]);
 		}
 		
 		// Enable blending for transparency
