@@ -5,6 +5,15 @@
 #include "Zgine/Events/MouseEvent.h"
 #include "Zgine/Events/KeyEvent.h"
 #include "Platform/OpenGL/OpenGLContext.h"
+#include <GLFW/glfw3.h>
+
+// Define GL constants if not already defined by GLAD
+#ifndef GL_TRUE
+#define GL_TRUE 1
+#endif
+#ifndef GL_FALSE
+#define GL_FALSE 0
+#endif
 
 namespace Zgine {
 	
