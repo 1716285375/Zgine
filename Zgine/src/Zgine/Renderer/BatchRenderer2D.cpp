@@ -176,7 +176,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-		ZG_CORE_INFO("BatchRenderer2D::BeginScene called");
+		ZG_CORE_INFO("=== BatchRenderer2D::BeginScene called ===");
 		
 		// Initialize if not already done
 		if (!s_Initialized)
@@ -190,8 +190,11 @@ namespace Zgine {
 		glGetIntegerv(GL_VIEWPORT, viewport);
 		if (viewport[2] > 0 && viewport[3] > 0)
 		{
-			ZG_CORE_INFO("BatchRenderer2D::BeginScene - Viewport: {}x{}", viewport[2], viewport[3]);
-			glViewport(0, 0, viewport[2], viewport[3]);
+		ZG_CORE_INFO("=== BatchRenderer2D::BeginScene - Viewport: {}x{} ===", viewport[2], viewport[3]);
+		glViewport(0, 0, viewport[2], viewport[3]);
+		
+		// CRITICAL: Make sure we're rendering to the main framebuffer
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		}
 		
 		// Enable blending for transparency
@@ -277,8 +280,15 @@ namespace Zgine {
 
 	void BatchRenderer2D::EndScene()
 	{
-		ZG_CORE_INFO("BatchRenderer2D::EndScene - s_QuadIndexCount: {}, About to flush and draw", s_QuadIndexCount);
-		Flush();
+		if (s_QuadIndexCount > 0)
+		{
+			ZG_CORE_INFO("=== BatchRenderer2D::EndScene - s_QuadIndexCount: {}, About to flush and draw ===", s_QuadIndexCount);
+			Flush();
+		}
+		else
+		{
+			ZG_CORE_WARN("=== BatchRenderer2D::EndScene - No quads to render ===");
+		}
 	}
 
 	void BatchRenderer2D::Shutdown()

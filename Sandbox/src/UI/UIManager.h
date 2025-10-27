@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Zgine/Layer.h"
-#include "imgui.h"
+#include "Zgine/ImGui/ImGuiWrapper.h"
 #include <functional>
 #include <string>
 #include <unordered_map>

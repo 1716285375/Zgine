@@ -2,6 +2,7 @@
 #include "ImGuiLayer.h"
 
 #include "GLFW/glfw3.h"
+#include <glad/glad.h>
 #include "imgui.h"
 
 //#define IMGUI_IMPL_API
@@ -141,6 +142,12 @@ namespace Zgine {
 			::ImGui::RenderPlatformWindowsDefault();
 			glfwMakeContextCurrent(backup_current_context);
 		}
+		
+		// CRITICAL: Restore OpenGL state after ImGui rendering
+		// ImGui::RenderPlatformWindowsDefault() changes viewport and framebuffer
+		// We must restore them to ensure subsequent renders are correct
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glViewport(0, 0, app.GetWindow().GetWidth(), app.GetWindow().GetHeight());
 	}
 
 	void ImGuiLayer::SetTheme(const std::string& theme)

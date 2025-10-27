@@ -424,10 +424,6 @@ void ImGuiWrapper::EndPopup() {
     ::ImGui::EndPopup();
 }
 
-void ImGuiWrapper::OpenPopup(const char* str_id, int popup_flags) {
-    ::ImGui::OpenPopup(str_id, popup_flags);
-}
-
 void ImGuiWrapper::OpenPopupOnItemClick(const char* str_id, int popup_flags) {
     ::ImGui::OpenPopupOnItemClick(str_id, popup_flags);
 }
@@ -699,7 +695,125 @@ uint32_t ImGuiWrapper::GetColorU32(uint32_t col) {
     return ::ImGui::GetColorU32(col);
 }
 
-// 其他方法的实现可以按需添加...
+// Advanced window functions
+ImGuiID ImGuiWrapper::GetID(const char* str_id) {
+    return ::ImGui::GetID(str_id);
+}
+
+ImGuiIO& ImGuiWrapper::GetIO() {
+    return ::ImGui::GetIO();
+}
+
+ImGuiStyle& ImGuiWrapper::GetStyle() {
+    return ::ImGui::GetStyle();
+}
+
+void ImGuiWrapper::DockSpace(ImGuiID id, const ImVec2& size, ImGuiDockNodeFlags flags) {
+    ::ImGui::DockSpace(id, size, flags);
+}
+
+void ImGuiWrapper::DockSpaceOverViewport(ImGuiID id, const ImGuiViewport* viewport, ImGuiDockNodeFlags flags) {
+    ::ImGui::DockSpaceOverViewport(id, viewport, flags);
+}
+
+// Advanced utilities
+bool ImGuiWrapper::Combo(const char* label, int* current_item, const char* const items[], int items_count, int popup_max_height_in_items) {
+    return ::ImGui::Combo(label, current_item, items, items_count, popup_max_height_in_items);
+}
+
+void ImGuiWrapper::SetTooltip(const char* fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    ::ImGui::SetTooltipV(fmt, args);
+    va_end(args);
+}
+
+void ImGuiWrapper::PushID(const char* str_id) {
+    ::ImGui::PushID(str_id);
+}
+
+void ImGuiWrapper::PushID(const void* ptr_id) {
+    ::ImGui::PushID(ptr_id);
+}
+
+void ImGuiWrapper::PushID(int int_id) {
+    ::ImGui::PushID(int_id);
+}
+
+void ImGuiWrapper::PopID() {
+    ::ImGui::PopID();
+}
+
+ImVec2 ImGuiWrapper::GetContentRegionAvail() {
+    return ::ImGui::GetContentRegionAvail();
+}
+
+void ImGuiWrapper::PlotLines(const char* label, const float* values, int values_count, int values_offset, const char* overlay_text, float scale_min, float scale_max, ImVec2 graph_size, int stride) {
+    ::ImGui::PlotLines(label, values, values_count, values_offset, overlay_text, scale_min, scale_max, graph_size, stride);
+}
+
+void ImGuiWrapper::StyleColorsDark() {
+    ::ImGui::StyleColorsDark();
+}
+
+void ImGuiWrapper::StyleColorsLight() {
+    ::ImGui::StyleColorsLight();
+}
+
+void ImGuiWrapper::StyleColorsClassic() {
+    ::ImGui::StyleColorsClassic();
+}
+
+// Columns
+void ImGuiWrapper::Columns(int count, const char* id, bool border) {
+    ::ImGui::Columns(count, id, border);
+}
+
+void ImGuiWrapper::NextColumn() {
+    ::ImGui::NextColumn();
+}
+
+// Popups
+void ImGuiWrapper::OpenPopup(const char* str_id, int popup_flags) {
+    ::ImGui::OpenPopup(str_id, popup_flags);
+}
+
+void ImGuiWrapper::CloseCurrentPopup() {
+    ::ImGui::CloseCurrentPopup();
+}
+
+// Menu methods
+bool ImGuiWrapper::BeginMainMenuBar() {
+    return ::ImGui::BeginMainMenuBar();
+}
+
+void ImGuiWrapper::EndMainMenuBar() {
+    ::ImGui::EndMainMenuBar();
+}
+
+bool ImGuiWrapper::BeginMenuBar() {
+    return ::ImGui::BeginMenuBar();
+}
+
+void ImGuiWrapper::EndMenuBar() {
+    ::ImGui::EndMenuBar();
+}
+
+bool ImGuiWrapper::BeginMenu(const char* label, bool enabled) {
+    return ::ImGui::BeginMenu(label, enabled);
+}
+
+void ImGuiWrapper::EndMenu() {
+    ::ImGui::EndMenu();
+}
+
+bool ImGuiWrapper::MenuItem(const char* label, const char* shortcut, bool selected, bool enabled) {
+    return ::ImGui::MenuItem(label, shortcut, selected, enabled);
+}
+
+bool ImGuiWrapper::MenuItem(const char* label, const char* shortcut, bool* p_selected, bool enabled) {
+    return ::ImGui::MenuItem(label, shortcut, p_selected, enabled);
+}
 
 } // namespace ImGui
 } // namespace Zgine

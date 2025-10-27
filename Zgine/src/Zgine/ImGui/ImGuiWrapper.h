@@ -18,6 +18,13 @@ namespace Zgine {
 			// Window management
 			static bool Begin(const char* name, bool* p_open = nullptr, int flags = 0);
 			static void End();
+			
+			// Advanced window functions (DockSpace, GetID, etc.)
+			static ImGuiID GetID(const char* str_id);
+			static ImGuiIO& GetIO();
+			static ImGuiStyle& GetStyle();
+			static void DockSpace(ImGuiID id, const ImVec2& size = ImVec2(0, 0), ImGuiDockNodeFlags flags = 0);
+			static void DockSpaceOverViewport(ImGuiID id = 0, const ImGuiViewport* viewport = nullptr, ImGuiDockNodeFlags flags = 0);
 
 			// Text and labels
 			static void Text(const char* fmt, ...);
@@ -264,6 +271,18 @@ namespace Zgine {
 			static void ShowFontSelector(const char* label);
 			static void ShowUserGuide();
 			static void GetVersion();
+			
+			// Advanced utilities
+			static bool Combo(const char* label, int* current_item, const char* const items[], int items_count, int popup_max_height_in_items = -1);
+			static void PushID(const char* str_id);
+			static void PushID(const void* ptr_id);
+			static void PushID(int int_id);
+			static void PopID();
+			static ImVec2 GetContentRegionAvail();
+			static void PlotLines(const char* label, const float* values, int values_count, int values_offset = 0, const char* overlay_text = nullptr, float scale_min = FLT_MAX, float scale_max = FLT_MAX, ImVec2 graph_size = ImVec2(0, 0), int stride = sizeof(float));
+			static void StyleColorsDark();
+			static void StyleColorsLight();
+			static void StyleColorsClassic();
 		};
 
 		// Short alias for ImGuiWrapper to reduce verbosity
@@ -271,7 +290,7 @@ namespace Zgine {
 
 	} // namespace ImGui
 
-	// Global alias for easier access
+	// Alias IG in Zgine namespace for Zgine::IG:: usage
 	using IG = ImGui::ImGuiWrapper;
 
 } // namespace Zgine

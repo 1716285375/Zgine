@@ -2,6 +2,7 @@
 #include "Application.h"
 
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include "Input.h"
 #include "Zgine/Logging/Log.h"
 #include "Zgine/Layer.h"
@@ -116,20 +117,31 @@ namespace Zgine {
 			Timestep timestep = time - lastFrameTime;
 			lastFrameTime = time;
 
+			// CRITICAL: Set viewport and framebuffer BEFORE rendering
+			glViewport(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+			
 			// Clear with normal color
 			RenderCommand::SetClearColor({0.1f, 0.1f, 0.1f, 1.0f});
 			RenderCommand::Clear();
 
+			// Update all layers (this renders the scene)
 			for (auto* layer : m_LayerStack) {
 				layer->OnUpdate(timestep);
 			}
 
+			// CRITICAL: Call ImGui::Begin AFTER scene rendering but BEFORE OnImGuiRender
+			// This prevents ImGui from interfering with the main rendering
 			m_ImGuiLayer->Begin();
 			for (auto* layer : m_LayerStack) {
 				layer->OnImGuiRender();
 			}
 			// ImGuiLayer is already in LayerStack as overlay, so its OnImGuiRender is called above
 			m_ImGuiLayer->End();
+			
+			// CRITICAL: Restore viewport after ImGui::End() to ensure next frame renders correctly
+			glViewport(0, 0, m_Window->GetWidth(), m_Window->GetHeight());
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			
 			m_Window->OnUpdate();
 		}

@@ -10,6 +10,7 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include <imgui.h> // For ImVec2, ImGuiID, etc.
 
 namespace Sandbox {
 
@@ -36,7 +37,7 @@ namespace Sandbox {
 		// Enable docking
 		if (m_EnableDocking)
 		{
-			ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+			Zgine::IG::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		}
 		
 		// Apply default theme
@@ -63,10 +64,12 @@ namespace Sandbox {
 
 	void UIManager::OnImGuiRender()
 	{
-		// Create DockSpace over entire viewport
-		ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-		ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-		ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+		// DISABLED: Do not create DockSpace that covers the entire window
+		// DockSpace with ImVec2(0, 0) covers the entire viewport and blocks rendering
+		// This was causing the main window to show no rendering content
+		
+		// The DockSpace should only be created when we have a specific rendering viewport area
+		// For now, just render the UI windows without DockSpace
 
 		// Render main menu
 		if (m_ShowMainMenu)
@@ -197,7 +200,7 @@ namespace Sandbox {
 	void UIManager::ApplyCustomTheme()
 	{
 		// Custom theme implementation
-		ImGui::StyleColorsDark();
+		Zgine::IG::StyleColorsDark();
 	}
 
 	void UIManager::SaveCurrentLayout(const std::string& name)
@@ -244,93 +247,93 @@ namespace Sandbox {
 
 	void UIManager::RenderMainMenuBar()
 	{
-		if (ImGui::BeginMainMenuBar())
+		if (Zgine::IG::BeginMainMenuBar())
 		{
-			if (ImGui::BeginMenu("File"))
+			if (Zgine::IG::BeginMenu("File"))
 			{
-				if (ImGui::MenuItem("Exit"))
+				if (Zgine::IG::MenuItem("Exit"))
 				{
 					// Application::Get().Close(); // Commented out for now
 				}
-				ImGui::EndMenu();
+				Zgine::IG::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Windows"))
+			if (Zgine::IG::BeginMenu("Windows"))
 			{
 				// Render registered windows
 				for (auto& [name, windowInfo] : m_Windows)
 				{
-					ImGui::MenuItem(name.c_str(), nullptr, &windowInfo.isVisible);
+					Zgine::IG::MenuItem(name.c_str(), nullptr, &windowInfo.isVisible);
 				}
-				ImGui::Separator();
-				ImGui::MenuItem("Demo Window", nullptr, &m_ShowDemoWindow);
-				ImGui::MenuItem("Metrics", nullptr, &m_ShowMetricsWindow);
-				ImGui::MenuItem("Style Editor", nullptr, &m_ShowStyleEditor);
-				ImGui::MenuItem("About", nullptr, &m_ShowAboutWindow);
-				ImGui::MenuItem("Layout Manager", nullptr, &m_ShowLayoutManager);
-				ImGui::EndMenu();
+				Zgine::IG::Separator();
+				Zgine::IG::MenuItem("Demo Window", nullptr, &m_ShowDemoWindow);
+				Zgine::IG::MenuItem("Metrics", nullptr, &m_ShowMetricsWindow);
+				Zgine::IG::MenuItem("Style Editor", nullptr, &m_ShowStyleEditor);
+				Zgine::IG::MenuItem("About", nullptr, &m_ShowAboutWindow);
+				Zgine::IG::MenuItem("Layout Manager", nullptr, &m_ShowLayoutManager);
+				Zgine::IG::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("View"))
+			if (Zgine::IG::BeginMenu("View"))
 			{
-				ImGui::MenuItem("Main Menu", nullptr, &m_ShowMainMenu);
-				ImGui::MenuItem("Status Bar", nullptr, &m_ShowStatusBar);
-				ImGui::MenuItem("Performance Overlay", nullptr, &m_ShowPerformanceOverlay);
-				ImGui::Separator();
-				ImGui::MenuItem("Hide All Windows", nullptr);
-				ImGui::MenuItem("Show All Windows", nullptr);
-				ImGui::EndMenu();
+				Zgine::IG::MenuItem("Main Menu", nullptr, &m_ShowMainMenu);
+				Zgine::IG::MenuItem("Status Bar", nullptr, &m_ShowStatusBar);
+				Zgine::IG::MenuItem("Performance Overlay", nullptr, &m_ShowPerformanceOverlay);
+				Zgine::IG::Separator();
+				Zgine::IG::MenuItem("Hide All Windows", nullptr);
+				Zgine::IG::MenuItem("Show All Windows", nullptr);
+				Zgine::IG::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Theme"))
+			if (Zgine::IG::BeginMenu("Theme"))
 			{
-				if (ImGui::MenuItem("Dark", nullptr, m_CurrentTheme == UITheme::Dark))
+				if (Zgine::IG::MenuItem("Dark", nullptr, m_CurrentTheme == UITheme::Dark))
 					SetTheme(UITheme::Dark);
-				if (ImGui::MenuItem("Light", nullptr, m_CurrentTheme == UITheme::Light))
+				if (Zgine::IG::MenuItem("Light", nullptr, m_CurrentTheme == UITheme::Light))
 					SetTheme(UITheme::Light);
-				if (ImGui::MenuItem("Classic", nullptr, m_CurrentTheme == UITheme::Classic))
+				if (Zgine::IG::MenuItem("Classic", nullptr, m_CurrentTheme == UITheme::Classic))
 					SetTheme(UITheme::Classic);
-				ImGui::EndMenu();
+				Zgine::IG::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Layout"))
+			if (Zgine::IG::BeginMenu("Layout"))
 			{
 				for (const auto& [name, layout] : m_Layouts)
 				{
-					if (ImGui::MenuItem(name.c_str()))
+					if (Zgine::IG::MenuItem(name.c_str()))
 					{
 						LoadLayout(name);
 					}
 				}
-				ImGui::Separator();
-				if (ImGui::MenuItem("Save Current Layout..."))
+				Zgine::IG::Separator();
+				if (Zgine::IG::MenuItem("Save Current Layout..."))
 				{
 					// TODO: Show save dialog
 				}
-				ImGui::EndMenu();
+				Zgine::IG::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("Help"))
+			if (Zgine::IG::BeginMenu("Help"))
 			{
-				if (ImGui::MenuItem("About"))
+				if (Zgine::IG::MenuItem("About"))
 				{
 					m_ShowAboutWindow = true;
 				}
-				ImGui::EndMenu();
+				Zgine::IG::EndMenu();
 			}
 
 			// Status information in the menu bar
-			ImGui::Separator();
+			Zgine::IG::Separator();
 			if (m_Test2DModule)
 			{
-				ImGui::Text("2D: %.1f FPS | %d Objects", m_Test2DModule->GetFPS(), m_Test2DModule->GetObjectCount());
+				Zgine::IG::Text("2D: %.1f FPS | %d Objects", m_Test2DModule->GetFPS(), m_Test2DModule->GetObjectCount());
 			}
 			if (m_Test3DModule)
 			{
-				ImGui::Text("3D: %.1f FPS | %d Objects", m_Test3DModule->GetFPS(), m_Test3DModule->GetObjectCount());
+				Zgine::IG::Text("3D: %.1f FPS | %d Objects", m_Test3DModule->GetFPS(), m_Test3DModule->GetObjectCount());
 			}
 
-			ImGui::EndMainMenuBar();
+			Zgine::IG::EndMainMenuBar();
 		}
 	}
 
@@ -339,116 +342,116 @@ namespace Sandbox {
 		// Create a more flexible status bar that can be moved and resized
 		ImGuiWindowFlags flags = ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings;
 		
-		if (ImGui::Begin("Status Bar", &m_ShowStatusBar, flags))
+		if (Zgine::IG::Begin("Status Bar", &m_ShowStatusBar, flags))
 		{
 			// Main status information
-			ImGui::Text("Zgine Engine - Sandbox Mode");
-			ImGui::SameLine();
-			ImGui::Text("| FPS: %.1f", ImGui::GetIO().Framerate);
-			ImGui::SameLine();
-			ImGui::Text("| Frame Time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
+			Zgine::IG::Text("Zgine Engine - Sandbox Mode");
+			Zgine::IG::SameLine();
+			Zgine::IG::Text("| FPS: %.1f", Zgine::IG::GetIO().Framerate);
+			Zgine::IG::SameLine();
+			Zgine::IG::Text("| Frame Time: %.3f ms", 1000.0f / Zgine::IG::GetIO().Framerate);
 			
 			// Add more detailed information if there's space
-			if (ImGui::GetContentRegionAvail().x > 300)
+			if (Zgine::IG::GetContentRegionAvail().x > 300)
 			{
-				ImGui::SameLine();
-				ImGui::Text("| Renderer: OpenGL 4.6");
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| Renderer: OpenGL 4.6");
 				
 				if (m_Test2DModule)
 				{
-					ImGui::SameLine();
-					ImGui::Text("| 2D Objects: %d", m_Test2DModule->GetObjectCount());
+					Zgine::IG::SameLine();
+					Zgine::IG::Text("| 2D Objects: %d", m_Test2DModule->GetObjectCount());
 				}
 				
 				if (m_Test3DModule)
 				{
-					ImGui::SameLine();
-					ImGui::Text("| 3D Objects: %d", m_Test3DModule->GetObjectCount());
+					Zgine::IG::SameLine();
+					Zgine::IG::Text("| 3D Objects: %d", m_Test3DModule->GetObjectCount());
 				}
 			}
 			
 			// Add a separator and additional controls
-			ImGui::Separator();
+			Zgine::IG::Separator();
 			
 			// Quick access buttons
-			if (ImGui::Button("Toggle 2D Test"))
+			if (Zgine::IG::Button("Toggle 2D Test"))
 			{
 				ToggleWindow("2D Test");
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Toggle 3D Test"))
+			Zgine::IG::SameLine();
+			if (Zgine::IG::Button("Toggle 3D Test"))
 			{
 				ToggleWindow("3D Test");
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Toggle Performance"))
+			Zgine::IG::SameLine();
+			if (Zgine::IG::Button("Toggle Performance"))
 			{
 				ToggleWindow("Performance");
 			}
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void UIManager::RenderPerformanceOverlay()
 	{
-		ImGui::SetNextWindowPos(ImVec2(10, 10));
-		ImGui::SetNextWindowSize(ImVec2(300, 200));
+		Zgine::IG::SetNextWindowPos(glm::vec2(10, 10));
+		Zgine::IG::SetNextWindowSize(glm::vec2(300, 200));
 		
-		if (ImGui::Begin("Performance Overlay", &m_ShowPerformanceOverlay))
+		if (Zgine::IG::Begin("Performance Overlay", &m_ShowPerformanceOverlay))
 		{
-			ImGui::Text("Performance Metrics");
-			ImGui::Separator();
+			Zgine::IG::Text("Performance Metrics");
+			Zgine::IG::Separator();
 			
-			ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
-			ImGui::Text("Frame Time: %.3f ms", 1000.0f / ImGui::GetIO().Framerate);
-			ImGui::Text("Draw Calls: %d", ImGui::GetIO().MetricsRenderVertices);
-			ImGui::Text("Vertices: %d", ImGui::GetIO().MetricsRenderVertices);
-			ImGui::Text("Indices: %d", ImGui::GetIO().MetricsRenderIndices);
+			Zgine::IG::Text("FPS: %.1f", Zgine::IG::GetIO().Framerate);
+			Zgine::IG::Text("Frame Time: %.3f ms", 1000.0f / Zgine::IG::GetIO().Framerate);
+			Zgine::IG::Text("Draw Calls: %d", Zgine::IG::GetIO().MetricsRenderVertices);
+			Zgine::IG::Text("Vertices: %d", Zgine::IG::GetIO().MetricsRenderVertices);
+			Zgine::IG::Text("Indices: %d", Zgine::IG::GetIO().MetricsRenderIndices);
 			
 			// Performance graph
 			static float values[100] = {};
 			static int values_offset = 0;
-			values[values_offset] = ImGui::GetIO().Framerate;
+			values[values_offset] = Zgine::IG::GetIO().Framerate;
 			values_offset = (values_offset + 1) % IM_ARRAYSIZE(values);
 			
-			ImGui::PlotLines("FPS", values, IM_ARRAYSIZE(values), values_offset, 
-				"FPS", 0.0f, 200.0f, ImVec2(0, 80));
+			Zgine::IG::PlotLines("FPS", values, IM_ARRAYSIZE(values), values_offset, 
+				"FPS", 0.0f, 200.0f, ImVec2(0.0f, 80.0f));
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void UIManager::RenderLayoutManager()
 	{
-		if (ImGui::Begin("Layout Manager", &m_ShowLayoutManager))
+		if (Zgine::IG::Begin("Layout Manager", &m_ShowLayoutManager))
 		{
-			ImGui::Text("Layout Management");
-			ImGui::Separator();
+			Zgine::IG::Text("Layout Management");
+			Zgine::IG::Separator();
 			
 			// List available layouts
-			ImGui::Text("Available Layouts:");
+			Zgine::IG::Text("Available Layouts:");
 			for (const auto& [name, layout] : m_Layouts)
 			{
-				ImGui::PushID(name.c_str());
-				if (ImGui::Button("Load"))
+				Zgine::IG::PushID(name.c_str());
+				if (Zgine::IG::Button("Load"))
 				{
 					LoadLayout(name);
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Delete"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Delete"))
 				{
 					DeleteLayout(name);
 				}
-				ImGui::SameLine();
-				ImGui::Text("%s", name.c_str());
-				ImGui::PopID();
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("%s", name.c_str());
+				Zgine::IG::PopID();
 			}
 			
-			ImGui::Separator();
+			Zgine::IG::Separator();
 			
 			// Save new layout
 			static char layoutName[128] = "";
-			ImGui::InputText("Layout Name", layoutName, sizeof(layoutName));
-			if (ImGui::Button("Save Current Layout"))
+			Zgine::IG::InputText("Layout Name", layoutName, sizeof(layoutName));
+			if (Zgine::IG::Button("Save Current Layout"))
 			{
 				if (strlen(layoutName) > 0)
 				{
@@ -457,38 +460,38 @@ namespace Sandbox {
 				}
 			}
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void UIManager::Render2DTestWindow()
 	{
 		if (m_Test2DModule)
 		{
-			if (ImGui::Begin("2D Rendering Test", &m_Windows["2D Test"].isVisible))
+			if (Zgine::IG::Begin("2D Rendering Test", &m_Windows["2D Test"].isVisible))
 			{
 				auto& config = m_Test2DModule->GetConfig();
 				
 				// Header 区 - 显示FPS、Objects、Draw Calls
-				ImGui::Text("2D Rendering Test Module");
-				ImGui::SameLine();
-				ImGui::Text("| FPS: %.1f", m_Test2DModule->GetFPS());
-				ImGui::SameLine();
-				ImGui::Text("| Objects: %d", m_Test2DModule->GetObjectCount());
-				ImGui::SameLine();
-				ImGui::Text("| Draw Calls: %d", m_Test2DModule->GetObjectCount() / 4); // Approximate draw calls
+				Zgine::IG::Text("2D Rendering Test Module");
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| FPS: %.1f", m_Test2DModule->GetFPS());
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| Objects: %d", m_Test2DModule->GetObjectCount());
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| Draw Calls: %d", m_Test2DModule->GetObjectCount() / 4); // Approximate draw calls
 				
 				// Tooltips for header info
-				if (ImGui::IsItemHovered())
+				if (Zgine::IG::IsItemHovered())
 				{
-					ImGui::SetTooltip("Current rendering performance metrics");
+					Zgine::IG::SetTooltip("Current rendering performance metrics");
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Quick Preset Buttons - 重新添加预设按钮
-				ImGui::Text("Quick Presets:");
-				ImGui::SameLine();
-				if (ImGui::Button("Basic"))
+				Zgine::IG::Text("Quick Presets:");
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Basic"))
 				{
 					config.showQuads = true;
 					config.showLines = true;
@@ -505,8 +508,8 @@ namespace Sandbox {
 					config.animationSpeed = 1.0f;
 					m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Advanced"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Advanced"))
 				{
 					ZG_CORE_INFO("Advanced button clicked! Setting config...");
 					// Only enable advanced shapes, not basic shapes
@@ -527,8 +530,8 @@ namespace Sandbox {
 					ZG_CORE_INFO("Advanced preset applied - showTriangles: {}, showEllipses: {}, showAdvanced: {}", 
 						config.showTriangles, config.showEllipses, config.showAdvanced);
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Mixed"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Mixed"))
 				{
 					// Enable both basic and advanced shapes
 					config.showQuads = true;
@@ -547,8 +550,8 @@ namespace Sandbox {
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 					ZG_CORE_INFO("Mixed preset applied - Both basic and advanced shapes enabled");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Clear All"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Clear All"))
 				{
 					config.showQuads = false;
 					config.showLines = false;
@@ -566,15 +569,15 @@ namespace Sandbox {
 					m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Shape 控制区 - 两列布局
-				ImGui::Text("Shape Controls");
-				ImGui::Columns(2, "2D_ShapeControls", false);
+				Zgine::IG::Text("Shape Controls");
+				Zgine::IG::Columns(2, "2D_ShapeControls", false);
 				
 				// Left column - Basic Shapes
-				ImGui::Text("Basic Shapes:");
-				if (ImGui::Checkbox("Quads", &config.showQuads))
+				Zgine::IG::Text("Basic Shapes:");
+				if (Zgine::IG::Checkbox("Quads", &config.showQuads))
 				{
 					// Auto-switch scene based on configuration
 					if (config.showAdvanced || config.showTriangles || config.showEllipses || config.showArcs || config.showGradients)
@@ -582,14 +585,14 @@ namespace Sandbox {
 					else
 						m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("Lines", &config.showLines))
+				if (Zgine::IG::Checkbox("Lines", &config.showLines))
 				{
 					if (config.showAdvanced || config.showTriangles || config.showEllipses || config.showArcs || config.showGradients)
 						m_Test2DModule->SetActiveScene("Advanced Shapes");
 					else
 						m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("Circles", &config.showCircles))
+				if (Zgine::IG::Checkbox("Circles", &config.showCircles))
 				{
 					if (config.showAdvanced || config.showTriangles || config.showEllipses || config.showArcs || config.showGradients)
 						m_Test2DModule->SetActiveScene("Advanced Shapes");
@@ -597,81 +600,81 @@ namespace Sandbox {
 						m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
 				
-				ImGui::NextColumn();
+				Zgine::IG::NextColumn();
 				
 				// Right column - Advanced Shapes
-				ImGui::Text("Advanced Shapes:");
-				if (ImGui::Checkbox("Triangles", &config.showTriangles))
+				Zgine::IG::Text("Advanced Shapes:");
+				if (Zgine::IG::Checkbox("Triangles", &config.showTriangles))
 				{
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 				}
-				if (ImGui::Checkbox("Ellipses", &config.showEllipses))
+				if (Zgine::IG::Checkbox("Ellipses", &config.showEllipses))
 				{
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 				}
-				if (ImGui::Checkbox("Arcs", &config.showArcs))
+				if (Zgine::IG::Checkbox("Arcs", &config.showArcs))
 				{
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 				}
-				if (ImGui::Checkbox("Gradients", &config.showGradients))
+				if (Zgine::IG::Checkbox("Gradients", &config.showGradients))
 				{
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 				}
-				if (ImGui::Checkbox("Advanced Effects", &config.showAdvanced))
+				if (Zgine::IG::Checkbox("Advanced Effects", &config.showAdvanced))
 				{
 					m_Test2DModule->SetActiveScene("Advanced Shapes");
 				}
 				
-				ImGui::Columns(1);
-				ImGui::Separator();
+				Zgine::IG::Columns(1);
+				Zgine::IG::Separator();
 				
 				// Animation Controls 区
-				ImGui::Text("Animation Controls");
-				ImGui::Checkbox("Animate Quads", &config.animateQuads);
-				ImGui::SameLine();
-				ImGui::Checkbox("Animate Circles", &config.animateCircles);
-				ImGui::SameLine();
-				ImGui::Checkbox("Animate All", &config.animateAll);
+				Zgine::IG::Text("Animation Controls");
+				Zgine::IG::Checkbox("Animate Quads", &config.animateQuads);
+				Zgine::IG::SameLine();
+				Zgine::IG::Checkbox("Animate Circles", &config.animateCircles);
+				Zgine::IG::SameLine();
+				Zgine::IG::Checkbox("Animate All", &config.animateAll);
 				
 				// Animation speed slider
 				if (config.animateQuads || config.animateCircles || config.animateAll)
 				{
-					ImGui::SliderFloat("Animation Speed", &config.animationSpeed, 0.1f, 3.0f);
-					ImGui::SameLine();
-					if (ImGui::Button(config.animationPaused ? "Resume" : "Pause"))
+					Zgine::IG::SliderFloat("Animation Speed", &config.animationSpeed, 0.1f, 3.0f);
+					Zgine::IG::SameLine();
+					if (Zgine::IG::Button(config.animationPaused ? "Resume" : "Pause"))
 					{
 						config.animationPaused = !config.animationPaused;
 					}
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Render Options 区 - 可折叠
-				if (ImGui::CollapsingHeader("Render Options"))
+				if (Zgine::IG::CollapsingHeader("Render Options"))
 				{
-					ImGui::Checkbox("Wireframe Mode", &config.wireframeMode);
-					ImGui::SameLine();
-					ImGui::Checkbox("Show Bounding Boxes", &config.showBoundingBoxes);
+					Zgine::IG::Checkbox("Wireframe Mode", &config.wireframeMode);
+					Zgine::IG::SameLine();
+					Zgine::IG::Checkbox("Show Bounding Boxes", &config.showBoundingBoxes);
 					
 					// Render mode dropdown
 					const char* renderModes[] = { "Normal", "Wireframe", "Points" };
-					ImGui::Combo("Render Mode", &config.renderMode, renderModes, IM_ARRAYSIZE(renderModes));
+					Zgine::IG::Combo("Render Mode", &config.renderMode, renderModes, IM_ARRAYSIZE(renderModes));
 				}
 				
 				// Settings section
-				if (ImGui::CollapsingHeader("2D Settings"))
+				if (Zgine::IG::CollapsingHeader("2D Settings"))
 				{
-					ImGui::SliderFloat("Line Thickness", &config.lineThickness, 0.01f, 0.2f);
-					ImGui::SliderFloat("Circle Radius", &config.circleRadius, 0.1f, 1.0f);
-					ImGui::SliderInt("Circle Segments", &config.circleSegments, 8, 64);
-					ImGui::SliderInt("Ellipse Segments", &config.ellipseSegments, 8, 32);
+					Zgine::IG::SliderFloat("Line Thickness", &config.lineThickness, 0.01f, 0.2f);
+					Zgine::IG::SliderFloat("Circle Radius", &config.circleRadius, 0.1f, 1.0f);
+					Zgine::IG::SliderInt("Circle Segments", &config.circleSegments, 8, 64);
+					Zgine::IG::SliderInt("Ellipse Segments", &config.ellipseSegments, 8, 32);
 				}
 				
 				// Footer 区 - 按钮组
-				ImGui::Separator();
-				ImGui::Text("Actions:");
+				Zgine::IG::Separator();
+				Zgine::IG::Text("Actions:");
 				
-				if (ImGui::Button("Apply"))
+				if (Zgine::IG::Button("Apply"))
 				{
 					// Apply current configuration - 确保场景切换正确
 					if (config.showAdvanced || config.showTriangles || config.showEllipses || config.showArcs || config.showGradients)
@@ -683,8 +686,8 @@ namespace Sandbox {
 						m_Test2DModule->SetActiveScene("Basic Shapes");
 					}
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Reset"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Reset"))
 				{
 					// Reset to default configuration
 					config.showQuads = false;
@@ -705,38 +708,38 @@ namespace Sandbox {
 					config.renderMode = 0;
 					m_Test2DModule->SetActiveScene("Basic Shapes");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Export"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("Export"))
 				{
 					// Export current configuration to file
 					Export2DConfiguration(config);
 				}
 				
 				// Performance section
-				if (ImGui::CollapsingHeader("Performance Details"))
+				if (Zgine::IG::CollapsingHeader("Performance Details"))
 				{
-					ImGui::Text("FPS: %.1f", m_Test2DModule->GetFPS());
-					ImGui::Text("Objects: %d", m_Test2DModule->GetObjectCount());
-					ImGui::Text("Active Scene: %s", m_Test2DModule->GetActiveScene().c_str());
+					Zgine::IG::Text("FPS: %.1f", m_Test2DModule->GetFPS());
+					Zgine::IG::Text("Objects: %d", m_Test2DModule->GetObjectCount());
+					Zgine::IG::Text("Active Scene: %s", m_Test2DModule->GetActiveScene().c_str());
 					
 					// Show current configuration status
-					ImGui::Separator();
-					ImGui::Text("Current Configuration:");
-					ImGui::Text("Quads: %s | Lines: %s | Circles: %s", 
+					Zgine::IG::Separator();
+					Zgine::IG::Text("Current Configuration:");
+					Zgine::IG::Text("Quads: %s | Lines: %s | Circles: %s", 
 						config.showQuads ? "ON" : "OFF",
 						config.showLines ? "ON" : "OFF", 
 						config.showCircles ? "ON" : "OFF");
-					ImGui::Text("Advanced: %s | Triangles: %s | Ellipses: %s", 
+					Zgine::IG::Text("Advanced: %s | Triangles: %s | Ellipses: %s", 
 						config.showAdvanced ? "ON" : "OFF",
 						config.showTriangles ? "ON" : "OFF", 
 						config.showEllipses ? "ON" : "OFF");
-					ImGui::Text("Animation: %s | Paused: %s | Speed: %.1f", 
+					Zgine::IG::Text("Animation: %s | Paused: %s | Speed: %.1f", 
 						(config.animateQuads || config.animateCircles || config.animateAll) ? "ON" : "OFF",
 						config.animationPaused ? "YES" : "NO",
 						config.animationSpeed);
 				}
 			}
-			ImGui::End();
+			Zgine::IG::End();
 		}
 	}
 
@@ -744,7 +747,7 @@ namespace Sandbox {
 	{
 		if (m_Test3DModule)
 		{
-			if (ImGui::Begin("3D Rendering Test", &m_Windows["3D Test"].isVisible))
+			if (Zgine::IG::Begin("3D Rendering Test", &m_Windows["3D Test"].isVisible))
 			{
 				auto& config = m_Test3DModule->GetConfig();
 				
@@ -759,26 +762,26 @@ namespace Sandbox {
 				}
 				
 				// Header 区 - 显示FPS、Objects、Draw Calls
-				ImGui::Text("3D Rendering Test Module");
-				ImGui::SameLine();
-				ImGui::Text("| FPS: %.1f", m_Test3DModule->GetFPS());
-				ImGui::SameLine();
-				ImGui::Text("| Objects: %d", m_Test3DModule->GetObjectCount());
-				ImGui::SameLine();
-				ImGui::Text("| Draw Calls: %d", m_Test3DModule->GetObjectCount() / 4); // Approximate draw calls
+				Zgine::IG::Text("3D Rendering Test Module");
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| FPS: %.1f", m_Test3DModule->GetFPS());
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| Objects: %d", m_Test3DModule->GetObjectCount());
+				Zgine::IG::SameLine();
+				Zgine::IG::Text("| Draw Calls: %d", m_Test3DModule->GetObjectCount() / 4); // Approximate draw calls
 				
 				// Tooltips for header info
-				if (ImGui::IsItemHovered())
+				if (Zgine::IG::IsItemHovered())
 				{
-					ImGui::SetTooltip("Current 3D rendering performance metrics");
+					Zgine::IG::SetTooltip("Current 3D rendering performance metrics");
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Quick Preset Buttons - 与2D测试保持一致的设计
-				ImGui::Text("3D Quick Presets:");
-				ImGui::SameLine();
-				if (ImGui::Button("3D Basic"))
+				Zgine::IG::Text("3D Quick Presets:");
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Basic"))
 				{
 					ZG_CORE_INFO("3D Basic button clicked!");
 					config.showCubes = true;
@@ -793,8 +796,8 @@ namespace Sandbox {
 					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Basic preset applied - Basic shapes enabled, ActiveScene: {}", m_Test3DModule->GetActiveScene());
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("3D Advanced"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Advanced"))
 				{
 					config.showCubes = true;
 					config.showSpheres = true;
@@ -808,8 +811,8 @@ namespace Sandbox {
 					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Advanced preset applied - All features enabled");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("3D Performance"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Performance"))
 				{
 					config.showCubes = true;
 					config.showSpheres = false;
@@ -823,8 +826,8 @@ namespace Sandbox {
 					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					ZG_CORE_INFO("3D Performance preset applied - Performance test scene");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("3D Clear All"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Clear All"))
 				{
 					config.showCubes = false;
 					config.showSpheres = false;
@@ -839,15 +842,15 @@ namespace Sandbox {
 					ZG_CORE_INFO("3D Clear All preset applied - All shapes disabled");
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Shape 控制区 - 两列布局
-				ImGui::Text("3D Shape Controls");
-				ImGui::Columns(2, "3D_ShapeControls", false);
+				Zgine::IG::Text("3D Shape Controls");
+				Zgine::IG::Columns(2, "3D_ShapeControls", false);
 				
 				// Left column - Basic Shapes
-				ImGui::Text("3D Basic Shapes:");
-				if (ImGui::Checkbox("3D Cubes", &config.showCubes))
+				Zgine::IG::Text("3D Basic Shapes:");
+				if (Zgine::IG::Checkbox("3D Cubes", &config.showCubes))
 				{
 					// Auto-switch scene based on configuration
 					if (config.showEnvironment || config.animateObjects)
@@ -855,14 +858,14 @@ namespace Sandbox {
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("3D Spheres", &config.showSpheres))
+				if (Zgine::IG::Checkbox("3D Spheres", &config.showSpheres))
 				{
 					if (config.showEnvironment || config.animateObjects)
 						m_Test3DModule->SetActiveScene("Environment");
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("3D Planes", &config.showPlanes))
+				if (Zgine::IG::Checkbox("3D Planes", &config.showPlanes))
 				{
 					if (config.showEnvironment || config.animateObjects)
 						m_Test3DModule->SetActiveScene("Environment");
@@ -870,15 +873,15 @@ namespace Sandbox {
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
 				
-				ImGui::NextColumn();
+				Zgine::IG::NextColumn();
 				
 				// Right column - Advanced Features
-				ImGui::Text("3D Advanced Features:");
-				if (ImGui::Checkbox("3D Environment", &config.showEnvironment))
+				Zgine::IG::Text("3D Advanced Features:");
+				if (Zgine::IG::Checkbox("3D Environment", &config.showEnvironment))
 				{
 					m_Test3DModule->SetActiveScene("Environment");
 				}
-				if (ImGui::Checkbox("3D Animate Objects", &config.animateObjects))
+				if (Zgine::IG::Checkbox("3D Animate Objects", &config.animateObjects))
 				{
 					if (config.animateObjects)
 						m_Test3DModule->SetActiveScene("Animated Shapes");
@@ -887,52 +890,52 @@ namespace Sandbox {
 					else
 						m_Test3DModule->SetActiveScene("Basic Shapes");
 				}
-				if (ImGui::Checkbox("3D Wireframe Mode", &config.wireframeMode))
+				if (Zgine::IG::Checkbox("3D Wireframe Mode", &config.wireframeMode))
 				{
 					// Wireframe mode can be applied to any scene
 				}
 				
-				ImGui::Columns(1);
-				ImGui::Separator();
+				Zgine::IG::Columns(1);
+				Zgine::IG::Separator();
 				
 				// Animation Controls 区
 				if (config.animateObjects)
 				{
-					ImGui::Text("3D Animation Controls");
-					ImGui::SliderFloat("3D Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
-					ImGui::SameLine();
-					if (ImGui::Button("3D Reset Animation"))
+					Zgine::IG::Text("3D Animation Controls");
+					Zgine::IG::SliderFloat("3D Animation Speed", &config.cameraSpeed, 0.1f, 10.0f);
+					Zgine::IG::SameLine();
+					if (Zgine::IG::Button("3D Reset Animation"))
 					{
 						// Reset animation state if needed
 					}
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Render Options 区 - 可折叠
-				if (ImGui::CollapsingHeader("3D Render Options"))
+				if (Zgine::IG::CollapsingHeader("3D Render Options"))
 				{
-					ImGui::Checkbox("3D Wireframe Mode", &config.wireframeMode);
-					ImGui::SameLine();
-					ImGui::Checkbox("3D Show Bounding Boxes", &config.showEnvironment); // Reuse for now
+					Zgine::IG::Checkbox("3D Wireframe Mode", &config.wireframeMode);
+					Zgine::IG::SameLine();
+					Zgine::IG::Checkbox("3D Show Bounding Boxes", &config.showEnvironment); // Reuse for now
 					
 					// Render mode dropdown
 					const char* renderModes[] = { "Normal", "Wireframe", "Points" };
 					int renderMode = config.wireframeMode ? 1 : 0;
-					if (ImGui::Combo("3D Render Mode", &renderMode, renderModes, IM_ARRAYSIZE(renderModes)))
+					if (Zgine::IG::Combo("3D Render Mode", &renderMode, renderModes, IM_ARRAYSIZE(renderModes)))
 					{
 						config.wireframeMode = (renderMode == 1);
 					}
 				}
 				
 				// Lighting Options 区 - 可折叠
-				if (ImGui::CollapsingHeader("3D Lighting Options"))
+				if (Zgine::IG::CollapsingHeader("3D Lighting Options"))
 				{
-					ImGui::SliderFloat("3D Light Intensity", &config.lightIntensity, 0.0f, 5.0f);
-					ImGui::SliderFloat3("3D Light Position", &config.lightPosition.x, -20.0f, 20.0f);
-					ImGui::ColorEdit3("3D Light Color", &config.lightColor.x);
+					Zgine::IG::SliderFloat("3D Light Intensity", &config.lightIntensity, 0.0f, 5.0f);
+					Zgine::IG::SliderFloat3("3D Light Position", &config.lightPosition.x, -20.0f, 20.0f);
+					Zgine::IG::ColorEdit3("3D Light Color", &config.lightColor.x);
 					
-					if (ImGui::Button("3D Reset Lighting"))
+					if (Zgine::IG::Button("3D Reset Lighting"))
 					{
 						config.lightIntensity = 1.0f;
 						config.lightPosition = { 0.0f, 10.0f, 0.0f };
@@ -941,34 +944,34 @@ namespace Sandbox {
 				}
 				
 				// Camera Controls 区 - 可折叠
-				if (ImGui::CollapsingHeader("3D Camera Controls"))
+				if (Zgine::IG::CollapsingHeader("3D Camera Controls"))
 				{
 					// Camera control enable/disable
-					ImGui::Checkbox("3D Enable Keyboard Movement", &config.enableKeyboardMovement);
-					ImGui::SameLine();
-					ImGui::Checkbox("3D Enable Mouse Look", &config.enableMouseLook);
+					Zgine::IG::Checkbox("3D Enable Keyboard Movement", &config.enableKeyboardMovement);
+					Zgine::IG::SameLine();
+					Zgine::IG::Checkbox("3D Enable Mouse Look", &config.enableMouseLook);
 					
-					ImGui::Separator();
+					Zgine::IG::Separator();
 					
 					// Camera settings
-					ImGui::SliderFloat("3D Camera Speed", &config.cameraSpeed, 0.1f, 20.0f);
-					ImGui::SliderFloat("3D Mouse Sensitivity", &config.mouseSensitivity, 0.01f, 1.0f);
-					ImGui::SliderFloat("3D Rotation Speed", &config.rotationSpeed, 10.0f, 180.0f);
+					Zgine::IG::SliderFloat("3D Camera Speed", &config.cameraSpeed, 0.1f, 20.0f);
+					Zgine::IG::SliderFloat("3D Mouse Sensitivity", &config.mouseSensitivity, 0.01f, 1.0f);
+					Zgine::IG::SliderFloat("3D Rotation Speed", &config.rotationSpeed, 10.0f, 180.0f);
 					
-					ImGui::Separator();
+					Zgine::IG::Separator();
 					
 					// Manual camera controls
-					ImGui::SliderFloat3("3D Camera Position", &config.cameraPosition.x, -50.0f, 50.0f);
-					ImGui::SliderFloat3("3D Camera Rotation", &config.cameraRotation.x, -180.0f, 180.0f);
+					Zgine::IG::SliderFloat3("3D Camera Position", &config.cameraPosition.x, -50.0f, 50.0f);
+					Zgine::IG::SliderFloat3("3D Camera Rotation", &config.cameraRotation.x, -180.0f, 180.0f);
 					
 					// Update camera immediately when sliders change
 					m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
 					m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					
-					ImGui::Separator();
+					Zgine::IG::Separator();
 					
 					// Camera control buttons
-					if (ImGui::Button("3D Reset Camera"))
+					if (Zgine::IG::Button("3D Reset Camera"))
 					{
 						m_Test3DModule->ResetCamera();
 						config.cameraPosition = { 0.0f, 2.0f, 8.0f };
@@ -977,36 +980,36 @@ namespace Sandbox {
 						m_Test3DModule->GetCamera().SetPosition(config.cameraPosition);
 						m_Test3DModule->GetCamera().SetRotation(config.cameraRotation);
 					}
-					ImGui::SameLine();
-					if (ImGui::Button("3D Look at Origin"))
+					Zgine::IG::SameLine();
+					if (Zgine::IG::Button("3D Look at Origin"))
 					{
 						m_Test3DModule->SetCameraLookAt({ 0.0f, 0.0f, 0.0f });
 						// Update UI to reflect new rotation
 						config.cameraRotation = m_Test3DModule->GetCamera().GetRotation();
 					}
 					
-					ImGui::Separator();
+					Zgine::IG::Separator();
 					
 					// Help text
-					ImGui::TextColored({ 0.7f, 0.7f, 0.7f, 1.0f }, "Controls:");
-					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "WASD - Move, Space/Shift - Up/Down");
-					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Right Mouse - Look around");
-					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Q/E - Decrease/Increase speed");
-					ImGui::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "R - Reset camera");
+					Zgine::IG::TextColored({ 0.7f, 0.7f, 0.7f, 1.0f }, "Controls:");
+					Zgine::IG::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "WASD - Move, Space/Shift - Up/Down");
+					Zgine::IG::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Right Mouse - Look around");
+					Zgine::IG::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "Q/E - Decrease/Increase speed");
+					Zgine::IG::TextColored({ 0.6f, 0.6f, 0.6f, 1.0f }, "R - Reset camera");
 				}
 				
-				ImGui::Separator();
+				Zgine::IG::Separator();
 				
 				// Actions 区
-				ImGui::Text("3D Actions:");
-				ImGui::SameLine();
-				if (ImGui::Button("3D Apply"))
+				Zgine::IG::Text("3D Actions:");
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Apply"))
 				{
 					// Apply current configuration
 					ZG_CORE_INFO("3D configuration applied");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("3D Reset"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Reset"))
 				{
 					// Reset to default configuration
 					config.showCubes = true;
@@ -1023,13 +1026,13 @@ namespace Sandbox {
 					m_Test3DModule->SetActiveScene("Basic Shapes");
 					ZG_CORE_INFO("3D configuration reset to defaults");
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("3D Export"))
+				Zgine::IG::SameLine();
+				if (Zgine::IG::Button("3D Export"))
 				{
 					Export3DConfiguration(config);
 				}
 			}
-			ImGui::End();
+			Zgine::IG::End();
 		}
 	}
 
@@ -1050,57 +1053,57 @@ namespace Sandbox {
 
 	void UIManager::RenderDemoWindow()
 	{
-		ImGui::ShowDemoWindow(&m_ShowDemoWindow);
+		Zgine::IG::ShowDemoWindow(&m_ShowDemoWindow);
 	}
 
 	void UIManager::RenderMetricsWindow()
 	{
-		ImGui::ShowMetricsWindow(&m_ShowMetricsWindow);
+		Zgine::IG::ShowMetricsWindow(&m_ShowMetricsWindow);
 	}
 
 	void UIManager::RenderStyleEditor()
 	{
-		if (ImGui::Begin("Style Editor", &m_ShowStyleEditor))
+		if (Zgine::IG::Begin("Style Editor", &m_ShowStyleEditor))
 		{
-			ImGui::ShowStyleEditor();
+			Zgine::IG::ShowStyleEditor();
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void UIManager::RenderAboutWindow()
 	{
-		if (ImGui::Begin("About Zgine", &m_ShowAboutWindow))
+		if (Zgine::IG::Begin("About Zgine", &m_ShowAboutWindow))
 		{
-			ImGui::Text("Zgine Engine");
-			ImGui::Text("A modern C++ game engine");
-			ImGui::Separator();
-			ImGui::Text("Version: 1.0.0");
-			ImGui::Text("Build: Debug");
-			ImGui::Text("Platform: Windows x64");
-			ImGui::Separator();
-			ImGui::Text("Features:");
-			ImGui::BulletText("2D/3D Batch Rendering");
-			ImGui::BulletText("Advanced Rendering Pipeline");
-			ImGui::BulletText("Performance Monitoring");
-			ImGui::BulletText("Modular Architecture");
-			ImGui::BulletText("ImGui Integration");
+			Zgine::IG::Text("Zgine Engine");
+			Zgine::IG::Text("A modern C++ game engine");
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Version: 1.0.0");
+			Zgine::IG::Text("Build: Debug");
+			Zgine::IG::Text("Platform: Windows x64");
+			Zgine::IG::Separator();
+			Zgine::IG::Text("Features:");
+			Zgine::IG::BulletText("2D/3D Batch Rendering");
+			Zgine::IG::BulletText("Advanced Rendering Pipeline");
+			Zgine::IG::BulletText("Performance Monitoring");
+			Zgine::IG::BulletText("Modular Architecture");
+			Zgine::IG::BulletText("ImGui Integration");
 		}
-		ImGui::End();
+		Zgine::IG::End();
 	}
 
 	void UIManager::ApplyDarkTheme()
 	{
-		ImGui::StyleColorsDark();
+		Zgine::IG::StyleColorsDark();
 	}
 
 	void UIManager::ApplyLightTheme()
 	{
-		ImGui::StyleColorsLight();
+		Zgine::IG::StyleColorsLight();
 	}
 
 	void UIManager::ApplyClassicTheme()
 	{
-		ImGui::StyleColorsClassic();
+		Zgine::IG::StyleColorsClassic();
 	}
 
 	void UIManager::SaveWindowStates()
@@ -1194,37 +1197,37 @@ namespace Sandbox {
 			ZG_CORE_INFO("2D Configuration exported to: {}", filename.str());
 			
 			// Show success message in ImGui
-			ImGui::OpenPopup("Export Success");
+			Zgine::IG::OpenPopup("Export Success");
 		}
 		else
 		{
 			ZG_CORE_ERROR("Failed to export 2D configuration to: {}", filename.str());
-			ImGui::OpenPopup("Export Failed");
+			Zgine::IG::OpenPopup("Export Failed");
 		}
 		
 		// Show popup messages
-		if (ImGui::BeginPopupModal("Export Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (Zgine::IG::BeginPopupModal("Export Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Configuration exported successfully!");
-			ImGui::Text("File: %s", filename.str().c_str());
-			ImGui::Separator();
-			if (ImGui::Button("OK"))
+			Zgine::IG::Text("Configuration exported successfully!");
+			Zgine::IG::Text("File: %s", filename.str().c_str());
+			Zgine::IG::Separator();
+			if (Zgine::IG::Button("OK"))
 			{
-				ImGui::CloseCurrentPopup();
+				Zgine::IG::CloseCurrentPopup();
 			}
-			ImGui::EndPopup();
+			Zgine::IG::EndPopup();
 		}
 		
-		if (ImGui::BeginPopupModal("Export Failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (Zgine::IG::BeginPopupModal("Export Failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Failed to export configuration!");
-			ImGui::Text("Please check file permissions.");
-			ImGui::Separator();
-			if (ImGui::Button("OK"))
+			Zgine::IG::Text("Failed to export configuration!");
+			Zgine::IG::Text("Please check file permissions.");
+			Zgine::IG::Separator();
+			if (Zgine::IG::Button("OK"))
 			{
-				ImGui::CloseCurrentPopup();
+				Zgine::IG::CloseCurrentPopup();
 			}
-			ImGui::EndPopup();
+			Zgine::IG::EndPopup();
 		}
 	}
 
@@ -1295,37 +1298,37 @@ namespace Sandbox {
 			ZG_CORE_INFO("3D Configuration exported to: {}", filename.str());
 			
 			// Show success message in ImGui
-			ImGui::OpenPopup("3D Export Success");
+			Zgine::IG::OpenPopup("3D Export Success");
 		}
 		else
 		{
 			ZG_CORE_ERROR("Failed to export 3D configuration to: {}", filename.str());
-			ImGui::OpenPopup("3D Export Failed");
+			Zgine::IG::OpenPopup("3D Export Failed");
 		}
 		
 		// Show popup messages
-		if (ImGui::BeginPopupModal("3D Export Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (Zgine::IG::BeginPopupModal("3D Export Success", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("3D Configuration exported successfully!");
-			ImGui::Text("File: %s", filename.str().c_str());
-			ImGui::Separator();
-			if (ImGui::Button("OK"))
+			Zgine::IG::Text("3D Configuration exported successfully!");
+			Zgine::IG::Text("File: %s", filename.str().c_str());
+			Zgine::IG::Separator();
+			if (Zgine::IG::Button("OK"))
 			{
-				ImGui::CloseCurrentPopup();
+				Zgine::IG::CloseCurrentPopup();
 			}
-			ImGui::EndPopup();
+			Zgine::IG::EndPopup();
 		}
 		
-		if (ImGui::BeginPopupModal("3D Export Failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+		if (Zgine::IG::BeginPopupModal("3D Export Failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			ImGui::Text("Failed to export 3D configuration!");
-			ImGui::Text("Please check file permissions and try again.");
-			ImGui::Separator();
-			if (ImGui::Button("OK"))
+			Zgine::IG::Text("Failed to export 3D configuration!");
+			Zgine::IG::Text("Please check file permissions and try again.");
+			Zgine::IG::Separator();
+			if (Zgine::IG::Button("OK"))
 			{
-				ImGui::CloseCurrentPopup();
+				Zgine::IG::CloseCurrentPopup();
 			}
-			ImGui::EndPopup();
+			Zgine::IG::EndPopup();
 		}
 	}
 
