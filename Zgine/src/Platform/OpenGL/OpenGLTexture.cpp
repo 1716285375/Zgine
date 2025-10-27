@@ -2,6 +2,7 @@
 #include "OpenGLTexture.h"
 #include <glad/glad.h>
 #include <stb_image.h>
+#include <GLFW/glfw3.h>
 
 namespace Zgine {
 
@@ -17,20 +18,38 @@ namespace Zgine {
 		m_InternalFormat = GL_RGBA8;
 		m_DataFormat = GL_RGBA;
 
-		// Use traditional OpenGL calls for compatibility
-		glGenTextures(1, &m_RendererID);
-		glBindTexture(GL_TEXTURE_2D, m_RendererID);
+		// Try to use DSA if available, fallback to traditional methods
+		typedef void (*PFNGLCREATETEXTURESPROC)(GLenum target, GLsizei n, GLuint* textures);
+		typedef void (*PFNGLTEXTURESTORAGE2DPROC)(GLuint texture, GLsizei levels, GLenum internalformat, GLsizei width, GLsizei height);
+		typedef void (*PFNGLTEXTUREPARAMETERIPROC)(GLuint texture, GLenum pname, GLint param);
 		
-		// Allocate texture storage using traditional method
-		glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, m_Width, m_Height, 0, m_DataFormat, GL_UNSIGNED_BYTE, nullptr);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		PFNGLCREATETEXTURESPROC glCreateTexturesPtr = (PFNGLCREATETEXTURESPROC)glfwGetProcAddress("glCreateTextures");
+		PFNGLTEXTURESTORAGE2DPROC glTextureStorage2DPtr = (PFNGLTEXTURESTORAGE2DPROC)glfwGetProcAddress("glTextureStorage2D");
+		PFNGLTEXTUREPARAMETERIPROC glTextureParameteriPtr = (PFNGLTEXTUREPARAMETERIPROC)glfwGetProcAddress("glTextureParameteri");
 		
-		glBindTexture(GL_TEXTURE_2D, 0);
+		if (glCreateTexturesPtr && glTextureStorage2DPtr && glTextureParameteriPtr)
+		{
+			// Use DSA (OpenGL 4.5+)
+			glCreateTexturesPtr(GL_TEXTURE_2D, 1, &m_RendererID);
+			glTextureStorage2DPtr(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);
+			glTextureParameteriPtr(m_RendererID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTextureParameteriPtr(m_RendererID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTextureParameteriPtr(m_RendererID, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTextureParameteriPtr(m_RendererID, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		}
+		else
+		{
+			// Fallback to traditional methods
+			ZG_CORE_WARN("DSA not available, using traditional texture functions");
+			glGenTextures(1, &m_RendererID);
+			glBindTexture(GL_TEXTURE_2D, m_RendererID);
+			glTexImage2D(GL_TEXTURE_2D, 0, m_InternalFormat, m_Width, m_Height, 0, m_DataFormat, GL_UNSIGNED_BYTE, nullptr);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+			glBindTexture(GL_TEXTURE_2D, 0);
+		}
 	}
 
 	/**
