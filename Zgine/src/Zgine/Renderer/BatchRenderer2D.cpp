@@ -176,7 +176,7 @@ namespace Zgine {
 
 	void BatchRenderer2D::BeginScene(const OrthographicCamera& camera)
 	{
-		// ZG_CORE_TRACE("BatchRenderer2D::BeginScene called");
+		ZG_CORE_INFO("BatchRenderer2D::BeginScene called");
 		
 		// Initialize if not already done
 		if (!s_Initialized)
@@ -186,6 +186,13 @@ namespace Zgine {
 		
 		// Set up camera matrix
 		s_TextureShader->Bind();
+		
+		// Debug: Check OpenGL state
+		GLboolean depthTest;
+		glGetBooleanv(GL_DEPTH_TEST, &depthTest);
+		GLboolean blend;
+		glGetBooleanv(GL_BLEND, &blend);
+		ZG_CORE_INFO("BatchRenderer2D::BeginScene - Depth test: {}, Blend: {}", depthTest ? "ON" : "OFF", blend ? "ON" : "OFF");
 		
 		// Debug: Check shader compilation status
 		GLint shaderProgram = s_TextureShader->GetRendererID();
