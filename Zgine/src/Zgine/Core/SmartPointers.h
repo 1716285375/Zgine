@@ -53,10 +53,13 @@ namespace Zgine {
 	 * @tparam Args The types of constructor arguments
 	 * @param args The constructor arguments
 	 * @return Ref<T> A reference-counted smart pointer to the created object
+	 * @note T must be a complete type and constructible with the given arguments
 	 */
 	template<typename T, typename... Args>
-	constexpr Ref<T> CreateRef(Args&&... args)
+	Ref<T> CreateRef(Args&&... args)
 	{
+		static_assert(std::is_constructible_v<T, Args...>, 
+			"T must be constructible with the provided arguments");
 		return std::make_shared<T>(std::forward<Args>(args)...);
 	}
 
@@ -66,10 +69,13 @@ namespace Zgine {
 	 * @tparam Args The types of constructor arguments
 	 * @param args The constructor arguments
 	 * @return Scope<T> A unique ownership smart pointer to the created object
+	 * @note T must be a complete type and constructible with the given arguments
 	 */
 	template<typename T, typename... Args>
-	constexpr Scope<T> CreateScope(Args&&... args)
+	Scope<T> CreateScope(Args&&... args)
 	{
+		static_assert(std::is_constructible_v<T, Args...>, 
+			"T must be constructible with the provided arguments");
 		return std::make_unique<T>(std::forward<Args>(args)...);
 	}
 
@@ -215,6 +221,8 @@ namespace Zgine {
 	template<typename To, typename From>
 	Ref<To> DynamicRefCast(const Ref<From>& ptr)
 	{
+		static_assert(std::is_pointer_v<To> == false && std::is_reference_v<To> == false, 
+			"Cannot cast to pointer or reference type");
 		return std::dynamic_pointer_cast<To>(ptr);
 	}
 
@@ -228,6 +236,8 @@ namespace Zgine {
 	template<typename To, typename From>
 	Ref<To> StaticRefCast(const Ref<From>& ptr)
 	{
+		static_assert(std::is_pointer_v<To> == false && std::is_reference_v<To> == false, 
+			"Cannot cast to pointer or reference type");
 		return std::static_pointer_cast<To>(ptr);
 	}
 
@@ -541,57 +551,146 @@ namespace Zgine {
 	// ============================================================================
 
 	/**
-	 * @brief RAII helper for temporary smart pointer management
+	 * @brief RAII helper for temporary reference-counted smart pointer management
 	 * @tparam T The type of object
+	 * @details Saves the original pointer and restores it on destruction
 	 */
 	template<typename T>
-	class SmartPtrGuard
+	class RefGuard
 	{
 	public:
-		explicit SmartPtrGuard(Ref<T>& ptr) : m_Ptr(ptr), m_Original(ptr) {}
-		explicit SmartPtrGuard(Scope<T>& ptr) : m_ScopePtr(ptr), m_OriginalScope(ptr) {}
+		explicit RefGuard(Ref<T>& ptr) 
+			: m_Ptr(&ptr), m_Original(ptr) {}
 		
-		~SmartPtrGuard()
+		~RefGuard()
 		{
 			if (m_Ptr) {
-				m_Ptr = m_Original;
-			}
-			if (m_ScopePtr) {
-				m_ScopePtr = std::move(m_OriginalScope);
+				*m_Ptr = m_Original;
 			}
 		}
 		
 		// Non-copyable
-		SmartPtrGuard(const SmartPtrGuard&) = delete;
-		SmartPtrGuard& operator=(const SmartPtrGuard&) = delete;
+		RefGuard(const RefGuard&) = delete;
+		RefGuard& operator=(const RefGuard&) = delete;
 		
-		// Non-movable
-		SmartPtrGuard(SmartPtrGuard&&) = delete;
-		SmartPtrGuard& operator=(SmartPtrGuard&&) = delete;
+		// Movable
+		RefGuard(RefGuard&& other) noexcept
+			: m_Ptr(other.m_Ptr), m_Original(std::move(other.m_Original))
+		{
+			other.m_Ptr = nullptr;
+		}
+		
+		RefGuard& operator=(RefGuard&& other) noexcept
+		{
+			if (this != &other) {
+				m_Ptr = other.m_Ptr;
+				m_Original = std::move(other.m_Original);
+				other.m_Ptr = nullptr;
+			}
+			return *this;
+		}
 
 	private:
-		Ref<T>* m_Ptr = nullptr;
+		Ref<T>* m_Ptr;
 		Ref<T> m_Original;
-		Scope<T>* m_ScopePtr = nullptr;
-		Scope<T> m_OriginalScope;
 	};
 
 	/**
-	 * @brief Create a guard for temporary smart pointer management
+	 * @brief RAII helper for temporary unique ownership smart pointer management
+	 * @tparam T The type of object
+	 * @details Saves the original pointer and restores it on destruction
+	 */
+	template<typename T>
+	class ScopeGuard
+	{
+	public:
+		explicit ScopeGuard(Scope<T>& ptr) 
+			: m_Ptr(&ptr), m_Original(std::move(ptr)) {}
+		
+		~ScopeGuard()
+		{
+			if (m_Ptr) {
+				*m_Ptr = std::move(m_Original);
+			}
+		}
+		
+		// Non-copyable
+		ScopeGuard(const ScopeGuard&) = delete;
+		ScopeGuard& operator=(const ScopeGuard&) = delete;
+		
+		// Movable
+		ScopeGuard(ScopeGuard&& other) noexcept
+			: m_Ptr(other.m_Ptr), m_Original(std::move(other.m_Original))
+		{
+			other.m_Ptr = nullptr;
+		}
+		
+		ScopeGuard& operator=(ScopeGuard&& other) noexcept
+		{
+			if (this != &other) {
+				m_Ptr = other.m_Ptr;
+				m_Original = std::move(other.m_Original);
+				other.m_Ptr = nullptr;
+			}
+			return *this;
+		}
+
+	private:
+		Scope<T>* m_Ptr;
+		Scope<T> m_Original;
+	};
+	
+	// Backward compatibility aliases
+	template<typename T>
+	using SmartPtrGuard = RefGuard<T>;  // Default to RefGuard for compatibility
+
+	/**
+	 * @brief Create a guard for temporary reference-counted smart pointer management
+	 * @tparam T The type of object
+	 * @param ptr The smart pointer to guard
+	 * @return RefGuard for RAII management
+	 */
+	template<typename T>
+	RefGuard<T> CreateRefGuard(Ref<T>& ptr)
+	{
+		return RefGuard<T>(ptr);
+	}
+	
+	/**
+	 * @brief Create a guard for temporary unique ownership smart pointer management
+	 * @tparam T The type of object
+	 * @param ptr The smart pointer to guard
+	 * @return ScopeGuard for RAII management
+	 */
+	template<typename T>
+	ScopeGuard<T> CreateScopeGuard(Scope<T>& ptr)
+	{
+		return ScopeGuard<T>(ptr);
+	}
+	
+	// Backward compatibility wrapper functions
+	/**
+	 * @brief Create a guard for temporary smart pointer management (deprecated)
 	 * @tparam T The type of object
 	 * @param ptr The smart pointer to guard
 	 * @return SmartPtrGuard for RAII management
+	 * @deprecated Use CreateRefGuard or CreateScopeGuard instead
 	 */
 	template<typename T>
+	[[deprecated("Use CreateRefGuard or CreateScopeGuard instead")]]
 	SmartPtrGuard<T> CreateGuard(Ref<T>& ptr)
 	{
-		return SmartPtrGuard<T>(ptr);
+		return CreateRefGuard(ptr);
 	}
 
 	template<typename T>
+	[[deprecated("Use CreateRefGuard or CreateScopeGuard instead")]]
 	SmartPtrGuard<T> CreateGuard(Scope<T>& ptr)
 	{
-		return SmartPtrGuard<T>(ptr);
+		// This won't work with the new design, recommend using CreateScopeGuard
+		// For backward compatibility, we create a RefGuard which is not ideal
+		// but maintains the old API
+		static_assert(false, "Use CreateScopeGuard instead");
 	}
 
 	// ============================================================================
