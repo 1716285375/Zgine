@@ -469,6 +469,17 @@ namespace Sandbox {
 			{
 				auto& config = m_Test2DModule->GetConfig();
 				
+				// Debug: Draw test quad in ImGui window to verify rendering is working
+				ImDrawList* draw_list = ImGui::GetWindowDrawList();
+				ImVec2 canvas_pos = ImGui::GetCursorScreenPos();
+				ImVec2 canvas_size = ImVec2(200, 200);
+				
+				// Draw test pattern: white background, red border, yellow circle
+				draw_list->AddRectFilled(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), IM_COL32(255, 255, 255, 255));
+				draw_list->AddRect(canvas_pos, ImVec2(canvas_pos.x + canvas_size.x, canvas_pos.y + canvas_size.y), IM_COL32(255, 0, 0, 255), 0.0f, 0, 2.0f);
+				draw_list->AddCircleFilled(ImVec2(canvas_pos.x + 100, canvas_pos.y + 100), 50, IM_COL32(255, 255, 0, 255));
+				ImGui::Dummy(canvas_size);
+				
 				// Header 区 - 显示FPS、Objects、Draw Calls
 				ImGui::Text("2D Rendering Test Module");
 				ImGui::SameLine();
