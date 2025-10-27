@@ -6,8 +6,6 @@
 #include <functional>
 #include <type_traits>
 #include <utility>
-#include <algorithm>
-#include <cassert>
 #include <unordered_map>
 #include <exception>
 #include <new>
@@ -259,6 +257,32 @@ namespace Zgine {
 		return std::reinterpret_pointer_cast<To>(ptr);
 	}
 
+	/**
+	 * @brief Convert a unique pointer to a shared pointer
+	 * @tparam T The type of object
+	 * @param scope The unique ownership smart pointer (will be moved from)
+	 * @return Ref<T> A reference-counted smart pointer
+	 * @note The original Scope will be moved from and will be empty after this call
+	 */
+	template<typename T>
+	Ref<T> MakeRefFromScope(Scope<T>&& scope)
+	{
+		return Ref<T>(scope.release());
+	}
+
+	/**
+	 * @brief Release ownership from a unique pointer without deleting
+	 * @tparam T The type of object
+	 * @param ptr The unique ownership smart pointer (will be moved from)
+	 * @return Raw pointer to the object
+	 * @warning Caller is responsible for managing the returned pointer's lifetime
+	 */
+	template<typename T>
+	T* ReleaseFromScope(Scope<T>&& ptr) noexcept
+	{
+		return ptr.release();
+	}
+
 	// ============================================================================
 	// Utility Functions and Operators
 	// ============================================================================
@@ -292,11 +316,13 @@ namespace Zgine {
 	 * @tparam T The type of object
 	 * @param ptr The smart pointer to check
 	 * @return true if pointer is valid, false otherwise
+	 * @note For WeakRef, this attempts to lock the reference to ensure it's truly valid.
+	 *       This is more reliable than just checking expired().
 	 */
 	template<typename T>
-	constexpr bool IsValid(const WeakRef<T>& ptr) noexcept
+	bool IsValid(const WeakRef<T>& ptr) noexcept
 	{
-		return !ptr.expired();
+		return ptr.lock() != nullptr;
 	}
 
 	/**
@@ -328,12 +354,28 @@ namespace Zgine {
 	 * @tparam T The type of object
 	 * @param ptr The weak reference
 	 * @return Raw pointer or nullptr if weak reference is expired
+	 * @warning This function creates a temporary shared_ptr and returns its raw pointer.
+	 *          The pointer becomes invalid when the temporary shared_ptr is destroyed.
+	 *          Consider using LockWeakRef() instead for safer access.
 	 */
 	template<typename T>
-	constexpr T* GetRawPtr(const WeakRef<T>& ptr) noexcept
+	[[deprecated("Dangerous: pointer lifetime is limited. Use LockWeakRef() instead.")]]
+	T* GetRawPtr(const WeakRef<T>& ptr) noexcept
 	{
 		auto shared = ptr.lock();
 		return shared ? shared.get() : nullptr;
+	}
+	
+	/**
+	 * @brief Safely lock a weak reference
+	 * @tparam T The type of object
+	 * @param ptr The weak reference
+	 * @return Reference-counted smart pointer if not expired, nullptr otherwise
+	 */
+	template<typename T>
+	Ref<T> LockWeakRef(const WeakRef<T>& ptr) noexcept
+	{
+		return ptr.lock();
 	}
 
 	/**
