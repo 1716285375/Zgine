@@ -43,10 +43,8 @@ namespace Zgine {
 		ImGuiIO& io = ::ImGui::GetIO(); (void)io;
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-		// Temporarily disable Docking to avoid covering main rendering area
-		// io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-		// Temporarily disable ViewportsEnable to debug rendering issue
-		// io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
 		// set ImGui theme style dark
 		::ImGui::StyleColorsDark();
