@@ -249,6 +249,12 @@ namespace Zgine {
 		
 		// Reset batch state
 		StartBatch();
+		
+		// Re-bind all texture slots to prevent OpenGL warnings
+		for (uint32_t i = 0; i < MaxTextureSlots; i++)
+		{
+			s_TextureSlots[i]->Bind(i);
+		}
 	}
 
 	void BatchRenderer2D::EndScene()
