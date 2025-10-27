@@ -56,8 +56,9 @@ namespace Zgine {
 	 */
 	void OpenGLVertexBuffer::SetData(const void* data, uint32_t size)
 	{
-		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
+		// Use DSA (Direct State Access) for better performance in OpenGL 4.3+
+		// No need to bind the buffer
+		glNamedBufferSubData(m_RendererID, 0, size, data);
 	}
 
 	// ================================================================================================
