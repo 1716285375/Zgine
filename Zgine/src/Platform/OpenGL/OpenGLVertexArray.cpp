@@ -37,7 +37,9 @@ namespace Zgine {
 	 */
 	OpenGLVertexArray::OpenGLVertexArray()
 	{
-		glCreateVertexArrays(1, &m_RendererID);
+		// Use glGenVertexArrays instead of glCreateVertexArrays for broader compatibility
+		// glGenVertexArrays is available since OpenGL 3.0 and works with Core Profile
+		glGenVertexArrays(1, &m_RendererID);
 	}
 
 	/**
