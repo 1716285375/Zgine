@@ -7,6 +7,8 @@
  */
 
 #ifdef ZG_PLATFORM_WINDOWS
+#include <Windows.h>
+#endif
 
 extern Zgine::Application* Zgine::CreateApplication();
 
@@ -19,6 +21,12 @@ extern Zgine::Application* Zgine::CreateApplication();
  *          runs it, and cleans up resources
  */
 int main(int argc, char** argv) {
+#ifdef ZG_PLATFORM_WINDOWS
+	// Set console output to UTF-8 to display Chinese and other Unicode characters correctly
+	SetConsoleOutputCP(65001); // UTF-8 code page
+	SetConsoleCP(65001); // UTF-8 code page
+#endif
+
 	// Initialize logging system with development configuration by default
 	// You can change this to use different configurations based on build type
 	#ifdef ZG_DEBUG
@@ -67,5 +75,3 @@ int main(int argc, char** argv) {
 	
 	return 0;
 }
-
-#endif
