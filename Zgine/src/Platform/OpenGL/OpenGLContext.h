@@ -1,6 +1,6 @@
 #pragma once
 
-#include "zgpch.h"
+#include "Zgpch.h"
 #include "Zgine/Renderer/GraphicsContext.h"
 
 struct GLFWwindow;

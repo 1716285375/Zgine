@@ -1,0 +1,92 @@
+[2025-11-13 04:53:24.040] [info] ZGINE: Created custom logger: Renderer [RENDERER]
+[2025-11-13 04:53:24.040] [info] ZGINE: Created custom logger: Audio [AUDIO]
+[2025-11-13 04:53:24.041] [info] ZGINE: Created custom logger: ECS [ECS]
+[2025-11-13 04:53:24.041] [info] ZGINE: Created custom logger: Resources [RESOURCES]
+[2025-11-13 04:53:24.041] [info] ZGINE: Created custom logger: UI [UI]
+[2025-11-13 04:53:24.041] [info] ZGINE: Created custom logger: Physics [PHYSICS]
+[2025-11-13 04:53:24.041] [info] ZGINE: Created custom logger: Input [INPUT]
+[2025-11-13 04:53:24.042] [info] ZGINE: Created custom logger: Network [NETWORK]
+[2025-11-13 04:53:24.042] [info] ZGINE: Created custom logger: Scripting [SCRIPTING]
+[2025-11-13 04:53:24.042] [info] ZGINE: Log system initialized successfully
+[2025-11-13 04:53:24.042] [info] ZGINE: Zgine Engine Starting...
+[2025-11-13 04:53:24.042] [info] ZGINE: Log system initialized successfully
+[2025-11-13 04:53:24.042] [info] ZGINE: Creating window Zgine (1280, 720)
+[2025-11-13 04:53:24.280] [info] ZGINE: OpenGL Info:
+[2025-11-13 04:53:24.280] [info] ZGINE:   Vendor:   NVIDIA Corporation
+[2025-11-13 04:53:24.280] [info] ZGINE:   Renderer: NVIDIA GeForce RTX 4060 Ti/PCIe/SSE2
+[2025-11-13 04:53:24.280] [info] ZGINE:   Version:  4.6
+[2025-11-13 04:53:24.281] [info] ZGINE:   GLSL:    4.60 NVIDIA
+[2025-11-13 04:53:24.281] [info] ZGINE: OpenGL Debug Output: ENABLED
+[2025-11-13 04:53:24.281] [info] ZGINE: RendererManager::Init() called
+[2025-11-13 04:53:24.281] [info] ZGINE: BatchRenderer2D::Init() called - Initializing with 10000 max quads
+[2025-11-13 04:53:24.282] [info] ZGINE: RenderStateManager initialized
+[2025-11-13 04:53:24.285] [info] ZGINE: Created vertex buffer base with 40000 vertices
+[2025-11-13 04:53:24.287] [info] ZGINE: Shader program 3 compiled and linked successfully
+[2025-11-13 04:53:24.288] [info] ZGINE: BatchRenderer2D::Init() completed successfully
+[2025-11-13 04:53:24.288] [info] ZGINE: BatchRenderer3D::Init() called
+[2025-11-13 04:53:24.288] [info] ZGINE: Created 3D vertex buffer base with 30000 vertices
+[2025-11-13 04:53:24.289] [info] ZGINE: BatchRenderer3D shader created with ID: 6
+[2025-11-13 04:53:24.289] [info] ZGINE: BatchRenderer3D::Init() completed successfully
+[2025-11-13 04:53:24.290] [info] ZGINE: RendererManager::Init() completed
+[2025-11-13 04:53:24.290] [info] APP: SandboxApp created
+[2025-11-13 04:53:24.290] [info] ZGINE: Application::Run calling OnApplicationStart
+[2025-11-13 04:53:24.290] [info] APP: SandboxApp starting - Pushing Test2DLayer
+[2025-11-13 04:53:24.291] [info] APP: Test2DLayer attached
+[2025-11-13 04:53:24.291] [info] ZGINE: BatchRenderer2D::Init() called - Initializing with 10000 max quads
+[2025-11-13 04:53:24.294] [info] ZGINE: Created vertex buffer base with 40000 vertices
+[2025-11-13 04:53:24.295] [info] ZGINE: Shader program 9 compiled and linked successfully
+[2025-11-13 04:53:24.295] [info] ZGINE: BatchRenderer2D::Init() completed successfully
+[2025-11-13 04:53:24.305] [info] APP: Successfully loaded texture from: assets/textures/Checkerboard.png
+[2025-11-13 04:53:24.305] [info] APP: Test2DLayer initialized successfully
+[2025-11-13 04:53:24.305] [info] APP: SandboxApp initialization complete
+[2025-11-13 04:53:24.305] [info] ZGINE: Application::Run OnApplicationStart completed
+[2025-11-13 04:53:24.306] [warning] ZGINE: OpenGL Warning [37192]: Texture state usage warning: The texture object (0) bound to texture image unit 31 does not have a defined base level and cannot be used for texture mapping.
+[2025-11-13 04:53:24.306] [info] APP: Camera Projection Matrix:
+[2025-11-13 04:53:24.306] [info] APP:   [0.0625, 0, 0, 0]
+[2025-11-13 04:53:24.306] [info] APP:   [0, 0.11111111, 0, 0]
+[2025-11-13 04:53:24.307] [info] APP:   [0, 0, -1, 0]
+[2025-11-13 04:53:24.307] [info] APP:   [-0, -0, -0, 1]
+[2025-11-13 04:53:24.307] [info] APP: Camera View Matrix:
+[2025-11-13 04:53:24.307] [info] APP:   [1, -0, 0, -0]
+[2025-11-13 04:53:24.307] [info] APP:   [-0, 1, -0, 0]
+[2025-11-13 04:53:24.307] [info] APP:   [0, -0, 1, -0]
+[2025-11-13 04:53:24.308] [info] APP:   [-0, 0, -0, 1]
+[2025-11-13 04:53:24.308] [info] APP: Camera ViewProjection Matrix:
+[2025-11-13 04:53:24.308] [info] APP:   [0.0625, 0, 0, 0]
+[2025-11-13 04:53:24.308] [info] APP:   [0, 0.11111111, 0, 0]
+[2025-11-13 04:53:24.308] [info] APP:   [0, 0, -1, 0]
+[2025-11-13 04:53:24.308] [info] APP:   [0, 0, 0, 1]
+[2025-11-13 04:53:24.308] [info] APP: Test vertex (-8, 4, 0) transformed to NDC: (-0.5, 0.44444445, 0, 1)
+[2025-11-13 04:53:24.309] [info] ZGINE: === First Flush ===
+[2025-11-13 04:53:24.309] [info] ZGINE: Actual vertices: 432
+[2025-11-13 04:53:24.309] [info] ZGINE: Data size: 17280 bytes
+[2025-11-13 04:53:24.309] [info] ZGINE: Actual quads: 108
+[2025-11-13 04:53:24.310] [info] ZGINE: Actual indices: 648
+[2025-11-13 04:53:24.310] [info] ZGINE: First vertex position: (-9, 3, 0)
+[2025-11-13 04:53:24.310] [info] ZGINE: First vertex color: (1, 0, 0, 1)
+[2025-11-13 04:53:24.310] [info] ZGINE: Current shader program: 9
+[2025-11-13 04:53:24.310] [info] ZGINE: Expected shader program: 9
+[2025-11-13 04:53:24.310] [info] ZGINE: Bound vertex array: 3
+[2025-11-13 04:53:24.310] [info] ZGINE: u_ViewProjection uniform location: 32
+[2025-11-13 04:53:24.311] [info] ZGINE: First vertex transformed NDC: (-0.5625, 0.33333334, 0, 1)
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: Current program: 9
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: Bound VAO: 3
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: Bound IBO: 5
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: Viewport: [0, 0, 1280, 720]
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: GL_DEPTH_TEST: 0, GL_CULL_FACE: 0, GL_SCISSOR_TEST: 0
+[2025-11-13 04:53:24.311] [info] ZGINE: DrawIndexed: Color mask: [1, 1, 1, 1]
+[2025-11-13 04:53:24.312] [info] ZGINE: DrawIndexed: Draw framebuffer: 0
+[2025-11-13 04:53:24.312] [info] ZGINE: DrawIndexed: Calling glDrawElements with 648 indices
+[2025-11-13 04:54:03.392] [info] ZGINE: Application shutting down...
+[2025-11-13 04:54:03.393] [info] APP: SandboxApp destroyed
+[2025-11-13 04:54:03.393] [info] ZGINE: Application destructor called
+[2025-11-13 04:54:03.393] [info] ZGINE: Shutting down ImGui layer
+[2025-11-13 04:54:03.395] [info] ZGINE: Shutting down renderer
+[2025-11-13 04:54:03.395] [info] ZGINE: RendererManager::Shutdown() called
+[2025-11-13 04:54:03.395] [info] ZGINE: BatchRenderer3D::Shutdown() called
+[2025-11-13 04:54:03.395] [info] ZGINE: BatchRenderer3D::Shutdown() completed
+[2025-11-13 04:54:03.396] [info] ZGINE: BatchRenderer2D::Shutdown() called
+[2025-11-13 04:54:03.396] [info] ZGINE: BatchRenderer2D::Shutdown() completed
+[2025-11-13 04:54:03.396] [info] ZGINE: RendererManager::Shutdown() completed
+[2025-11-13 04:54:03.396] [info] ZGINE: Application destructor completed
+[2025-11-13 04:54:03.397] [info] APP: Test2DLayer detached

@@ -71,5 +71,5 @@
 
 
 /*  Helper Macros  */
-#define BIND_EVENT_FN(fn)    std::bind(&fn, this, std::placeholders::_1)
-#define BIT(x)               (1u << (x))
+#define ZG_BIND_EVENT_FN(fn)    std::bind(&fn, this, std::placeholders::_1)
+#define ZG_BIT(x)               (1u << (x))

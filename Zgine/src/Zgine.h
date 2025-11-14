@@ -11,6 +11,14 @@
 
 #include "Zgine/ImGui/ImGuiLayer.h"
 
+#include "Zgine/Renderer/Renderer.h"
+#include "Zgine/Renderer/RenderCommand.h"
+#include "Zgine/Renderer/VertexArray.h"
+#include "Zgine/Renderer/Buffer.h"
+#include "Zgine/Renderer/Shader.h"
+#include "Zgine/Renderer/OrthographicCamera.h"
+#include "Zgine/Renderer/RendererAPI.h"
+
 
 
 // --- Entry Point ---

@@ -37,8 +37,8 @@ project "Zgine"
     targetdir ("%{rootdir}/bin/" .. outputdir .. "/%{prj.name}")
     objdir ("%{rootdir}/bin-int/" .. outputdir .. "/%{prj.name}")
     
-	pchheader "zgpch.h"
-	pchsource "Zgine/src/zgpch.cpp"
+	pchheader "Zgpch.h"
+	pchsource "Zgine/src/Zgpch.cpp"
 	
     files
     {

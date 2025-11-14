@@ -1,4 +1,4 @@
-#include "zgpch.h"
+#include "Zgpch.h"
 #include "WindowsWindow.h"
 
 #include "Zgine/Events/ApplicationEvent.h"

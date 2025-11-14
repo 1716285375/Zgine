@@ -18,11 +18,11 @@ namespace Zgine {
 	enum EventCategory
 	{
 		None = 0,
-		EventCategoryApplication = BIT(0),
-		EventCategoryInput = BIT(1),
-		EventCategoryKeyboard = BIT(2),
-		EventCategoryMouse = BIT(3),
-		EventCategoryMouseButton = BIT(4)
+		EventCategoryApplication = ZG_BIT(0),
+		EventCategoryInput = ZG_BIT(1),
+		EventCategoryKeyboard = ZG_BIT(2),
+		EventCategoryMouse = ZG_BIT(3),
+		EventCategoryMouseButton = ZG_BIT(4)
 	};
 
 #define EVENT_CLASS_TYPE(type) static EventType GetStaticType() { return EventType::##type;}\

@@ -1,7 +1,7 @@
 #pragma once
 
 
-#include "zgpch.h"
+#include "Zgpch.h"
 #include "Zgine/Core.h"
 #include "Zgine/Events/Event.h"
 
