@@ -127,32 +127,33 @@ public:
 
 	}
 
-	void OnUpdate() override
+	void OnUpdate(Zgine::Timestep ts) override
 	{
+		//ZG_TRACE("Delta time: {0}s {1}ms", ts.GetSeconds(), ts.GetMillisconds());
 
 		if (Zgine::Input::IsKeyPressed(ZG_KEY_LEFT))
 		{
-			m_CameraPosition.x -= m_CameraMoveSpeed;
+			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
 		}
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_RIGHT))
 		{
-			m_CameraPosition.x += m_CameraMoveSpeed;
+			m_CameraPosition.x += m_CameraMoveSpeed * ts;
 		}
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_UP))
 		{
-			m_CameraPosition.y += m_CameraMoveSpeed;
+			m_CameraPosition.y += m_CameraMoveSpeed * ts;
 		}
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_DOWN))
 		{
-			m_CameraPosition.y -= m_CameraMoveSpeed;
+			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
 		}
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_A))
 		{
-			m_CameraRotation += m_CameraRotationSpeed * 5.0f;
+			m_CameraRotation += m_CameraRotationSpeed * ts * 60;
 		}
 		else if (Zgine::Input::IsKeyPressed(ZG_KEY_D))
 		{
-			m_CameraRotation -= m_CameraRotationSpeed * 5.0f;
+			m_CameraRotation -= m_CameraRotationSpeed * ts * 60;
 		}
 
 		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
@@ -196,9 +197,9 @@ public:
 		Zgine::OrthographicCamera m_Camera{ -1.6f, 1.6f, -0.9f, 0.9f };
 
 		glm::vec3 m_CameraPosition{ 0.0f, 0.0f, 0.0f };
-		float m_CameraMoveSpeed = 0.1f;
-		float m_CameraRotationSpeed = 0.05f;
 		float m_CameraRotation = 0.0f;
+		float m_CameraMoveSpeed = 1.0f;
+		float m_CameraRotationSpeed = 0.5f;
 };
 
 class Sandbox : public Application {

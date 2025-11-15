@@ -3,9 +3,12 @@
 #include "Input.h"
 #include "Zgine/Log.h"
 
+#include "Zgine/Core/Timestep.h"
 #include "Zgine/Layer.h"
 #include "imgui.h"
 #include "Zgine/Renderer/Renderer.h"
+
+#include <GLFW/glfw3.h>
 
 
 namespace Zgine {
@@ -23,6 +26,7 @@ namespace Zgine {
 		//m_Window->(ZG_BIND_EVENT_FN(Application::OnEvent));
 		// TODO: modern c++ use lambda
 		m_Window->SetEventCallback([this](Event& e) {OnEvent(e);});
+
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
 	}
@@ -52,8 +56,13 @@ namespace Zgine {
 	void Application::Run()
 	{
 		while (m_Running) {
+
+			float time = static_cast<float>(glfwGetTime());
+			Timestep timestep = time - m_LastFrameTime;
+			m_LastFrameTime = time;
+
 			for (auto* layer : m_LayerStack) {
-				layer->OnUpdate();
+				layer->OnUpdate(timestep);
 			}
 
 			m_ImGuiLayer->Begin();

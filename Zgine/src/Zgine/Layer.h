@@ -2,6 +2,7 @@
 
 #include <Zgine/Core.h>
 #include <Zgine/Events/Event.h>
+#include <Zgine/Core/Timestep.h>
 
 
 namespace Zgine {
@@ -13,7 +14,7 @@ namespace Zgine {
 
 		virtual void OnAttach() {};
 		virtual void OnDetach() {};
-		virtual void OnUpdate() {};
+		virtual void OnUpdate(Timestep ts) {};
 		virtual void OnImGuiRender() {};
 		virtual void OnEvent(Event& event) {};
 
