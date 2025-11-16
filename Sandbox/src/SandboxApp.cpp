@@ -2,6 +2,7 @@
 #include <Zgine.h>
 
 #include "imgui.h"
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace Zgine;
 
@@ -39,10 +40,10 @@ public:
 		m_SquaredVA.reset(Zgine::VertexArray::Create());
 
 		float squareVertices[3 * 4] = {
-			-0.75f, -0.75f, 0.0f,
-			0.75f, -0.75f, 0.0f,
-			0.75f, 0.75f, 0.0f,
-			-0.75f, 0.75f, 0.0f
+			-0.5f, -0.5f, 0.0f,
+			0.5f, -0.5f, 0.0f,
+			0.5f, 0.5f, 0.0f,
+			-0.5f, 0.5f, 0.0f
 		};
 
 		std::shared_ptr<Zgine::VertexBuffer> squareVB(Zgine::VertexBuffer::Create(squareVertices, sizeof(squareVertices)));
@@ -97,13 +98,14 @@ public:
 			layout(location = 0) in vec3 a_Position;
 
 			uniform mat4 u_ViewProjection;
+			uniform mat4 u_Transform;
 
 			out vec3 v_Position;
 
 			void main()
 			{
 				v_Position = a_Position;
-				gl_Position = u_ViewProjection * vec4(a_Position, 1.0);
+				gl_Position = u_ViewProjection * u_Transform * vec4(a_Position, 1.0);
 			}
 		)";
 
@@ -155,6 +157,22 @@ public:
 		{
 			m_CameraRotation -= m_CameraRotationSpeed * ts * 60;
 		}
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_I))
+		{
+			m_SquaredPosition.y -= m_SquaredMoveSpeed * ts;
+		}
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_K))
+		{
+			m_SquaredPosition.y += m_SquaredMoveSpeed * ts;
+		}
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_J))
+		{
+			m_SquaredPosition.x -= m_SquaredMoveSpeed * ts;
+		}
+		else if (Zgine::Input::IsKeyPressed(ZG_KEY_L))
+		{
+			m_SquaredPosition.x += m_SquaredMoveSpeed * ts;
+		}
 
 		Zgine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1.0f });
 		Zgine::RenderCommand::Clear();
@@ -163,7 +181,19 @@ public:
 		m_Camera.SetRotation(m_CameraRotation);
 
 		Zgine::Renderer::BeginScene(m_Camera);
-		Zgine::Renderer::Submit(m_BlueShader, m_SquaredVA);
+
+		static glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
+
+		for (int y = 0; y < 20; ++y)
+		{
+			for (int  x = 0; x < 20; ++x)
+			{
+				glm::vec3 pos = glm::vec3(x * 0.11f, y * 0.11f, 0.0f);
+				glm::mat4 transform = glm::translate(glm::mat4(1.0f), pos) * scale;
+				Zgine::Renderer::Submit(m_BlueShader, m_SquaredVA, transform);
+			}
+		}
+
 		Zgine::Renderer::Submit(m_Shader, m_VertexArray);
 
 		Zgine::Renderer::EndScene();
@@ -200,6 +230,10 @@ public:
 		float m_CameraRotation = 0.0f;
 		float m_CameraMoveSpeed = 1.0f;
 		float m_CameraRotationSpeed = 0.5f;
+
+		float m_SquaredMoveSpeed = 1.0f;
+
+		glm::vec3 m_SquaredPosition = { 0.0f, 0.0f, 0.0f };
 };
 
 class Sandbox : public Application {
