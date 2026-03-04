@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Zgine Sandbox
+Comment=Zgine Engine Sandbox
+Exec=ZgineSandbox
+Icon=zgine
+Terminal=false
+Categories=Game;Development;

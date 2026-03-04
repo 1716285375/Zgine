@@ -1,0 +1,79 @@
+@PACKAGE_INIT@
+
+# ============================================================================
+# Zgine CMake Configuration
+# ============================================================================
+
+# Version information
+set(Zgine_VERSION @PROJECT_VERSION@)
+set(Zgine_VERSION_MAJOR @PROJECT_VERSION_MAJOR@)
+set(Zgine_VERSION_MINOR @PROJECT_VERSION_MINOR@)
+set(Zgine_VERSION_PATCH @PROJECT_VERSION_PATCH@)
+
+# ============================================================================
+# Find Required Dependencies
+# ============================================================================
+
+# CMake utilities
+include(CMakeFindDependencyMacro)
+
+# Find OpenGL (required for glad)
+find_dependency(OpenGL REQUIRED)
+
+# Find Threads (required for spdlog)
+find_dependency(Threads REQUIRED)
+
+# Note: Most dependencies were built via FetchContent during Zgine's build
+# Downstream projects have two options:
+# 1. Use FetchContent to get the same versions
+# 2. Provide system-installed versions via CMAKE_PREFIX_PATH
+
+# Try to find dependencies, but don't require them (they're bundled in the library)
+# This allows downstream projects to use their own versions if desired
+
+# Optional: Try to find dependencies for header-only or interface usage
+find_package(spdlog QUIET)
+find_package(glfw3 QUIET)
+find_package(glm QUIET)
+find_package(EnTT QUIET)
+find_package(assimp QUIET)
+find_package(imgui QUIET)
+find_package(nlohmann_json QUIET)
+find_package(Lua QUIET)
+
+# ============================================================================
+# Include directories
+# ============================================================================
+set(Zgine_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+
+# ============================================================================
+# Import Zgine targets
+# ============================================================================
+include("${CMAKE_CURRENT_LIST_DIR}/ZgineTargets.cmake")
+
+# ============================================================================
+# Check required components  
+# ============================================================================
+check_required_components(Zgine)
+
+# ============================================================================
+# Compatibility variables (for older CMake versions)
+# ============================================================================
+set(Zgine_FOUND TRUE)
+set(Zgine_LIBRARIES Zgine::ZgineRuntime)
+set(Zgine_INCLUDE_DIR ${Zgine_INCLUDE_DIRS})
+
+# ============================================================================
+# Usage Information
+# ============================================================================
+if(NOT Zgine_FIND_QUIETLY)
+    message(STATUS "Found Zgine ${Zgine_VERSION}")
+    message(STATUS "  Include dirs: ${Zgine_INCLUDE_DIRS}")
+    message(STATUS "  Libraries: ${Zgine_LIBRARIES}")
+    message(STATUS "")
+    message(STATUS "Usage:")
+    message(STATUS "  target_link_libraries(your_target PRIVATE Zgine::ZgineRuntime)")
+    message(STATUS "")
+    message(STATUS "Note: Zgine's dependencies are statically linked.")
+    message(STATUS "      No additional find_package() calls are required.")
+endif()

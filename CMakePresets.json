@@ -1,0 +1,398 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl.exe",
+        "CMAKE_CXX_COMPILER": "cl.exe"
+      }
+    },
+    {
+      "name": "windows-vs",
+      "hidden": true,
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      },
+      "generator": "Visual Studio 17 2022",
+      "architecture": {
+        "value": "x64",
+        "strategy": "set"
+      },
+      "toolset": {
+        "value": "host=x64",
+        "strategy": "set"
+      },
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "linux-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "vendor": {
+        "microsoft.com/VisualStudioSettings/CMake/1.0": {
+          "hostOS": [
+            "Linux"
+          ]
+        }
+      }
+    },
+    {
+      "name": "macos-base",
+      "hidden": true,
+      "inherits": "base",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Darwin"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "displayName": "Windows Debug (Ninja)",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release (Ninja)",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "windows-vs-debug",
+      "displayName": "Windows Debug (Visual Studio)",
+      "inherits": "windows-vs",
+      "cacheVariables": {
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "windows-vs-release",
+      "displayName": "Windows Release (Visual Studio)",
+      "inherits": "windows-vs",
+      "cacheVariables": {
+        "ZGINE_ENABLE_ASSERTIONS": "OFF",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "macos-debug",
+      "displayName": "macOS Debug",
+      "inherits": "macos-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "macos-release",
+      "displayName": "macOS Release",
+      "inherits": "macos-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF",
+        "ZGINE_USE_PCH": "ON"
+      }
+    },
+    {
+      "name": "dev",
+      "displayName": "Development Build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_ENABLE_PROFILING": "ON",
+        "ZGINE_USE_PCH": "ON",
+        "ZGINE_WARNINGS_AS_ERRORS": "OFF"
+      }
+    },
+    {
+      "name": "ci",
+      "displayName": "CI Build",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_BUILD_TESTS": "ON",
+        "ZGINE_WARNINGS_AS_ERRORS": "ON",
+        "ZGINE_USE_PCH": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF"
+      }
+    },
+    {
+      "name": "ci-linux",
+      "displayName": "CI Build (Linux)",
+      "inherits": "linux-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_BUILD_TESTS": "ON",
+        "ZGINE_WARNINGS_AS_ERRORS": "ON",
+        "ZGINE_USE_PCH": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF"
+      }
+    },
+    {
+      "name": "ci-windows",
+      "displayName": "CI Build (Windows)",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_BUILD_TESTS": "ON",
+        "ZGINE_WARNINGS_AS_ERRORS": "ON",
+        "ZGINE_USE_PCH": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF"
+      }
+    },
+    {
+      "name": "ci-macos",
+      "displayName": "CI Build (macOS)",
+      "inherits": "macos-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_BUILD_TESTS": "ON",
+        "ZGINE_WARNINGS_AS_ERRORS": "ON",
+        "ZGINE_USE_PCH": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF"
+      }
+    },
+    {
+      "name": "sanitizer-address",
+      "displayName": "Debug with AddressSanitizer",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_SANITIZER_ADDRESS": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "sanitizer-undefined",
+      "displayName": "Debug with UndefinedBehaviorSanitizer",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ZGINE_ENABLE_SANITIZER_UNDEFINED": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "ON",
+        "ZGINE_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "release-lto",
+      "displayName": "Release with LTO",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_ENABLE_LTO": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF"
+      }
+    },
+    {
+      "name": "release-optimized",
+      "displayName": "Release Optimized",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ZGINE_ENABLE_LTO": "ON",
+        "ZGINE_ENABLE_ASSERTIONS": "OFF",
+        "ZGINE_USE_PCH": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "windows-vs-debug",
+      "configurePreset": "windows-vs-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "windows-vs-release",
+      "configurePreset": "windows-vs-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "linux-debug",
+      "configurePreset": "linux-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "linux-release",
+      "configurePreset": "linux-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "macos-debug",
+      "configurePreset": "macos-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "macos-release",
+      "configurePreset": "macos-release",
+      "configuration": "Release"
+    },
+    {
+      "name": "dev",
+      "configurePreset": "dev",
+      "configuration": "Debug",
+      "jobs": 8
+    },
+    {
+      "name": "ci",
+      "configurePreset": "ci",
+      "configuration": "Release"
+    },
+    {
+      "name": "ci-linux",
+      "configurePreset": "ci-linux",
+      "configuration": "Release"
+    },
+    {
+      "name": "ci-windows",
+      "configurePreset": "ci-windows",
+      "configuration": "Release"
+    },
+    {
+      "name": "ci-macos",
+      "configurePreset": "ci-macos",
+      "configuration": "Release"
+    },
+    {
+      "name": "sanitizer-address",
+      "configurePreset": "sanitizer-address",
+      "configuration": "Debug"
+    },
+    {
+      "name": "sanitizer-undefined",
+      "configurePreset": "sanitizer-undefined",
+      "configuration": "Debug"
+    },
+    {
+      "name": "release-lto",
+      "configurePreset": "release-lto",
+      "configuration": "Release"
+    },
+    {
+      "name": "release-optimized",
+      "configurePreset": "release-optimized",
+      "configuration": "Release"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "test-default",
+      "displayName": "Run Tests (Default)",
+      "configurePreset": "dev",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": false
+      }
+    },
+    {
+      "name": "test-ci",
+      "displayName": "Run Tests (CI)",
+      "configurePreset": "ci",
+      "output": {
+        "outputOnFailure": true,
+        "verbosity": "verbose"
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": true
+      }
+    },
+    {
+      "name": "test-sanitizer",
+      "displayName": "Run Tests (Sanitizer)",
+      "configurePreset": "sanitizer-address",
+      "output": {
+        "outputOnFailure": true
+      },
+      "execution": {
+        "noTestsAction": "error",
+        "stopOnFailure": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+{
+    "Entities": [
+        {
+            "BoxCollider": {
+                "Offset": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "Color": [
+                0.05717376992106438,
+                0.4651162624359131,
+                0.12764886021614075,
+                1.0
+            ],
+            "Primitive": {
+                "Type": 0
+            },
+            "RigidBody": {
+                "BodyType": 1,
+                "Friction": 0.5,
+                "Mass": 1.0,
+                "Restitution": 0.0
+            },
+            "Tag": "Cube",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    -0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    -0.2778502106666565,
+                    -95353.96875,
+                    13.694947242736816
+                ]
+            },
+            "UUID": "4352ef7d73125ef1"
+        },
+        {
+            "AudioListener": {},
+            "Camera": {
+                "Primary": true
+            },
+            "Tag": "Camera",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    5.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.399999976158142
+                ],
+                "Translation": [
+                    4.900000095367432,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "ad7a96ea9f1117b9"
+        },
+        {
+            "BoxCollider": {
+                "Offset": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "Color": [
+                0.699999988079071,
+                0.699999988079071,
+                0.699999988079071,
+                1.0
+            ],
+            "Primitive": {
+                "Type": 1
+            },
+            "RigidBody": {
+                "BodyType": 0,
+                "Friction": 0.5,
+                "Mass": 1.0,
+                "Restitution": 0.0
+            },
+            "Tag": "Plane",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    5.0,
+                    1.0,
+                    5.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "a8cc91752543e7ac"
+        },
+        {
+            "AudioSource": {
+                "FilePath": "assets\\sounds\\bgm.mp3",
+                "IsLooping": true,
+                "IsPlaying": true,
+                "MaxDistance": 100.0,
+                "MinDistance": 1.0,
+                "Pitch": 1.0,
+                "Spatialized": true,
+                "Volume": 1.0
+            },
+            "Parent": "4352ef7d73125ef1",
+            "Tag": "Empty",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "94d8d520ba9d3820"
+        },
+        {
+            "Parent": "ad7a96ea9f1117b9",
+            "Tag": "Empty",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "168fccd7acecf582"
+        },
+        {
+            "Parent": "a8cc91752543e7ac",
+            "Tag": "Empty",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "29ff85779bff73bc"
+        },
+        {
+            "Tag": "Empty",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "c1cb474796096d63"
+        },
+        {
+            "Tag": "Empty",
+            "Transform": {
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "UUID": "6765c9997d039bb9"
+        }
+    ],
+    "Scene": {},
+    "Version": 2
+}

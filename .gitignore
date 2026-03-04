@@ -1,0 +1,156 @@
+# Build directories
+build/
+cmake-build-*/
+out/
+bin/
+lib/
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+!cmake/*.cmake
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# IDE specific
+.vs/
+.vscode/
+.gemini/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj*
+*.sln
+
+# Visual Studio
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+ipch/
+.vs/
+
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.perspectivev3
+
+# Qt Creator
+*.pro.user
+*.autosave
+
+# CLion
+cmake-build-debug/
+cmake-build-release/
+
+# Compiled Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# OS specific
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Package managers
+vcpkg_installed/
+conan/
+
+# Assets (if too large, store separately)
+# assets/large_models/
+# assets/textures/high_res/
+*.meta
+
+# Documentation build output
+docs/_build/
+docs/html/
+docs/latex/
+
+# Test results
+Testing/
+test_results/
+
+# Profiling data
+*.perf
+*.prof
+callgrind.out.*
+gmon.out
+
+# Coverage
+*.gcda
+*.gcno
+*.gcov
+coverage/
+.coverage
+htmlcov/
+
+# Cache
+.cache/
+__pycache__/
+*.pyc
+
+# Backup files
+*.bak
+*.orig
+
+docs/fix
+
+
+# 构建脚本
+
+build*/
+
+.gemini*

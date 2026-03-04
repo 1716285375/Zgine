@@ -1,0 +1,165 @@
+卷 Elements SE 的文件夹 PATH 列表
+卷序列号为 84A2-D8B7
+F:\MYPROJECT\ZGINE\SRC
++---Audio
+|       AudioSystem.cpp
+|       
++---Core
+|   |   ImGuiCompat.h
+|   |   PCH.h
+|   |   
+|   +---Application
+|   |       Application.cpp
+|   |       
+|   +---Base
+|   |       Log.cpp
+|   |       
+|   +---Events
+|   |       Event.cpp
+|   |       
+|   +---Layers
+|   |       LayerStack.cpp
+|   |       
+|   \---Utils
+|           ServiceLocator.cpp
+|           
++---Editor
+|   +---Commands
+|   |       EditorCommandHistory.cpp
+|   |       EntityCommands.cpp
+|   |       TransformCommands.cpp
+|   |       
+|   +---Core
+|   |       Editor.cpp
+|   |       EditorConfig.cpp
+|   |       EditorContext.cpp
+|   |       EditorEventBus.cpp
+|   |       SelectionContext.cpp
+|   |       
+|   +---Gizmo
+|   |       GizmoController.cpp
+|   |       
+|   +---Manager
+|   |       EditorPanelManager.cpp
+|   |       
+|   +---Panels
+|   |       ConsolePanel.cpp
+|   |       ContentBrowserPanel.cpp
+|   |       EditorPanel.cpp
+|   |       GameViewPanel.cpp
+|   |       HierarchyPanel.cpp
+|   |       InspectorPanel.cpp
+|   |       PerformancePanel.cpp
+|   |       StatusPanel.cpp
+|   |       ViewportPanel.cpp
+|   |       
+|   +---UI
+|   |       EditorToolbar.cpp
+|   |       
+|   \---ViewModels
+|           SceneViewModel.cpp
+|           
++---Gui
+|   +---Backend
+|   |   +---ImGui
+|   |   |       ImGuiLayer.cpp
+|   |   |       
+|   |   \---Nuklear
+|   |           NuklearLayer.cpp
+|   |           
+|   +---Fonts
+|   |       FontManager.cpp
+|   |       
+|   \---Themes
+|           ImGuiTheme.cpp
+|           
++---Physics
+|       PhysicsSystem.cpp
+|       
++---Platform
+|   |   Input.cpp
+|   |   
+|   \---Backend
+|       \---GLFW
+|               GLFWInput.cpp
+|               GLFWInput.h
+|               GLFWWindow.cpp
+|               GLFWWindow.h
+|               
++---Renderer
+|   +---Backend
+|   |   \---OpenGL
+|   |           OpenGLIndexBuffer.cpp
+|   |           OpenGLIndexBuffer.h
+|   |           OpenGLRendererAPI.cpp
+|   |           OpenGLRendererAPI.h
+|   |           OpenGLShader.cpp
+|   |           OpenGLShader.h
+|   |           OpenGLTexture.cpp
+|   |           OpenGLTexture.h
+|   |           OpenGLVertexArray.cpp
+|   |           OpenGLVertexArray.h
+|   |           OpenGLVertexBuffer.cpp
+|   |           OpenGLVertexBuffer.h
+|   |           
+|   +---Core
+|   |       RenderSystem.cpp
+|   |       
+|   +---RHI
+|   |       IndexBuffer.cpp
+|   |       RendererAPI.cpp
+|   |       Shader.cpp
+|   |       Texture.cpp
+|   |       VertexArray.cpp
+|   |       VertexBuffer.cpp
+|   |       
+|   \---Systems
+|           IBLSystem.cpp
+|           PostProcessSystem.cpp
+|           ShadowSystem.cpp
+|           Skybox.cpp
+|           
++---Resources
+|   +---Core
+|   |       AssetMetadata.cpp
+|   |       AssetType.cpp
+|   |       
+|   +---Importers
+|   |       AssetImporter.cpp
+|   |       AssetImportSettings.cpp
+|   |       
+|   +---Manager
+|   |       AssetManager.cpp
+|   |       
+|   +---Material
+|   |       PBRMaterialPreset.cpp
+|   |       
+|   \---Mesh
+|           Mesh.cpp
+|           MeshLoader.cpp
+|           PrimitiveMesh.cpp
+|           
++---Scene
+|   +---Camera
+|   |       Camera.cpp
+|   |       
+|   +---Core
+|   |       EntityHandle.cpp
+|   |       EntityManager.cpp
+|   |       Scene.cpp
+|   |       
+|   +---Serialization
+|   |       SceneSerializer.cpp
+|   |       
+|   \---Systems
+|           SystemManager.cpp
+|           
++---Scripting
+|       ScriptSystem.cpp
+|       
+\---Utils
+        FileUtils.cpp
+        FileWatcher.cpp
+        MemoryPool.cpp
+        UUID.cpp
+        
