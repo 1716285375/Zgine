@@ -2,13 +2,13 @@
 
 #include <vector>
 #include <algorithm>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <Zgine/Editor/Core/EditorTypes.h>
 
 namespace Zgine {
 
 // Forward declarations
-class Scene;
+class World;
 class EditorEventBus;
 
 /**
@@ -22,7 +22,7 @@ class EditorEventBus;
  * - Single and multi-selection support
  * - Selection modes (Replace, Add, Subtract, Toggle)
  * - Automatic event publishing (integrates with EditorEventBus)
- * - Selection validation against active scene
+ * - Selection validation against active World
  *
  * **Usage**:
  * @code
@@ -151,14 +151,14 @@ public:
     //=========================================================================
 
     /**
-     * @brief Validate selection against active scene
+     * @brief Validate selection against active World
      *
-     * Removes any entities that no longer exist in the scene.
-     * Call this after loading a new scene or when entities are deleted.
+     * Removes any entities that no longer exist in the World.
+     * Call this after loading a new World or when entities are deleted.
      *
-     * @param scene Scene to validate against
+     * @param World World to validate against
      */
-    void Validate(Scene* scene);
+    void Validate(World* World);
 
     //=========================================================================
     // Event Integration

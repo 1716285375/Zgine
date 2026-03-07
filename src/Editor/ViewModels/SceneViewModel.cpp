@@ -12,11 +12,11 @@ namespace EntityCmd = Zgine;
 namespace Zgine {
 
 SceneViewModel::SceneViewModel(
-    Scene* scene,
+    World* World,
     EditorEventBus* eventBus,
     EditorCommandHistory* commandHistory,
     SelectionContext* selectionContext)
-    : m_Scene(scene)
+    : m_World(World)
     , m_EventBus(eventBus)
     , m_CommandHistory(commandHistory)
     , m_SelectionContext(selectionContext)
@@ -24,7 +24,7 @@ SceneViewModel::SceneViewModel(
     // Initialize observable properties
     EntityCount.Set(0);
     IsDirty.Set(false);
-    SceneName.Set("Untitled Scene");
+    SceneName.Set("Untitled World");
 
     // Bind commands
     CreateEntityCommand.SetExecute([this](const std::string& name) {
@@ -68,7 +68,7 @@ SceneViewModel::~SceneViewModel() {
 
 void SceneViewModel::Update() {
     // Update entity count if changed
-    size_t currentCount = m_Scene->GetEntityCount();
+    size_t currentCount = m_World->GetEntityCount();
     if (EntityCount.Get() != currentCount) {
         EntityCount.Set(currentCount);
     }
@@ -76,15 +76,15 @@ void SceneViewModel::Update() {
 
 std::vector<Entity> SceneViewModel::GetAllEntities() const {
     std::vector<Entity> result;
-    auto view = m_Scene->GetRegistry().view<entt::entity>();
+    auto view = m_World->GetRegistry().view<entt::entity>();
     for (auto entity : view) {
-        result.emplace_back(entity, m_Scene);
+        result.emplace_back(entity, m_World);
     }
     return result;
 }
 
 void SceneViewModel::RefreshFromModel() {
-    EntityCount.Set(m_Scene->GetEntityCount());
+    EntityCount.Set(m_World->GetEntityCount());
 
     // Sync selection
     if (m_SelectionContext && !m_SelectionContext->GetSelection().empty()) {
@@ -115,12 +115,12 @@ void SceneViewModel::SetupEventSubscriptions() {
 
 void SceneViewModel::OnEntityCreated(Entity entity) {
     ZGINE_UNUSED(entity);  // Suppress unused parameter warning
-    EntityCount.Set(m_Scene->GetEntityCount());
+    EntityCount.Set(m_World->GetEntityCount());
     IsDirty.Set(true);
 }
 
 void SceneViewModel::OnEntityDestroyed(Entity entity) {
-    EntityCount.Set(m_Scene->GetEntityCount());
+    EntityCount.Set(m_World->GetEntityCount());
     IsDirty.Set(true);
 
     // Clear selection if destroyed entity was selected
@@ -143,7 +143,7 @@ void SceneViewModel::OnSceneModified() {
 
 void SceneViewModel::ExecuteCreateEntity(const std::string& name) {
     auto cmd = std::make_unique<EntityCmd::CreateEntityCommand>(
-        m_Scene,
+        m_World,
         name.empty() ? "Entity" : name,
         PrimitiveType::None);
 
@@ -158,7 +158,7 @@ void SceneViewModel::ExecuteDeleteSelectedEntity() {
         return;
     }
 
-    auto cmd = std::make_unique<DeleteEntityCommand>(m_Scene, selected);
+    auto cmd = std::make_unique<DeleteEntityCommand>(m_World, selected);
 
     if (m_CommandHistory) {
         m_CommandHistory->Execute(std::move(cmd));
@@ -171,7 +171,7 @@ void SceneViewModel::ExecuteDuplicateSelectedEntity() {
         return;
     }
 
-    Entity duplicated = m_Scene->DuplicateEntity(selected);
+    Entity duplicated = m_World->DuplicateEntity(selected);
 
     if (m_SelectionContext && duplicated.IsValid()) {
         m_SelectionContext->Select(duplicated, SelectionMode::Replace);
@@ -179,13 +179,13 @@ void SceneViewModel::ExecuteDuplicateSelectedEntity() {
 }
 
 void SceneViewModel::ExecuteSaveScene() {
-    // TODO: Implement scene serialization
+    // TODO: Implement World serialization
     IsDirty.Set(false);
 
-    if (m_EventBus && m_Scene) {
-        // Use scene path from SceneContext or default
+    if (m_EventBus && m_World) {
+        // Use World path from SceneContext or default
         std::filesystem::path scenePath(SceneName.Get());
-        SceneSavedEvent event(m_Scene, scenePath);
+        SceneSavedEvent event(m_World, scenePath);
         m_EventBus->PublishImmediate(event);
     }
 }

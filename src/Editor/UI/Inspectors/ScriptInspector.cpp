@@ -1,6 +1,6 @@
 #include <Zgine/Editor/UI/Inspectors/ScriptInspector.h>
 #include <Zgine/Gui/Backend/ImGui/ImGuiWidgets.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Base/Macro.h>
 #include <imgui.h>
 

@@ -4,6 +4,7 @@
 #include <typeindex>
 #include <unordered_map>
 #include <memory>
+#include <concepts>
 
 namespace Zgine {
 
@@ -27,6 +28,7 @@ public:
      * @param service Pointer to service (ServiceLocator does NOT take ownership)
      */
     template<typename T>
+        requires std::is_class_v<T>
     static void Register(T* service) {
         s_Services[std::type_index(typeid(T))] = static_cast<void*>(service);
     }
@@ -51,7 +53,8 @@ public:
      * @return True if service is registered
      */
     template<typename T>
-    static bool Has() {
+        requires std::is_class_v<T>
+    [[nodiscard]] static bool Has() {
         return s_Services.find(std::type_index(typeid(T))) != s_Services.end();
     }
 
@@ -60,6 +63,7 @@ public:
      * @tparam T Service type
      */
     template<typename T>
+        requires std::is_class_v<T>
     static void Unregister() {
         s_Services.erase(std::type_index(typeid(T)));
     }

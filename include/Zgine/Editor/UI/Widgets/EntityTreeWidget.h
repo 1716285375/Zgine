@@ -1,13 +1,13 @@
 #pragma once
 
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <functional>
 #include <string>
 
 namespace Zgine {
 
 // Forward declarations
-class Scene;
+class World;
 class SelectionContext;
 
 } // namespace Zgine
@@ -26,7 +26,7 @@ public:
     ~EntityTree() = default;
 
     // Configuration
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    void SetScene(World* World) { m_World = World; }
     void SetSelectionContext(SelectionContext* ctx) { m_SelectionContext = ctx; }
     void SetFilter(const std::string& filter) { m_Filter = filter; }
     void SetDragDropEnabled(bool enabled) { m_DragDropEnabled = enabled; }
@@ -47,7 +47,7 @@ private:
     void DrawEntityNode(Entity entity);
     std::string GetEntityLabel(Entity entity) const;
 
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
     SelectionContext* m_SelectionContext = nullptr;
     std::string m_Filter;
     bool m_DragDropEnabled = true;

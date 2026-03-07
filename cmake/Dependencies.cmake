@@ -6,6 +6,10 @@
 include(FetchContent)
 include(CMakePackageConfigHelpers)
 
+# All deps are version-locked by git tag — disable the update step so CMake
+# never tries to run `git fetch` on a shallow clone that has no .git metadata.
+set(FETCHCONTENT_UPDATES_DISCONNECTED TRUE)
+
 # Dependency version lock file
 set(ZGINE_DEPS_VERSION_FILE "${CMAKE_SOURCE_DIR}/cmake/deps_versions.cmake")
 
@@ -205,25 +209,7 @@ FetchContent_Declare(stduuid
 )
 FetchContent_MakeAvailable(stduuid)
 
-# Nuklear
-zgine_find_or_fetch_dependency(nuklear
-    VERSION 4.12.8
-    GIT_REPOSITORY https://github.com/Immediate-Mode-UI/Nuklear.git
-    GIT_TAG 4.12.8
-)
-if(NOT TARGET nuklear)
-    FetchContent_GetProperties(nuklear)
-    if(nuklear_POPULATED)
-        add_library(nuklear INTERFACE)
-        target_include_directories(nuklear INTERFACE
-            $<BUILD_INTERFACE:${nuklear_SOURCE_DIR}>
-            $<BUILD_INTERFACE:${nuklear_SOURCE_DIR}/demo>
-        )
-        if(NOT TARGET nuklear::nuklear)
-            add_library(nuklear::nuklear ALIAS nuklear)
-        endif()
-    endif()
-endif()
+
 
 # RuntimeCompiledCPlusPlus (optional)
 # Enables runtime C++ compilation for rapid development iteration

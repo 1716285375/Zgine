@@ -1,5 +1,5 @@
 #include <Zgine/Editor/Commands/EntityCommands.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 
 namespace Zgine {
@@ -8,8 +8,8 @@ namespace Zgine {
 // CreateEntityCommand
 // ============================================================================
 
-CreateEntityCommand::CreateEntityCommand(Scene* scene, const std::string& name, PrimitiveType type)
-    : m_Scene(scene)
+CreateEntityCommand::CreateEntityCommand(World* World, const std::string& name, PrimitiveType type)
+    : m_World(World)
     , m_EntityName(name)
     , m_PrimitiveType(type)
     , m_EntityID(0)
@@ -17,13 +17,13 @@ CreateEntityCommand::CreateEntityCommand(Scene* scene, const std::string& name, 
 }
 
 bool CreateEntityCommand::Execute() {
-    if (!m_Scene) {
-        ZGINE_CORE_ERROR("CreateEntityCommand: Scene is null");
+    if (!m_World) {
+        ZGINE_CORE_ERROR("CreateEntityCommand: World is null");
         return false;
     }
 
     // Create entity
-    m_CreatedEntity = m_Scene->CreateEntity(m_EntityName);
+    m_CreatedEntity = m_World->CreateEntity(m_EntityName);
     m_EntityID = (uint32_t)m_CreatedEntity;
 
     // Add components based on primitive type
@@ -38,13 +38,13 @@ bool CreateEntityCommand::Execute() {
 }
 
 bool CreateEntityCommand::Undo() {
-    if (!m_Scene) {
+    if (!m_World) {
         return false;
     }
 
     // Destroy the entity we created
     if (m_CreatedEntity) {
-        m_Scene->DestroyEntity(m_CreatedEntity);
+        m_World->DestroyEntity(m_CreatedEntity);
         m_CreatedEntity = Entity(); // Invalidate
     }
 
@@ -59,8 +59,8 @@ std::string CreateEntityCommand::GetName() const {
 // DeleteEntityCommand
 // ============================================================================
 
-DeleteEntityCommand::DeleteEntityCommand(Scene* scene, Entity entity)
-    : m_Scene(scene)
+DeleteEntityCommand::DeleteEntityCommand(World* World, Entity entity)
+    : m_World(World)
     , m_Entity(entity)
     , m_EntityID((uint32_t)entity)
 {
@@ -73,7 +73,7 @@ DeleteEntityCommand::DeleteEntityCommand(Scene* scene, Entity entity)
 }
 
 bool DeleteEntityCommand::Execute() {
-    if (!m_Scene || !m_Entity) {
+    if (!m_World || !m_Entity) {
         return false;
     }
 
@@ -81,19 +81,19 @@ bool DeleteEntityCommand::Execute() {
     // TODO: Implement full component serialization
 
     // Actually delete the entity
-    m_Scene->DestroyEntity(m_Entity);
+    m_World->DestroyEntity(m_Entity);
     m_Entity = Entity(); // Mark as deleted
     return true;
 }
 
 bool DeleteEntityCommand::Undo() {
-    if (!m_Scene) {
+    if (!m_World) {
         return false;
     }
 
     // Recreate entity with same name
     // TODO: Restore all components from serialized data
-    m_Entity = m_Scene->CreateEntity(m_EntityName);
+    m_Entity = m_World->CreateEntity(m_EntityName);
     m_EntityID = (uint32_t)m_Entity;
 
     return m_Entity.operator bool();

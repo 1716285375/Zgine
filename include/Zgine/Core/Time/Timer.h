@@ -28,7 +28,7 @@ public:
     /**
      * @brief Stop the timer and return elapsed time
      */
-    double Stop();
+    [[nodiscard]] double Stop();
 
     /**
      * @brief Reset timer to zero
@@ -38,17 +38,17 @@ public:
     /**
      * @brief Record lap time without stopping
      */
-    double Lap();
+    [[nodiscard]] double Lap();
 
     /**
      * @brief Get elapsed time without stopping
      */
-    double GetElapsed() const;
+    [[nodiscard]] double GetElapsed() const;
 
     /**
      * @brief Check if timer is running
      */
-    bool IsRunning() const { return m_Running; }
+    [[nodiscard]] bool IsRunning() const { return m_Running; }
 
     /**
      * @brief Set callback to be called when target time is reached

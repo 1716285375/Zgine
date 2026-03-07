@@ -11,8 +11,8 @@
 #include <Zgine/Editor/UI/Inspectors/PhysicsInspector.h>
 #include <Zgine/Editor/UI/Inspectors/AudioInspector.h>
 #include <Zgine/Editor/UI/Inspectors/ScriptInspector.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <imgui.h>
 
 namespace Zgine {
@@ -39,7 +39,7 @@ void InspectorPanel::OnGuiRender() {
     BeginPanel();
 
     auto& selectionContext = GetContext().GetSelectionContext();
-    selectionContext.Validate(m_Scene);
+    selectionContext.Validate(m_World);
     Entity selected = selectionContext.GetPrimary();
 
     if (!selected) {
@@ -56,7 +56,7 @@ void InspectorPanel::OnGuiRender() {
 
     // Delete button
     if (ImGui::Button("Delete Entity")) {
-        DeleteEntity(m_Scene, selected);
+        DeleteEntity(m_World, selected);
         selectionContext.Remove(selected);
         EndPanel();
         return;
@@ -158,11 +158,11 @@ void InspectorPanel::AddComponentMenuItem(Entity entity, const char* label) {
     }
 }
 
-void InspectorPanel::DeleteEntity(Scene* scene, Entity entity) {
-    if (!scene || !entity) return;
+void InspectorPanel::DeleteEntity(World* World, Entity entity) {
+    if (!World || !entity) return;
 
     // Create command for entity deletion (supports undo/redo)
-    auto command = std::make_unique<DeleteEntityCommand>(scene, entity);
+    auto command = std::make_unique<DeleteEntityCommand>(World, entity);
 
     // Execute command through CommandHistory
     auto& commandHistory = GetContext().GetCommandHistory();

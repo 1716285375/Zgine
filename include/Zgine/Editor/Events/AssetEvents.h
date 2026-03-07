@@ -7,17 +7,17 @@
 namespace Zgine {
 
 // Forward declaration
-class Scene;
+class World;
 
 /**
  * @brief Event fired when an asset is dropped onto the viewport
  */
 class AssetDroppedEvent : public EditorEvent {
 public:
-    AssetDroppedEvent(Scene* scene, const std::filesystem::path& path)
-        : m_Scene(scene), m_AssetPath(path) {}
+    AssetDroppedEvent(World* World, const std::filesystem::path& path)
+        : m_World(World), m_AssetPath(path) {}
 
-    Scene* GetScene() const noexcept { return m_Scene; }
+    World* GetScene() const noexcept { return m_World; }
     const std::filesystem::path& GetAssetPath() const noexcept { return m_AssetPath; }
 
     std::string ToString() const override {
@@ -31,7 +31,7 @@ public:
     ZGINE_EDITOR_EVENT_CLASS_CATEGORY(Asset)
 
 private:
-    Scene* m_Scene;
+    World* m_World;
     std::filesystem::path m_AssetPath;
 };
 

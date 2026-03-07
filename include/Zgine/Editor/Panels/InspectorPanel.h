@@ -1,11 +1,11 @@
 #pragma once
 
 #include <Zgine/Editor/Panels/EditorPanel.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 
 namespace Zgine {
 
-class Scene;
+class World;
 
 /**
  * @brief Inspector panel for editing entity components
@@ -38,8 +38,8 @@ public:
     void OnUpdate(float deltaTime) override;
     void OnGuiRender() override;
 
-    /** Set the scene to inspect entities from */
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    /** Set the World to inspect entities from */
+    void SetScene(World* World) { m_World = World; }
 
 private:
     /**
@@ -60,9 +60,9 @@ private:
     template<typename Component>
     void AddComponentMenuItem(Entity entity, const char* label);
 
-    void DeleteEntity(Scene* scene, Entity entity);
+    void DeleteEntity(World* World, Entity entity);
 
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
 };
 
 } // namespace Zgine

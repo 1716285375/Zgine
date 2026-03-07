@@ -1,7 +1,7 @@
 #include <Zgine/Renderer/RHI/RendererAPI.h>
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Gui/GuiLayer.h>
-#include <Zgine/Core/OS/VFS.h>
+#include <Zgine/Platform/IO/VFS.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Base/Assert.h>
 #include <Zgine/Core/Time/Timestep.h>

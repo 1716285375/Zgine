@@ -12,7 +12,7 @@ enum class AssetType : uint8_t {
     Mesh,
     Audio,
     Shader,
-    Scene,
+    World,
     Material
 };
 

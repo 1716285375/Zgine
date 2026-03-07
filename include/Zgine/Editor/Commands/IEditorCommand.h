@@ -19,7 +19,7 @@ namespace Zgine {
  *
  * Usage:
  * @code
- *   auto cmd = std::make_unique<CreateEntityCommand>(scene, "Cube");
+ *   auto cmd = std::make_unique<CreateEntityCommand>(World, "Cube");
  *   cmd->Execute();
  *   commandHistory.Push(std::move(cmd));
  *   // ... later ...
@@ -30,44 +30,38 @@ class IEditorCommand {
 public:
     virtual ~IEditorCommand() = default;
 
-    /**
-     * @brief Execute the command
-     * @return true if successful, false otherwise
-     */
-    virtual bool Execute() = 0;
+    /*
+        Purpose : Execute the command action.
+        Return  : true if the action succeeded.
+    */
+    [[nodiscard]] virtual bool Execute() = 0;
 
-    /**
-     * @brief Undo the command
-     * @return true if successful, false otherwise
-     */
-    virtual bool Undo() = 0;
+    /*
+        Purpose : Reverse the previously executed action.
+        Return  : true if undo succeeded.
+    */
+    [[nodiscard]] virtual bool Undo() = 0;
 
-    /**
-     * @brief Get human-readable name of the command
-     */
-    virtual std::string GetName() const = 0;
+    /*
+        Purpose : Return a short human-readable description shown in the undo history UI.
+    */
+    [[nodiscard]] virtual std::string GetName() const = 0;
 
-    /**
-     * @brief Check if this command can be merged with another
-     *
-     * Some commands (like multiple transform adjustments) can be
-     * merged into a single undo/redo step for better UX.
-     *
-     * @param other The command to potentially merge with
-     * @return true if merge is possible
-     */
-    virtual bool CanMergeWith(const IEditorCommand* other) const {
+    /*
+        Purpose : Check if this command can be merged with another to form one undo step.
+        Notes   : E.g. consecutive transforms merge into a single undo entry.
+        Args    : other — candidate command for merging.
+        Return  : true if merge is possible.
+    */
+    [[nodiscard]] virtual bool CanMergeWith(const IEditorCommand* other) const {
         (void)other;
         return false;
     }
 
-    /**
-     * @brief Merge this command with another
-     *
-     * Called only if CanMergeWith() returned true.
-     *
-     * @param other The command to merge with
-     */
+    /*
+        Purpose : Absorb another command's data into this one; only called after CanMergeWith returns true.
+        Args    : other — command to merge into this.
+    */
     virtual void MergeWith(const IEditorCommand* other) {
         (void)other;
     }

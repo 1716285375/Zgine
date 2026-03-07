@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
-#include <Zgine/Scene/Core/Scene.h>
+#include <Zgine/World/Core/World.h>
 
 using namespace Zgine;
 
@@ -11,21 +11,21 @@ using namespace Zgine;
 class SelectionContextTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        m_Scene = new Scene();
+        m_World = new World();
         m_Selection = std::make_unique<SelectionContext>();
 
         // Create test entities
-        m_Entity1 = m_Scene->CreateEntity("Entity1");
-        m_Entity2 = m_Scene->CreateEntity("Entity2");
-        m_Entity3 = m_Scene->CreateEntity("Entity3");
+        m_Entity1 = m_World->CreateEntity("Entity1");
+        m_Entity2 = m_World->CreateEntity("Entity2");
+        m_Entity3 = m_World->CreateEntity("Entity3");
     }
 
     void TearDown() override {
         m_Selection.reset();
-        delete m_Scene;
+        delete m_World;
     }
 
-    Scene* m_Scene;
+    World* m_World;
     std::unique_ptr<SelectionContext> m_Selection;
     Entity m_Entity1, m_Entity2, m_Entity3;
 };

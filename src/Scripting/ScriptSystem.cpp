@@ -1,13 +1,13 @@
 #include <Zgine/Scripting/ScriptSystem.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Platform/Input.h>
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
-#include <Zgine/Core/OS/File.h>
+#include <Zgine/Platform/IO/File.h>
 #include <GLFW/glfw3.h>
 #include <ctime>
 #include <chrono>
@@ -176,28 +176,28 @@ void ScriptSystem::BindEntityAPI() {
     auto entityType = m_LuaState.new_usertype<Entity>("Entity");
 
     m_LuaState["findEntity"] = [this](const std::string& name) -> Entity {
-        if (!m_Scene) return Entity();
+        if (!m_World) return Entity();
 
-        auto& registry = m_Scene->GetRegistry();
+        auto& registry = m_World->GetRegistry();
         auto view = registry.view<TagComponent>();
 
         for (auto entity : view) {
             auto& tag = registry.get<TagComponent>(entity);
             if (tag.Tag == name) {
-                return Entity(entity, m_Scene);
+                return Entity(entity, m_World);
             }
         }
         return Entity();
     };
 
     m_LuaState["createEntity"] = [this](const std::string& name) -> Entity {
-        if (!m_Scene) return Entity();
-        return m_Scene->CreateEntity(name);
+        if (!m_World) return Entity();
+        return m_World->CreateEntity(name);
     };
 
     m_LuaState["destroyEntity"] = [this](Entity entity) {
-        if (!m_Scene) return;
-        m_Scene->DestroyEntity(entity);
+        if (!m_World) return;
+        m_World->DestroyEntity(entity);
     };
 }
 
@@ -244,35 +244,35 @@ void ScriptSystem::BindAudioAPI() {
     };
 }
 
-void ScriptSystem::OnSceneStart(Scene* scene) {
-    m_Scene = scene;
+void ScriptSystem::OnSceneStart(World* World) {
+    m_World = World;
 
     // 加载所有脚本组件
-    if (scene) {
-        auto& registry = scene->GetRegistry();
+    if (World) {
+        auto& registry = World->GetRegistry();
         auto view = registry.view<ScriptComponent>();
 
         for (auto entity : view) {
-            LoadScript(Entity(entity, scene));
+            LoadScript(Entity(entity, World));
         }
     }
 }
 
 void ScriptSystem::OnSceneStop() {
-    if (!m_Scene) {
+    if (!m_World) {
         return;
     }
 
     // 卸载所有脚本
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
-        UnloadScript(Entity(entity, m_Scene));
+        UnloadScript(Entity(entity, m_World));
     }
 
     m_ScriptInstances.clear();
-    m_Scene = nullptr;
+    m_World = nullptr;
 }
 
 void ScriptSystem::SetPhysicsSystem(PhysicsSystem* physicsSystem) {
@@ -283,12 +283,12 @@ void ScriptSystem::SetAudioSystem(AudioSystem* audioSystem) {
     m_AudioSystem = audioSystem;
 }
 
-void ScriptSystem::Update(Scene* scene, float deltaTime) {
-    if (!m_Initialized || !scene) {
+void ScriptSystem::Update(World* World, float deltaTime) {
+    if (!m_Initialized || !World) {
         return;
     }
 
-    auto& registry = scene->GetRegistry();
+    auto& registry = World->GetRegistry();
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
@@ -308,7 +308,7 @@ void ScriptSystem::Update(Scene* scene, float deltaTime) {
         // 调用 OnUpdate
         try {
             if (it->second.OnUpdate.valid()) {
-                auto result = it->second.OnUpdate(Entity(entity, scene), deltaTime);
+                auto result = it->second.OnUpdate(Entity(entity, World), deltaTime);
                 if (!result.valid()) {
                     sol::error err = result;
                     ZGINE_CORE_ERROR("Script error in OnUpdate (entity {}): {}", entityId, err.what());
@@ -426,12 +426,12 @@ bool ScriptSystem::ReloadScript(Entity entity) {
     return LoadScript(entity);
 }
 
-void ScriptSystem::CheckForChanges(Scene* scene) {
-    if (!m_Initialized || !scene) {
+void ScriptSystem::CheckForChanges(World* World) {
+    if (!m_Initialized || !World) {
         return;
     }
 
-    auto& registry = scene->GetRegistry();
+    auto& registry = World->GetRegistry();
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
@@ -454,7 +454,7 @@ void ScriptSystem::CheckForChanges(Scene* scene) {
                     timeSinceEpoch).count();
                 if (currentTime != it->second.LastModified) {
                     ZGINE_CORE_INFO("Script file changed, reloading: {}", script.ScriptPath);
-                    ReloadScript(Entity(entity, scene));
+                    ReloadScript(Entity(entity, World));
                 }
             }
         } catch (...) {

@@ -149,7 +149,6 @@ target_link_libraries(ZgineRuntime PUBLIC
     Jolt
     lua::lua
     sol2
-    nuklear::nuklear
 )
 
 # PRIVATE: Implementation details not exposed in public API

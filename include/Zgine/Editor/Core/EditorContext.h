@@ -3,7 +3,7 @@
 #include <Zgine/Core/Math/MathTypes.h>
 #include <memory>
 #include <string>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 
 namespace Zgine {
 
@@ -11,13 +11,13 @@ namespace Zgine {
 class SelectionContext;
 class EditorEventBus;
 class EditorCommandHistory;
-class Scene;
+class World;
 class SceneViewModel;
 
 /**
  * @brief Viewport rendering context
  *
- * Manages viewport-specific state such as scene texture,
+ * Manages viewport-specific state such as World texture,
  * viewport bounds, camera matrices, and rendering flags.
  */
 class ViewportContext {
@@ -25,7 +25,7 @@ public:
     ViewportContext();
     ~ViewportContext() = default;
 
-    // Scene texture
+    // World texture
     void SetSceneTexture(unsigned int textureId) { m_SceneTextureId = textureId; }
     unsigned int GetSceneTexture() const { return m_SceneTextureId; }
 
@@ -80,17 +80,17 @@ private:
 };
 
 /**
- * @brief Scene context for editor
+ * @brief World context for editor
  *
- * Manages the active scene and related state.
+ * Manages the active World and related state.
  */
 class SceneContext {
 public:
     SceneContext() = default;
     ~SceneContext() = default;
 
-    void SetActiveScene(Scene* scene) { m_ActiveScene = scene; }
-    Scene* GetActiveScene() const { return m_ActiveScene; }
+    void SetActiveScene(World* World) { m_ActiveScene = World; }
+    World* GetActiveScene() const { return m_ActiveScene; }
 
     void SetScenePath(const std::string& path) { m_ScenePath = path; }
     const std::string& GetScenePath() const { return m_ScenePath; }
@@ -99,7 +99,7 @@ public:
     bool IsSceneDirty() const { return m_SceneDirty; }
 
 private:
-    Scene* m_ActiveScene = nullptr;
+    World* m_ActiveScene = nullptr;
     std::string m_ScenePath;
     bool m_SceneDirty = false;
 };
@@ -150,8 +150,8 @@ public:
     // ViewModel (MVVM)
     SceneViewModel* GetSceneViewModel() { return m_SceneViewModel.get(); }
 
-    // Helper to set active scene and create/update ViewModel
-    void SetActiveScene(Scene* scene);
+    // Helper to set active World and create/update ViewModel
+    void SetActiveScene(World* World);
 
 private:
     // Core services (owned)

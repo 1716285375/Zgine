@@ -6,11 +6,11 @@
 #include <Zgine/Editor/Commands/TransformCommands.h>
 #include <Zgine/Editor/Events/EntityEvents.h>
 #include <Zgine/Editor/Events/TransformEvents.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <imgui.h>
 #include <ImGuizmo.h>
-#include <glm/gtc/type_ptr.hpp>
+
 
 namespace Zgine {
 

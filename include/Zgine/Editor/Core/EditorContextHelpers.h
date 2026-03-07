@@ -1,11 +1,11 @@
 #include <Zgine/Editor/Core/EditorContext.h>
 #include <Zgine/Editor/ViewModels/SceneViewModel.h>
-#include <Zgine/Scene/Core/Scene.h>
+#include <Zgine/World/Core/World.h>
 
 namespace Zgine {
 
 /**
- * @brief Helper to create SceneViewModel when scene is set
+ * @brief Helper to create SceneViewModel when World is set
  *
  * Call this after setting EditorContext::GetSceneContext().ActiveScene
  */

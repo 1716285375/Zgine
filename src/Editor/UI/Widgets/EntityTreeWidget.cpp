@@ -1,20 +1,20 @@
 #include <Zgine/Editor/UI/Widgets/EntityTreeWidget.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Editor/UI/Helpers/SelectionHelpers.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <imgui.h>
 
 namespace Zgine::UI::Widgets {
 
 void EntityTree::Render() {
-    if (!m_Scene) {
-        ImGui::TextDisabled("No scene loaded");
+    if (!m_World) {
+        ImGui::TextDisabled("No World loaded");
         return;
     }
 
     // Render root entities
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto view = registry.view<TagComponent, RelationshipComponent>();
 
     for (auto entity : view) {
@@ -23,7 +23,7 @@ void EntityTree::Render() {
         // Only render root entities (no parent)
         if (rel.Parent != entt::null) continue;
 
-        Entity e(entity, m_Scene);
+        Entity e(entity, m_World);
         if (!PassFilter(e)) continue;
 
         DrawEntityNode(e);
@@ -35,7 +35,7 @@ void EntityTree::RenderNode(Entity entity) {
 }
 
 bool EntityTree::PassFilter(Entity entity) const {
-    if (!entity || !m_Scene) return false;
+    if (!entity || !m_World) return false;
     if (m_Filter.empty()) return true;
 
     // Check entity name
@@ -50,7 +50,7 @@ bool EntityTree::PassFilter(Entity entity) const {
     if (entity.HasComponent<RelationshipComponent>()) {
         const auto& rel = entity.GetComponent<RelationshipComponent>();
         for (auto child : rel.Children) {
-            Entity childEntity(child, m_Scene);
+            Entity childEntity(child, m_World);
             if (PassFilter(childEntity)) {
                 return true;
             }
@@ -61,9 +61,9 @@ bool EntityTree::PassFilter(Entity entity) const {
 }
 
 void EntityTree::DrawEntityNode(Entity entity) {
-    if (!entity || !m_Scene) return;
+    if (!entity || !m_World) return;
 
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto* rel = registry.try_get<RelationshipComponent>(static_cast<entt::entity>(entity));
 
     const bool hasChildren = rel && !rel->Children.empty();
@@ -118,10 +118,10 @@ void EntityTree::DrawEntityNode(Entity entity) {
             entt::entity dropped = *static_cast<const entt::entity*>(payload->Data);
             if (dropped != static_cast<entt::entity>(entity)) {
                 if (OnEntityDragDrop) {
-                    OnEntityDragDrop(Entity(dropped, m_Scene), entity);
+                    OnEntityDragDrop(Entity(dropped, m_World), entity);
                 } else {
                     // Default behavior: set parent
-                    m_Scene->SetParent(Entity(dropped, m_Scene), entity);
+                    m_World->SetParent(Entity(dropped, m_World), entity);
                 }
             }
         }
@@ -144,7 +144,7 @@ void EntityTree::DrawEntityNode(Entity entity) {
     if (opened && hasChildren) {
         for (auto child : rel->Children) {
             if (!registry.valid(child)) continue;
-            Entity childEntity(child, m_Scene);
+            Entity childEntity(child, m_World);
             if (!PassFilter(childEntity)) continue;
             DrawEntityNode(childEntity);
         }

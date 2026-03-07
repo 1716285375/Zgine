@@ -27,7 +27,7 @@ const char* AssetTypeToString(AssetType type) {
         case AssetType::Mesh: return "Mesh";
         case AssetType::Audio: return "Audio";
         case AssetType::Shader: return "Shader";
-        case AssetType::Scene: return "Scene";
+        case AssetType::World: return "World";
         case AssetType::Material: return "Material";
         default: return "Unknown";
     }
@@ -39,7 +39,7 @@ AssetType AssetTypeFromString(const std::string& value) {
     if (lower == "mesh") return AssetType::Mesh;
     if (lower == "audio") return AssetType::Audio;
     if (lower == "shader") return AssetType::Shader;
-    if (lower == "scene") return AssetType::Scene;
+    if (lower == "World") return AssetType::World;
     if (lower == "material") return AssetType::Material;
     return AssetType::Unknown;
 }
@@ -61,7 +61,7 @@ AssetType AssetTypeFromPath(const std::filesystem::path& path) {
         return AssetType::Shader;
     }
     if (ext == ".json" && PathContainsFolder(path, "scenes")) {
-        return AssetType::Scene;
+        return AssetType::World;
     }
     if (ext == ".mat") {
         return AssetType::Material;

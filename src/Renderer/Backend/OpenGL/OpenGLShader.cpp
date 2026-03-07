@@ -2,7 +2,7 @@
 #include <Zgine/Core/Log/Log.h>
 #include <fstream>
 #include <sstream>
-#include <glm/gtc/type_ptr.hpp>
+
 
 namespace Zgine {
 

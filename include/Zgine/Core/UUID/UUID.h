@@ -3,6 +3,7 @@
 #include <string>
 #include <uuid.h>
 #include <ostream>
+#include <compare>
 
 namespace Zgine {
 
@@ -26,25 +27,28 @@ namespace Zgine {
     public:
         UUID(); // Nil UUID
         UUID(const uuids::uuid& uuid);
-        
+
         static UUID New();
-        static UUID FromString(const std::string& value);
+        static UUID FromString(std::string_view value);
         static UUID FromString(const std::wstring& value);
 
-        const uuids::uuid& Raw() const { return m_Value; }
-        
-        bool IsValid() const { return !IsNil(); }
-        bool IsNil() const { return m_Value.is_nil(); }
-        
-        UUIDVersion GetVersion() const { return static_cast<UUIDVersion>(m_Value.version()); }
-        UUIDVariant GetVariant() const { return static_cast<UUIDVariant>(m_Value.variant()); }
+        [[nodiscard]] const uuids::uuid& Raw() const { return m_Value; }
 
-        std::string ToString() const;
-        std::wstring ToWString() const;
+        [[nodiscard]] bool IsValid() const { return !IsNil(); }
+        [[nodiscard]] bool IsNil() const { return m_Value.is_nil(); }
 
-        bool operator==(const UUID& other) const { return m_Value == other.m_Value; }
-        bool operator!=(const UUID& other) const { return m_Value != other.m_Value; }
-        bool operator<(const UUID& other) const { return m_Value < other.m_Value; }
+        [[nodiscard]] UUIDVersion GetVersion() const { return static_cast<UUIDVersion>(m_Value.version()); }
+        [[nodiscard]] UUIDVariant GetVariant() const { return static_cast<UUIDVariant>(m_Value.variant()); }
+
+        [[nodiscard]] std::string ToString() const;
+        [[nodiscard]] std::wstring ToWString() const;
+
+        [[nodiscard]] bool operator==(const UUID& other) const noexcept { return m_Value == other.m_Value; }
+        [[nodiscard]] auto operator<=>(const UUID& other) const noexcept {
+            auto a = m_Value.as_bytes();
+            auto b = other.m_Value.as_bytes();
+            return std::lexicographical_compare_three_way(a.begin(), a.end(), b.begin(), b.end());
+        }
 
         friend std::ostream& operator<<(std::ostream& os, const UUID& uuid) {
             return os << uuid.ToString();

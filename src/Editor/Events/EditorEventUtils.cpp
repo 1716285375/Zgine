@@ -17,7 +17,7 @@ std::string CategoryToString(EditorEventCategory category) {
     };
 
     addCategory(EditorEventCategory::Entity, "Entity");
-    addCategory(EditorEventCategory::Scene, "Scene");
+    addCategory(EditorEventCategory::World, "World");
     addCategory(EditorEventCategory::Selection, "Selection");
     addCategory(EditorEventCategory::Transform, "Transform");
     addCategory(EditorEventCategory::Viewport, "Viewport");

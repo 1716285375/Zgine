@@ -41,7 +41,7 @@ public:
         }
         ImGui::EndDisabled();
 
-        // Save Scene Button
+        // Save World Button
         if (ImGui::Button("Save") || ImGui::IsKeyPressed(ImGuiKey_S, ImGuiKeyModFlags_Ctrl)) {
             m_ViewModel->SaveSceneCommand.Execute();
         }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Zgine/Editor/Panels/EditorPanel.h>
-#include <Zgine/Renderer/Core/RenderStats.h>
+#include <Zgine/Renderer/Pipeline/RenderStats.h>
 #include <array>
 
 namespace Zgine {

@@ -10,14 +10,14 @@ class MemoryPool {
 public:
     MemoryPool(size_t blockSize, size_t blockCount);
 
-    void* Allocate();
+    [[nodiscard]] void* Allocate();
     void Deallocate(void* ptr);
 
-    size_t GetBlockSize() const { return m_BlockSize; }
-    size_t GetBlockCount() const { return m_BlockCount; }
-    size_t GetFreeCount() const { return m_FreeList.size(); }
+    [[nodiscard]] size_t GetBlockSize() const { return m_BlockSize; }
+    [[nodiscard]] size_t GetBlockCount() const { return m_BlockCount; }
+    [[nodiscard]] size_t GetFreeCount() const { return m_FreeList.size(); }
 
-    bool Owns(void* ptr) const;
+    [[nodiscard]] bool Owns(void* ptr) const;
 
 private:
     size_t m_BlockSize = 0;
@@ -27,7 +27,7 @@ private:
 };
 
 template <typename T>
-T* AllocateFromPool(MemoryPool& pool) {
+[[nodiscard]] T* AllocateFromPool(MemoryPool& pool) {
     return static_cast<T*>(pool.Allocate());
 }
 

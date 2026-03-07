@@ -153,19 +153,19 @@ TEST_F(EditorEventBusTest, TransformChangedEvent) {
 }
 
 TEST_F(EditorEventBusTest, SceneSavedEvent) {
-    // Scene* scene = new Scene(); // Avoid raw optional pointers if possible, but keeping test simple
-    Scene scene; // Stack allocate to avoid leak concerns in test
-    std::string path = "/path/to/scene.zscene";
+    // World* World = new World(); // Avoid raw optional pointers if possible, but keeping test simple
+    World World; // Stack allocate to avoid leak concerns in test
+    std::string path = "/path/to/World.zscene";
     bool received = false;
 
     m_EventBus->Subscribe<SceneSavedEvent>([&](SceneSavedEvent& e) {
         received = true;
-        EXPECT_EQ(e.GetScene(), &scene);
+        EXPECT_EQ(e.GetScene(), &World);
         EXPECT_EQ(e.GetPath(), path);
-        EXPECT_EQ(e.GetCategory(), EventCategory::Scene);
+        EXPECT_EQ(e.GetCategory(), EventCategory::World);
     });
 
-    SceneSavedEvent event(&scene, path);
+    SceneSavedEvent event(&World, path);
     m_EventBus->PublishImmediate(event);
     EXPECT_TRUE(received);
 }
@@ -289,12 +289,12 @@ TEST_F(EditorEventBusTest, MultipleEventTypes) {
 
     // Publish different event types
     Entity entity(static_cast<entt::entity>(1), nullptr);
-    Scene scene;
+    World World;
 
     EntitySelectedEvent e1(entity);
     m_EventBus->PublishImmediate(e1);
 
-    SceneSavedEvent e2(&scene, "test.scene");
+    SceneSavedEvent e2(&World, "test.World");
     m_EventBus->PublishImmediate(e2);
 
     PlayModeChangedEvent e3(EditorMode::Play);

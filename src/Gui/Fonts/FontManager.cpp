@@ -2,7 +2,7 @@
 #include <Zgine/Gui/Fonts/FontConstants.h>
 #include <Zgine/Gui/Fonts/FontUtils.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/OS/File.h>
+#include <Zgine/Platform/IO/File.h>
 #include <imgui.h>
 #include <filesystem>
 #include <cstring>
@@ -172,8 +172,8 @@ ImFont* FontManager::LoadFont(const FontConfig& config) {
         return nullptr;
     }
 
-    // Check font file existence using Core/OS/File
-    // 使用 Core/OS/File 检查字体文件是否存在
+    // Check font file existence using Platform/IO/File since ImGui uses OS paths
+    // 使用 Platform/IO/File 检查字体文件是否存在，因为 ImGui 使用操作系统路径
     if (!File::Exists(config.Path)) {
         ZGINE_CORE_WARN("Cannot load font '{}': File does not exist at path: {}",
                         config.Name, config.Path);

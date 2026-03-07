@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Zgine/Editor/Events/EditorEvent.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <sstream>
 
 namespace Zgine {

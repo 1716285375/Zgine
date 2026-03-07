@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 
 namespace Zgine {
 namespace UI {

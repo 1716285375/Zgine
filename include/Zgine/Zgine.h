@@ -13,7 +13,7 @@
 #include <Zgine/Platform/Input.h>
 #include <Zgine/Platform/Window.h>
 
-#include <Zgine/Renderer/Core/RenderSystem.h>
+#include <Zgine/Renderer/Pipeline/RenderSystem.h>
 #include <Zgine/Renderer/RHI/RendererAPI.h>
 #include <Zgine/Renderer/RHI/VertexBuffer.h>
 #include <Zgine/Renderer/RHI/IndexBuffer.h>
@@ -21,11 +21,11 @@
 #include <Zgine/Renderer/RHI/Shader.h>
 #include <Zgine/Renderer/RHI/Texture.h>
 
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
-#include <Zgine/Scene/Camera/Camera.h>
-#include <Zgine/Scene/Serialization/SceneSerializer.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
+#include <Zgine/World/Camera/Camera.h>
+#include <Zgine/World/Serialization/WorldSerializer.h>
 
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
@@ -34,8 +34,8 @@
 #include <Zgine/Resources/Material/PBRMaterialPreset.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
 
-#include <Zgine/Core/OS/File.h>
-#include <Zgine/Core/OS/VFS.h>
+#include <Zgine/Platform/IO/File.h>
+#include <Zgine/Platform/IO/VFS.h>
 #include <Zgine/Core/UUID/UUID.h>
 
 #include <Zgine/Core/Events/Event.h>

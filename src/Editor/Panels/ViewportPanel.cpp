@@ -5,8 +5,8 @@
 #include <Zgine/Editor/Events/EntityEvents.h>
 #include <Zgine/Editor/Events/SceneEvents.h>
 #include <Zgine/Editor/Events/AssetEvents.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Editor/Gizmo/GizmoController.h>
 #include <imgui.h>
 #include <imgui_internal.h>
@@ -15,7 +15,7 @@ namespace Zgine {
 
 	ViewportPanel::ViewportPanel(const std::string& name, EditorContext& context)
 		: EditorPanel(name, context)
-		, m_Scene(nullptr)
+		, m_World(nullptr)
 		, m_DockId(0)
 		, m_GizmoController(std::make_unique<GizmoController>(context))
 	{
@@ -70,23 +70,23 @@ namespace Zgine {
 		}
 		viewportCtx.SetViewportSize({ viewportPanelSize.x, viewportPanelSize.y });
 
-		// Render scene texture
+		// Render World texture
 		unsigned int textureId = viewportCtx.GetSceneTexture();
 		if (textureId != 0) {
 			ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(textureId)),
 				viewportPanelSize, ImVec2(0, 1), ImVec2(1, 0));
 		}
 		else {
-			ImGui::Text("Scene viewport is not ready.");
+			ImGui::Text("World viewport is not ready.");
 		}
 
 		// Handle asset drag-drop
-		if (m_Scene && ImGui::BeginDragDropTarget()) {
+		if (m_World && ImGui::BeginDragDropTarget()) {
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ZGINE_ASSET_PATH")) {
 				const char* path = static_cast<const char*>(payload->Data);
 				if (path) {
 					// Publish event instead of callback
-					AssetDroppedEvent event(m_Scene, std::filesystem::path(path));
+					AssetDroppedEvent event(m_World, std::filesystem::path(path));
 					GetContext().GetEventBus().PublishImmediate(event);
 				}
 			}

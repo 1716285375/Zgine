@@ -53,8 +53,8 @@ void EditorContext::Initialize() {
     m_EventBus = std::make_unique<EditorEventBus>();
     m_CommandHistory = std::make_unique<EditorCommandHistory>();
 
-    // Create SceneViewModel if an active scene exists
-    // Note: If no scene is active yet, SceneViewModel will be created later
+    // Create SceneViewModel if an active World exists
+    // Note: If no World is active yet, SceneViewModel will be created later
     // when SetActiveScene() is called
     if (m_SceneContext.GetActiveScene()) {
         m_SceneViewModel = std::make_unique<SceneViewModel>(
@@ -87,20 +87,20 @@ void EditorContext::Shutdown() {
     m_Initialized = false;
 }
 
-void EditorContext::SetActiveScene(Scene* scene) {
-    // Update scene context
-    m_SceneContext.SetActiveScene(scene);
+void EditorContext::SetActiveScene(World* World) {
+    // Update World context
+    m_SceneContext.SetActiveScene(World);
 
-    // Recreate SceneViewModel if editor is initialized and scene is valid
-    if (m_Initialized && scene) {
+    // Recreate SceneViewModel if editor is initialized and World is valid
+    if (m_Initialized && World) {
         m_SceneViewModel = std::make_unique<SceneViewModel>(
-            scene,
+            World,
             m_EventBus.get(),
             m_CommandHistory.get(),
             m_SelectionContext.get()
         );
     } else {
-        // Clear ViewModel if no scene
+        // Clear ViewModel if no World
         m_SceneViewModel.reset();
     }
 }

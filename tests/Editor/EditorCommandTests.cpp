@@ -3,8 +3,8 @@
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Commands/EntityCommands.h>
 #include <Zgine/Editor/Commands/TransformCommands.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 
 using namespace Zgine;
 
@@ -228,64 +228,64 @@ TEST_F(EditorCommandHistoryTest, NestedTransactionsNotAllowed) {
 class EntityCommandsTest : public ::testing::Test {
 protected:
     void SetUp() override {
-        m_Scene = new Scene();
+        m_World = new World();
         m_History = std::make_unique<EditorCommandHistory>();
     }
 
     void TearDown() override {
-        delete m_Scene;
+        delete m_World;
         m_History.reset();
     }
 
-    Scene* m_Scene;
+    World* m_World;
     std::unique_ptr<EditorCommandHistory> m_History;
 };
 
 TEST_F(EntityCommandsTest, CreateEntityCommand) {
     auto cmd = std::make_unique<CreateEntityCommand>(
-        m_Scene, "TestEntity", PrimitiveType::Cube);
+        m_World, "TestEntity", PrimitiveType::Cube);
 
-    size_t initialCount = m_Scene->GetRegistry().storage<entt::entity>().size();
+    size_t initialCount = m_World->GetRegistry().storage<entt::entity>().size();
 
     m_History->Execute(std::move(cmd));
 
-    EXPECT_EQ(m_Scene->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
+    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
 }
 
 TEST_F(EntityCommandsTest, CreateEntityCommandUndo) {
     auto cmd = std::make_unique<CreateEntityCommand>(
-        m_Scene, "TestEntity", PrimitiveType::Cube);
+        m_World, "TestEntity", PrimitiveType::Cube);
 
-    size_t initialCount = m_Scene->GetRegistry().storage<entt::entity>().size();
+    size_t initialCount = m_World->GetRegistry().storage<entt::entity>().size();
 
     m_History->Execute(std::move(cmd));
-    EXPECT_EQ(m_Scene->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
+    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
 
     m_History->Undo();
-    EXPECT_EQ(m_Scene->GetRegistry().storage<entt::entity>().size(), initialCount);
+    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount);
 }
 
 TEST_F(EntityCommandsTest, DeleteEntityCommand) {
     // Create an entity first
-    Entity entity = m_Scene->CreateEntity("ToDelete");
-    size_t countAfterCreate = m_Scene->GetRegistry().storage<entt::entity>().size();
+    Entity entity = m_World->CreateEntity("ToDelete");
+    size_t countAfterCreate = m_World->GetRegistry().storage<entt::entity>().size();
 
-    auto cmd = std::make_unique<DeleteEntityCommand>(m_Scene, entity);
+    auto cmd = std::make_unique<DeleteEntityCommand>(m_World, entity);
     m_History->Execute(std::move(cmd));
 
-    EXPECT_EQ(m_Scene->GetRegistry().storage<entt::entity>().size(), countAfterCreate - 1);
+    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), countAfterCreate - 1);
 }
 
 TEST_F(EntityCommandsTest, DeleteEntityCommandUndo) {
-    Entity entity = m_Scene->CreateEntity("ToDelete");
-    size_t countAfterCreate = m_Scene->GetRegistry().storage<entt::entity>().size();
+    Entity entity = m_World->CreateEntity("ToDelete");
+    size_t countAfterCreate = m_World->GetRegistry().storage<entt::entity>().size();
 
-    auto cmd = std::make_unique<DeleteEntityCommand>(m_Scene, entity);
+    auto cmd = std::make_unique<DeleteEntityCommand>(m_World, entity);
     m_History->Execute(std::move(cmd));
     m_History->Undo();
 
     // Should restore entity
-    EXPECT_EQ(m_Scene->GetRegistry().storage<entt::entity>().size(), countAfterCreate);
+    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), countAfterCreate);
 }
 
 // ============================================================================
@@ -293,13 +293,13 @@ TEST_F(EntityCommandsTest, DeleteEntityCommandUndo) {
 // ============================================================================
 
 TEST_F(EntityCommandsTest, TransformEntityCommand) {
-    Entity entity = m_Scene->CreateEntity("Transformable");
+    Entity entity = m_World->CreateEntity("Transformable");
     // Entity already has TransformComponent by default
 
-    glm::vec3 oldPos = entity.GetComponent<TransformComponent>().Translation;
-    glm::vec3 newPos(10.0f, 20.0f, 30.0f);
-    glm::vec3 rot(0.0f);
-    glm::vec3 scale(1.0f);
+    Math::Vector3 oldPos = entity.GetComponent<TransformComponent>().Translation;
+    Math::Vector3 newPos(10.0f, 20.0f, 30.0f);
+    Math::Vector3 rot(0.0f);
+    Math::Vector3 scale(1.0f);
 
     auto cmd = std::make_unique<TransformEntityCommand>(entity, newPos, rot, scale);
     m_History->Execute(std::move(cmd));
@@ -308,13 +308,13 @@ TEST_F(EntityCommandsTest, TransformEntityCommand) {
 }
 
 TEST_F(EntityCommandsTest, TransformCommandUndo) {
-    Entity entity = m_Scene->CreateEntity("Transformable");
+    Entity entity = m_World->CreateEntity("Transformable");
     // Entity already has TransformComponent by default
 
-    glm::vec3 oldPos = entity.GetComponent<TransformComponent>().Translation;
-    glm::vec3 newPos(10.0f, 20.0f, 30.0f);
-    glm::vec3 rot(0.0f);
-    glm::vec3 scale(1.0f);
+    Math::Vector3 oldPos = entity.GetComponent<TransformComponent>().Translation;
+    Math::Vector3 newPos(10.0f, 20.0f, 30.0f);
+    Math::Vector3 rot(0.0f);
+    Math::Vector3 scale(1.0f);
 
     auto cmd = std::make_unique<TransformEntityCommand>(entity, newPos, rot, scale);
     m_History->Execute(std::move(cmd));
@@ -324,16 +324,16 @@ TEST_F(EntityCommandsTest, TransformCommandUndo) {
 }
 
 TEST_F(EntityCommandsTest, TransformCommandMerging) {
-    Entity entity = m_Scene->CreateEntity("Transformable");
+    Entity entity = m_World->CreateEntity("Transformable");
     // Entity already has TransformComponent by default
 
     // Execute multiple transform commands
     m_History->Execute(std::make_unique<TransformEntityCommand>(
-        entity, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        entity, Math::Vector3(1.0f, 0.0f, 0.0f), Math::Vector3(0.0f), Math::Vector3(1.0f)));
     m_History->Execute(std::make_unique<TransformEntityCommand>(
-        entity, glm::vec3(2.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        entity, Math::Vector3(2.0f, 0.0f, 0.0f), Math::Vector3(0.0f), Math::Vector3(1.0f)));
     m_History->Execute(std::make_unique<TransformEntityCommand>(
-        entity, glm::vec3(3.0f, 0.0f, 0.0f), glm::vec3(0.0f), glm::vec3(1.0f)));
+        entity, Math::Vector3(3.0f, 0.0f, 0.0f), Math::Vector3(0.0f), Math::Vector3(1.0f)));
 
     // Should have merged into single command
     EXPECT_EQ(m_History->GetHistorySize(), 1);
@@ -341,7 +341,7 @@ TEST_F(EntityCommandsTest, TransformCommandMerging) {
     // Undo should go back to original position
     m_History->Undo();
     EXPECT_EQ(entity.GetComponent<TransformComponent>().Translation,
-              glm::vec3(0.0f, 0.0f, 0.0f));
+              Math::Vector3(0.0f, 0.0f, 0.0f));
 }
 
 // ============================================================================

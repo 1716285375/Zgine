@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Zgine/Editor/Commands/IEditorCommand.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
 #include <string>
 
@@ -13,7 +13,7 @@ namespace Zgine {
  */
 class CreateEntityCommand : public IEditorCommand {
 public:
-    CreateEntityCommand(Scene* scene, const std::string& name, PrimitiveType type = PrimitiveType::None);
+    CreateEntityCommand(World* World, const std::string& name, PrimitiveType type = PrimitiveType::None);
     ~CreateEntityCommand() override = default;
 
     bool Execute() override;
@@ -23,7 +23,7 @@ public:
     Entity GetCreatedEntity() const { return m_CreatedEntity; }
 
 private:
-    Scene* m_Scene;
+    World* m_World;
     std::string m_EntityName;
     PrimitiveType m_PrimitiveType;
     Entity m_CreatedEntity;
@@ -35,7 +35,7 @@ private:
  */
 class DeleteEntityCommand : public IEditorCommand {
 public:
-    DeleteEntityCommand(Scene* scene, Entity entity);
+    DeleteEntityCommand(World* World, Entity entity);
     ~DeleteEntityCommand() override = default;
 
     bool Execute() override;
@@ -43,7 +43,7 @@ public:
     std::string GetName() const override;
 
 private:
-    Scene* m_Scene;
+    World* m_World;
     Entity m_Entity;
     uint32_t m_EntityID;
     std::string m_EntityName;

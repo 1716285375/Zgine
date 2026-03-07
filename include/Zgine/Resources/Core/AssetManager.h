@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <Zgine/Resources/Core/AssetMetadata.h>
 #include <Zgine/Resources/Import/AssetImporter.h>
-#include <Zgine/Core/OS/FileWatcher.h>
+#include <Zgine/Platform/IO/FileWatcher.h>
 #include <Zgine/Core/Memory/MemoryPool.h>
 
 namespace Zgine {

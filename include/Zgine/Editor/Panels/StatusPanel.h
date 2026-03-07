@@ -5,17 +5,17 @@
 
 namespace Zgine {
 
-class Scene;
+class World;
 
 /**
  * @brief Status bar panel displaying editor state information
  *
  * Shows important editor state at the bottom of the window, including
- * selected entity information, scene statistics, and current mode.
+ * selected entity information, World statistics, and current mode.
  *
  * **Features**:
  * - Selected entity name and type
- * - Entity count in scene
+ * - Entity count in World
  * - Editor mode display (Edit/Play/Pause)
  * - Quick stats summary
  *
@@ -33,11 +33,11 @@ public:
     void OnUpdate(float deltaTime) override;
     void OnGuiRender() override;
 
-    /** Set the scene to display statistics for */
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    /** Set the World to display statistics for */
+    void SetScene(World* World) { m_World = World; }
 
 private:
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
     const SelectionContext& m_SelectionContext;
 };
 

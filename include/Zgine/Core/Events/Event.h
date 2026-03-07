@@ -2,6 +2,7 @@
 
 #include <string>
 #include <functional>
+#include <concepts>
 
 namespace Zgine {
 
@@ -39,15 +40,20 @@ namespace Zgine {
 
         bool Handled = false;
 
-        virtual EventType GetEventType() const = 0;
-        virtual const char* GetName() const = 0;
-        virtual int GetCategoryFlags() const = 0;
-        virtual std::string ToString() const { return GetName(); }
+        [[nodiscard]] virtual EventType GetEventType() const = 0;
+        [[nodiscard]] virtual const char* GetName() const = 0;
+        [[nodiscard]] virtual int GetCategoryFlags() const = 0;
+        [[nodiscard]] virtual std::string ToString() const { return GetName(); }
 
-        inline bool IsInCategory(EventCategory category) {
+        [[nodiscard]] bool IsInCategory(EventCategory category) {
             return GetCategoryFlags() & category;
         }
     };
+
+    // Concept: T must be a concrete Event subclass exposing GetStaticType()
+    template<typename T>
+    concept ConcreteEvent = std::derived_from<T, Event> &&
+        requires { { T::GetStaticType() } -> std::same_as<EventType>; };
 
     class EventDispatcher {
     public:
@@ -56,7 +62,7 @@ namespace Zgine {
         }
 
         // F will be deduced by the compiler
-        template<typename T, typename F>
+        template<ConcreteEvent T, typename F>
         bool Dispatch(const F& func) {
             if (m_Event.GetEventType() == T::GetStaticType()) {
                 m_Event.Handled |= func(static_cast<T&>(m_Event));

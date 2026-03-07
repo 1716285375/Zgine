@@ -1,8 +1,8 @@
 #include <Zgine/Editor/Panels/StatusPanel.h>
 #include <Zgine/Editor/Core/EditorContext.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <imgui.h>
 
 namespace Zgine
@@ -38,9 +38,9 @@ namespace Zgine
             ImGui::Text("Selected: None");
         }
 
-        if (m_Scene)
+        if (m_World)
         {
-            auto &registry = m_Scene->GetRegistry();
+            auto &registry = m_World->GetRegistry();
             auto &entities = registry.storage<entt::entity>();
             ImGui::Text("Entities: %zu", entities.size());
         }

@@ -61,9 +61,9 @@ std::vector<std::shared_ptr<Mesh>> MeshLoader::LoadModel(const std::string& path
         flags |= aiProcess_CalcTangentSpace;
     }
 
-    const aiScene* scene = importer.ReadFile(path, flags);
+    const aiScene* World = importer.ReadFile(path, flags);
 
-    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+    if (!World || World->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !World->mRootNode) {
         ZGINE_CORE_ERROR("Assimp error: {0}", importer.GetErrorString());
         return meshes;
     }
@@ -74,7 +74,7 @@ std::vector<std::shared_ptr<Mesh>> MeshLoader::LoadModel(const std::string& path
         directory = ".";
     }
 
-    ProcessNode(scene->mRootNode, scene, directory, meshes);
+    ProcessNode(World->mRootNode, World, directory, meshes);
     return meshes;
 }
 
@@ -87,22 +87,22 @@ std::shared_ptr<Mesh> MeshLoader::LoadMesh(const std::string& path,
     return meshes[0]; // 返回第一个网�?
 }
 
-void MeshLoader::ProcessNode(const aiNode* node, const aiScene* scene,
+void MeshLoader::ProcessNode(const aiNode* node, const aiScene* World,
                              const std::string& directory, std::vector<std::shared_ptr<Mesh>>& meshes) {
     // 处理当前节点的所有网�?
     for (unsigned int i = 0; i < node->mNumMeshes; i++) {
-        aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        MeshData meshData = ProcessMesh(mesh, scene, directory);
+        aiMesh* mesh = World->mMeshes[node->mMeshes[i]];
+        MeshData meshData = ProcessMesh(mesh, World, directory);
         meshes.push_back(std::make_shared<Mesh>(meshData));
     }
 
     // 递归处理子节�?
     for (unsigned int i = 0; i < node->mNumChildren; i++) {
-        ProcessNode(node->mChildren[i], scene, directory, meshes);
+        ProcessNode(node->mChildren[i], World, directory, meshes);
     }
 }
 
-MeshData MeshLoader::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const std::string& directory) {
+MeshData MeshLoader::ProcessMesh(const aiMesh* mesh, const aiScene* World, const std::string& directory) {
     ZGINE_UNUSED(directory);
     MeshData data;
 
@@ -155,7 +155,7 @@ MeshData MeshLoader::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const
 
     // 处理材质
     if (mesh->mMaterialIndex >= 0) {
-        aiMaterial* material = scene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial* material = World->mMaterials[mesh->mMaterialIndex];
 
         aiColor4D baseColor(1.0f, 1.0f, 1.0f, 1.0f);
         if (aiGetMaterialColor(material, AI_MATKEY_BASE_COLOR, &baseColor) == AI_SUCCESS ||
@@ -169,7 +169,7 @@ MeshData MeshLoader::ProcessMesh(const aiMesh* mesh, const aiScene* scene, const
 }
 
 std::vector<std::shared_ptr<Texture>> MeshLoader::LoadMaterialTextures(const aiMaterial* mat,
-                                                                       const aiScene* scene,
+                                                                       const aiScene* World,
                                                                        int type, const std::string& typeName,
                                                                        const std::string& directory) {
     std::vector<std::shared_ptr<Texture>> textures;
@@ -184,7 +184,7 @@ std::vector<std::shared_ptr<Texture>> MeshLoader::LoadMaterialTextures(const aiM
             continue;
         }
 
-        const aiTexture* embedded = scene ? scene->GetEmbeddedTexture(str.C_Str()) : nullptr;
+        const aiTexture* embedded = World ? World->GetEmbeddedTexture(str.C_Str()) : nullptr;
         if (embedded) {
             auto texture = LoadEmbeddedTexture(embedded, filename);
             if (texture) {

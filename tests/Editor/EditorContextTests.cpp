@@ -4,7 +4,7 @@
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Editor/Events/EntityEvents.h>
-#include <Zgine/Scene/Core/Scene.h>
+#include <Zgine/World/Core/World.h>
 
 using namespace Zgine;
 
@@ -81,7 +81,7 @@ TEST_F(EditorContextTest, ViewportContextAccess) {
     EXPECT_TRUE(viewport.IsHovered());
 
     // Test viewport size
-    glm::vec2 size(1920.0f, 1080.0f);
+    Math::Vector2 size(1920.0f, 1080.0f);
     viewport.SetViewportSize(size);
     EXPECT_EQ(viewport.GetViewportSize(), size);
 }
@@ -89,11 +89,11 @@ TEST_F(EditorContextTest, ViewportContextAccess) {
 TEST_F(EditorContextTest, SceneContextAccess) {
     auto& sceneCtx = m_Context->GetSceneContext();
 
-    Scene* testScene = new Scene();
+    World* testScene = new World();
     sceneCtx.SetActiveScene(testScene);
     EXPECT_EQ(sceneCtx.GetActiveScene(), testScene);
 
-    std::string path = "test_scene.zscene";
+    std::string path = "test_World.zscene";
     sceneCtx.SetScenePath(path);
     EXPECT_EQ(sceneCtx.GetScenePath(), path);
 

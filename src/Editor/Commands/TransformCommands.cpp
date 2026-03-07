@@ -1,5 +1,5 @@
 #include <Zgine/Editor/Commands/TransformCommands.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 
 namespace Zgine {

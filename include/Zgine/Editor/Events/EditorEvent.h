@@ -34,7 +34,7 @@ enum class EditorEventPriority : uint8_t {
 enum class EditorEventCategory : uint32_t {
     None        = 0,
     Entity      = BIT(0),   ///< Entity lifecycle (create, delete, modify)
-    Scene       = BIT(1),   ///< Scene operations (load, save, new)
+    World       = BIT(1),   ///< World operations (load, save, new)
     Selection   = BIT(2),   ///< Selection changes
     Transform   = BIT(3),   ///< Transform modifications
     Viewport    = BIT(4),   ///< Viewport state changes

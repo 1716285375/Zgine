@@ -2,9 +2,9 @@
 #include <Zgine/Platform/Window.h>
 #include <Zgine/Gui/Fonts/FontManager.h>
 #include <Zgine/Gui/Themes/ImGuiTheme.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Editor/Panels/HierarchyPanel.h>
 #include <Zgine/Editor/Panels/InspectorPanel.h>
@@ -192,8 +192,8 @@ void Editor::EndFrame() {
     }
 }
 
-void Editor::OnUpdate(Scene* scene) {
-    ZGINE_UNUSED(scene);
+void Editor::OnUpdate(World* World) {
+    ZGINE_UNUSED(World);
 }
 
 // All old callback setters removed - use EditorContext, EventBus, and Commands instead
@@ -230,19 +230,19 @@ const Math::Vector2& Editor::GetSceneViewportBoundsMax() const {
     return m_Context.GetViewportContext().GetViewportBoundsMax();
 }
 
-void Editor::Render(Scene* scene) {
+void Editor::Render(World* World) {
     if (!m_Initialized) {
         return;
     }
 
-    AttachScene(scene);
-    RenderDockSpace(scene);
-    HandleShortcuts(scene);
+    AttachScene(World);
+    RenderDockSpace(World);
+    HandleShortcuts(World);
     m_PanelManager.OnUpdate(ImGui::GetIO().DeltaTime);
     m_PanelManager.OnGuiRender();
 }
 
-void Editor::RenderDockSpace(Scene* scene) {
+void Editor::RenderDockSpace(World* World) {
     static ImGuiDockNodeFlags dockspaceFlags = ImGuiDockNodeFlags_PassthruCentralNode;
     auto ensureTabBarVisible = [](ImGuiID dockId) {
         if (dockId == 0) {
@@ -276,7 +276,7 @@ void Editor::RenderDockSpace(Scene* scene) {
     ImGui::PopStyleColor(1);
     ImGui::PopStyleVar(2);
 
-    RenderMainMenu(scene);
+    RenderMainMenu(World);
     const float toolbarHeight = m_Toolbar->GetHeight();
     ImGui::Dummy(ImVec2(0.0f, toolbarHeight));
     ImVec2 dockspaceSize = ImGui::GetContentRegionAvail();
@@ -312,7 +312,7 @@ void Editor::RenderDockSpace(Scene* scene) {
 
         ImGui::DockBuilderDockWindow("Hierarchy", dockLeftId);
         ImGui::DockBuilderDockWindow("Inspector", dockRightId);
-        ImGui::DockBuilderDockWindow("Scene", m_SceneDockId);
+        ImGui::DockBuilderDockWindow("World", m_SceneDockId);
         ImGui::DockBuilderDockWindow("Asset Browser", dockBottomLeftId);
         ImGui::DockBuilderDockWindow("Console", dockBottomId);
         ImGui::DockBuilderDockWindow("Profiler", dockBottomId);
@@ -454,25 +454,25 @@ void Editor::ClosePanelWindow(ImGuiWindow* window) {
     }
 }
 
-void Editor::RenderMainMenu(Scene* scene) {
+void Editor::RenderMainMenu(World* World) {
     if (!ImGui::BeginMenuBar()) {
         return;
     }
 
     if (ImGui::BeginMenu("File")) {
-        if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
-            if (scene) {
-                scene->Clear();
+        if (ImGui::MenuItem("New World", "Ctrl+N")) {
+            if (World) {
+                World->Clear();
                 m_Context.GetSelectionContext().Clear();
             }
         }
-        if (ImGui::MenuItem("Open Scene", "Ctrl+O")) {
-            // TODO: Implement scene loading via events or commands
-            // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(scene));
+        if (ImGui::MenuItem("Open World", "Ctrl+O")) {
+            // TODO: Implement World loading via events or commands
+            // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(World));
         }
-        if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-            // TODO: Implement scene saving via events or commands
-            // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(scene));
+        if (ImGui::MenuItem("Save World", "Ctrl+S")) {
+            // TODO: Implement World saving via events or commands
+            // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(World));
         }
         ImGui::Separator();
         ImGui::MenuItem("Exit", nullptr, false, false);
@@ -507,22 +507,22 @@ void Editor::RenderMainMenu(Scene* scene) {
     if (ImGui::BeginMenu("Tools")) {
         if (ImGui::BeginMenu("Create")) {
             if (ImGui::MenuItem("Empty")) {
-                if (scene) {
-                    Entity created = scene->CreateEntity("Empty");
+                if (World) {
+                    Entity created = World->CreateEntity("Empty");
                     m_Context.GetSelectionContext().SetPrimary(created);
                 }
             }
             if (ImGui::MenuItem("Cube")) {
-                if (scene) {
-                    Entity created = scene->CreateEntity("Cube");
+                if (World) {
+                    Entity created = World->CreateEntity("Cube");
                     created.AddComponent<TransformComponent>();
                     // TODO: Add mesh rendering component for cube primitive
                     m_Context.GetSelectionContext().SetPrimary(created);
                 }
             }
             if (ImGui::MenuItem("Plane")) {
-                if (scene) {
-                    Entity created = scene->CreateEntity("Plane");
+                if (World) {
+                    Entity created = World->CreateEntity("Plane");
                     created.AddComponent<TransformComponent>();
                     // TODO: Add mesh rendering component for plane primitive
                     m_Context.GetSelectionContext().SetPrimary(created);
@@ -563,30 +563,30 @@ void Editor::RenderMainMenu(Scene* scene) {
     ImGui::EndMenuBar();
 }
 
-void Editor::HandleShortcuts(Scene* scene) {
+void Editor::HandleShortcuts(World* World) {
     ImGuiIO& io = ImGui::GetIO();
     if (io.WantTextInput) {
         return;
     }
 
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
-        // TODO: Implement scene saving via events or commands
-        // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(scene));
+        // TODO: Implement World saving via events or commands
+        // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(World));
     }
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
-        // TODO: Implement scene loading via events or commands
-        // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(scene));
+        // TODO: Implement World loading via events or commands
+        // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(World));
     }
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
-        if (scene) {
-            scene->Clear();
+        if (World) {
+            World->Clear();
             m_Context.GetSelectionContext().Clear();
         }
     }
     Entity selected = m_Context.GetSelectionContext().GetPrimary();
     if (ImGui::IsKeyPressed(ImGuiKey_Delete) && selected) {
-        if (scene) {
-            scene->DestroyEntity(selected);
+        if (World) {
+            World->DestroyEntity(selected);
         }
         m_Context.GetSelectionContext().Remove(selected);
     }
@@ -626,7 +626,7 @@ void Editor::InitializePanels() {
     // Register all panels
     m_PanelManager.AddPanel<HierarchyPanel>("Hierarchy", m_Context);
     m_PanelManager.AddPanel<InspectorPanel>("Inspector", m_Context);
-    m_PanelManager.AddPanel<ViewportPanel>("Scene", m_Context);
+    m_PanelManager.AddPanel<ViewportPanel>("World", m_Context);
     m_PanelManager.AddPanel<ContentBrowserPanel>("Asset Browser", m_Context, m_AssetsRoot);
     m_PanelManager.AddPanel<ConsolePanel>("Console", m_Context);
     auto* perfPanel = m_PanelManager.AddPanel<PerformancePanel>("Profiler", m_Context, &m_RenderStats).get();
@@ -635,20 +635,20 @@ void Editor::InitializePanels() {
     m_PanelManager.AddPanel<StatusPanel>("Status", m_Context);
 }
 
-void Editor::AttachScene(Scene* scene) {
-    // Set the scene in EditorContext (this will create SceneViewModel)
-    m_Context.SetActiveScene(scene);
+void Editor::AttachScene(World* World) {
+    // Set the World in EditorContext (this will create SceneViewModel)
+    m_Context.SetActiveScene(World);
 
-    // Attach scene to panels
+    // Attach World to panels
     for (auto& panel : m_PanelManager.GetPanels()) {
         if (auto* hierarchyPanel = dynamic_cast<HierarchyPanel*>(panel.get())) {
-            hierarchyPanel->SetScene(scene);
+            hierarchyPanel->SetScene(World);
         } else if (auto* inspectorPanel = dynamic_cast<InspectorPanel*>(panel.get())) {
-            inspectorPanel->SetScene(scene);
+            inspectorPanel->SetScene(World);
         } else if (auto* viewportPanel = dynamic_cast<ViewportPanel*>(panel.get())) {
-            viewportPanel->SetScene(scene);
+            viewportPanel->SetScene(World);
         } else if (auto* statusPanel = dynamic_cast<StatusPanel*>(panel.get())) {
-            statusPanel->SetScene(scene);
+            statusPanel->SetScene(World);
         }
     }
 }

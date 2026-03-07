@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Scene/Systems/ISystem.h>
+#include <Zgine/World/Systems/ISystem.h>
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
 #include <Jolt/Core/Factory.h>
@@ -16,7 +16,7 @@
 
 namespace Zgine {
 
-class Scene;
+class World;
 
 class PhysicsSystem : public ISystem {
 public:
@@ -26,13 +26,13 @@ public:
     // ISystem interface implementation
     void Initialize() override;
     void Shutdown() override;
-    void Update(Scene* scene, float deltaTime) override;
-    void FixedUpdate(Scene* scene, float fixedDeltaTime) override;
+    void Update(World* World, float deltaTime) override;
+    void FixedUpdate(World* World, float fixedDeltaTime) override;
     const char* GetName() const override { return "PhysicsSystem"; }
     int GetPriority() const override { return 10; }  // Physics runs early
 
     // Legacy interface (kept for compatibility)
-    void OnSceneStart(Scene* scene);
+    void OnSceneStart(World* World);
     void OnSceneStop();
     void Step(float deltaTime);
 
@@ -41,7 +41,7 @@ public:
     void DestroyBody(class Entity entity);
 
     // 同步物理世界和 ECS 变换
-    void SyncPhysicsToECS(Scene* scene);
+    void SyncPhysicsToECS(World* World);
     void UpdateBodyTransform(class Entity entity);
 
 private:
@@ -51,7 +51,7 @@ private:
     JPH::BodyInterface* m_BodyInterface = nullptr;
 
     bool m_Initialized = false;
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
 };
 
 }

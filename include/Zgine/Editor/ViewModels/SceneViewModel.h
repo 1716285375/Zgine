@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Zgine/Core/MVVM/Observable.h>
-#include <Zgine/Core/MVVM/Command.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Core/Scene.h>
+#include <Zgine/Editor/MVVM/Observable.h>
+#include <Zgine/Editor/MVVM/Command.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Core/World.h>
 #include <vector>
 #include <unordered_set>
 #include <memory>
@@ -15,9 +15,9 @@ class EditorCommandHistory;
 class SelectionContext;
 
 /**
- * @brief ViewModel for Scene in MVVM pattern
+ * @brief ViewModel for World in MVVM pattern
  *
- * SceneViewModel sits between Scene (Model) and Editor UI (View).
+ * SceneViewModel sits between World (Model) and Editor UI (View).
  * It provides:
  * - Observable properties for data binding
  * - Commands for UI actions
@@ -27,7 +27,7 @@ class SelectionContext;
 class SceneViewModel {
 public:
     SceneViewModel(
-        Scene* scene,
+        World* World,
         EditorEventBus* eventBus,
         EditorCommandHistory* commandHistory,
         SelectionContext* selectionContext);
@@ -44,17 +44,17 @@ public:
     Observable<Entity> SelectedEntity;
 
     /**
-     * @brief Total entity count in scene
+     * @brief Total entity count in World
      */
     Observable<size_t> EntityCount;
 
     /**
-     * @brief Whether scene has unsaved changes
+     * @brief Whether World has unsaved changes
      */
     Observable<bool> IsDirty;
 
     /**
-     * @brief Scene name/path
+     * @brief World name/path
      */
     Observable<std::string> SceneName;
 
@@ -78,7 +78,7 @@ public:
     SimpleCommand DuplicateSelectedEntityCommand;
 
     /**
-     * @brief Save scene
+     * @brief Save World
      */
     SimpleCommand SaveSceneCommand;
 
@@ -97,7 +97,7 @@ public:
     void Update();
 
     /**
-     * @brief Get all entities in scene
+     * @brief Get all entities in World
      */
     std::vector<Entity> GetAllEntities() const;
 
@@ -107,9 +107,9 @@ public:
     template<typename... Components>
     std::vector<Entity> GetEntitiesWithComponents() const {
         std::vector<Entity> result;
-        auto view = m_Scene->GetEntitiesWith<Components...>();
+        auto view = m_World->GetEntitiesWith<Components...>();
         for (auto entity : view) {
-            result.emplace_back(entity, m_Scene);
+            result.emplace_back(entity, m_World);
         }
         return result;
     }
@@ -121,7 +121,7 @@ public:
 
 private:
     // Model references
-    Scene* m_Scene;
+    World* m_World;
     EditorEventBus* m_EventBus;
     EditorCommandHistory* m_CommandHistory;
     SelectionContext* m_SelectionContext;

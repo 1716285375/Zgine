@@ -2,7 +2,7 @@
 
 #include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/Editor/Commands/IEditorCommand.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <string>
 
 namespace Zgine {

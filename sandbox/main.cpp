@@ -46,24 +46,24 @@ namespace Zgine {
             // m_RenderSystem.SetShadowSystem(&m_ShadowSystem);
             // m_RenderSystem.SetIBLSystem(&m_IBLSystem);
 
-            // Set up test scene
+            // Set up test World
             SetupTestScene();
 
-            m_PhysicsSystem.OnSceneStart(&m_Scene);
-            m_AudioSystem.OnSceneStart(&m_Scene);
-            m_ScriptSystem.OnSceneStart(&m_Scene);
+            m_PhysicsSystem.OnSceneStart(&m_World);
+            m_AudioSystem.OnSceneStart(&m_World);
+            m_ScriptSystem.OnSceneStart(&m_World);
         }
 
         void SetupTestScene() {
             // Directional Light (Sun)
-            auto sun = m_Scene.CreateEntity("Sun");
+            auto sun = m_World.CreateEntity("Sun");
             auto& light = sun.AddComponent<DirectionalLightComponent>();
             light.Color = glm::vec3(1.0f, 0.95f, 0.9f);
             light.Intensity = 5.0f;
             sun.GetComponent<TransformComponent>().Rotation = glm::vec3(-45.0f, -45.0f, 0.0f);
 
             // Ground Plane
-            auto ground = m_Scene.CreateEntity("Ground");
+            auto ground = m_World.CreateEntity("Ground");
             ground.AddComponent<PrimitiveComponent>(PrimitiveType::Cube);
             auto& gt = ground.GetComponent<TransformComponent>();
             gt.Translation = glm::vec3(0.0f, -0.25f, 0.0f);
@@ -73,7 +73,7 @@ namespace Zgine {
             // Spheres with different materials for PBR verification
             const char* presets[] = { "Gold", "Silver", "Iron", "Plastic Red", "Rubber Black" };
             for (int i = 0; i < 5; ++i) {
-                auto sphere = m_Scene.CreateEntity(presets[i]);
+                auto sphere = m_World.CreateEntity(presets[i]);
                 sphere.AddComponent<PrimitiveComponent>(PrimitiveType::Sphere);
                 auto& st = sphere.GetComponent<TransformComponent>();
                 st.Translation = glm::vec3(-8.0f + i * 4.0f, 1.0f, 0.0f);
@@ -85,7 +85,7 @@ namespace Zgine {
                 {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}
             };
             for (int i = 0; i < 4; ++i) {
-                auto pointLight = m_Scene.CreateEntity("Point Light " + std::to_string(i));
+                auto pointLight = m_World.CreateEntity("Point Light " + std::to_string(i));
                 auto& pl = pointLight.AddComponent<PointLightComponent>();
                 pl.Color = lightColors[i];
                 pl.Intensity = 10.0f;
@@ -115,8 +115,8 @@ namespace Zgine {
 
             // System updates
             m_PhysicsSystem.Step(ts);
-            m_PhysicsSystem.SyncPhysicsToECS(&m_Scene);
-            m_AudioSystem.Update(&m_Scene, ts);
+            m_PhysicsSystem.SyncPhysicsToECS(&m_World);
+            m_AudioSystem.Update(&m_World, ts);
 
             // Render to default framebuffer (screen)
             auto& window = Application::Get().GetWindow();
@@ -125,7 +125,7 @@ namespace Zgine {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             m_RenderSystem.BeginFrame(); // Ensure light collection etc.
-            m_RenderSystem.RenderScene(&m_Scene, &m_Camera);
+            m_RenderSystem.RenderScene(&m_World, &m_Camera);
         }
 
         virtual void OnGuiRender() override {
@@ -137,7 +137,7 @@ namespace Zgine {
         }
 
     private:
-        Scene m_Scene;
+        World m_World;
         Camera m_Camera;
         PhysicsSystem m_PhysicsSystem;
         AudioSystem m_AudioSystem;

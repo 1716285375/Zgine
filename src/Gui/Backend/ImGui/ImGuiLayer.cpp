@@ -1,8 +1,5 @@
 #include <Zgine/Gui/Backend/ImGui/ImGuiLayer.h>
 
-#ifdef ZGINE_GUI_NUKLEAR
-#include <Zgine/Gui/Backend/Nuklear/NuklearLayer.h>
-#endif
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -155,11 +152,7 @@ namespace Zgine {
 
     Ref<GuiLayer> GuiLayer::Create()
     {
-#ifdef ZGINE_GUI_NUKLEAR
-        return CreateRef<NuklearLayer>();
-#else
         return CreateRef<ImGuiLayer>();
-#endif
     }
 
 }

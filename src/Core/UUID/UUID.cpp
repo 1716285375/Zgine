@@ -29,7 +29,7 @@ namespace Zgine {
         return UUID(GetGenerator()());
     }
 
-    UUID UUID::FromString(const std::string& value) {
+    UUID UUID::FromString(std::string_view value) {
         auto id = uuids::uuid::from_string(value);
         if (id.has_value()) {
             return UUID(id.value());

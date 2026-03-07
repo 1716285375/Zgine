@@ -3,7 +3,7 @@
 #include <Zgine/Core/Base/Prerequisites.h>
 #include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/Editor/Core/EditorTypes.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <memory>
 
 namespace Zgine {

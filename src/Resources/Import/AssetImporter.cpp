@@ -1,6 +1,6 @@
 #include <Zgine/Resources/Import/AssetImporter.h>
 #include <Zgine/Resources/Core/AssetManager.h>
-#include <Zgine/Core/OS/File.h>
+#include <Zgine/Platform/IO/File.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Base/Macro.h>
 #include <Zgine/Renderer/RHI/Texture.h>

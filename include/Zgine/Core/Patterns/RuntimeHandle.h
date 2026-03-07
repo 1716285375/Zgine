@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <compare>
 
 namespace Zgine {
 
@@ -24,14 +25,14 @@ public:
     /**
      * @brief Check if handle is valid (non-null)
      */
-    bool IsValid() const {
+    [[nodiscard]] bool IsValid() const {
         return m_Handle != GetNullValue();
     }
 
     /**
      * @brief Get the raw handle value
      */
-    HandleType Get() const {
+    [[nodiscard]] HandleType Get() const {
         return m_Handle;
     }
 
@@ -52,19 +53,19 @@ public:
     /**
      * @brief Bool conversion for null checking
      */
-    explicit operator bool() const {
+    [[nodiscard]] explicit operator bool() const {
         return IsValid();
     }
 
     /**
      * @brief Equality comparison
      */
-    bool operator==(const RuntimeHandle& other) const {
+    [[nodiscard]] bool operator==(const RuntimeHandle& other) const noexcept {
         return m_Handle == other.m_Handle;
     }
 
-    bool operator!=(const RuntimeHandle& other) const {
-        return m_Handle != other.m_Handle;
+    [[nodiscard]] auto operator<=>(const RuntimeHandle& other) const noexcept {
+        return m_Handle <=> other.m_Handle;
     }
 
 private:

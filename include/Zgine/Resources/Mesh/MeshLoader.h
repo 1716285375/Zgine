@@ -23,12 +23,12 @@ public:
                                           const MeshImportSettings& settings = {});
 
 private:
-    static void ProcessNode(const ::aiNode* node, const ::aiScene* scene,
+    static void ProcessNode(const ::aiNode* node, const ::aiScene* World,
                            const std::string& directory, std::vector<std::shared_ptr<Mesh>>& meshes);
-    static MeshData ProcessMesh(const ::aiMesh* mesh, const ::aiScene* scene,
+    static MeshData ProcessMesh(const ::aiMesh* mesh, const ::aiScene* World,
                                const std::string& directory);
     static std::vector<std::shared_ptr<Texture>> LoadMaterialTextures(const ::aiMaterial* mat,
-                                                                      const ::aiScene* scene,
+                                                                      const ::aiScene* World,
                                                                       int type, const std::string& typeName,
                                                                       const std::string& directory);
 };

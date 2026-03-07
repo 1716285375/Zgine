@@ -1,7 +1,7 @@
 #include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Editor/Core/EditorEventBus.h>
 #include <Zgine/Editor/Events/SelectionEvents.h>
-#include <Zgine/Scene/Core/Scene.h>
+#include <Zgine/World/Core/World.h>
 #include <algorithm>
 
 namespace Zgine {
@@ -151,8 +151,8 @@ bool SelectionContext::IsSelected(Entity entity) const {
     return std::find(m_Selection.begin(), m_Selection.end(), entity) != m_Selection.end();
 }
 
-void SelectionContext::Validate(Scene* scene) {
-    if (!scene) {
+void SelectionContext::Validate(World* World) {
+    if (!World) {
         Clear();
         return;
     }
@@ -160,14 +160,14 @@ void SelectionContext::Validate(Scene* scene) {
     // Remove entities that no longer exist
     m_Selection.erase(
         std::remove_if(m_Selection.begin(), m_Selection.end(),
-            [scene](Entity e) {
-                return !scene->IsEntityValid(e);
+            [World](Entity e) {
+                return !World->IsEntityValid(e);
             }),
         m_Selection.end()
     );
 
     // Validate primary
-    if (m_Primary && !scene->IsEntityValid(m_Primary)) {
+    if (m_Primary && !World->IsEntityValid(m_Primary)) {
         m_Primary = m_Selection.empty() ? Entity{} : m_Selection[0];
     }
 }

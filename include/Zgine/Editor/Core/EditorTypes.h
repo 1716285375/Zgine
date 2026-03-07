@@ -14,7 +14,7 @@ namespace Zgine {
  * Controls whether the editor is in edit mode, play mode, or paused.
  */
 enum class EditorMode : uint8_t {
-    Edit,   ///< Editor is in edit mode (scene is editable)
+    Edit,   ///< Editor is in edit mode (World is editable)
     Play,   ///< Editor is in play mode (game is running)
     Pause   ///< Editor is paused (game logic frozen)
 };

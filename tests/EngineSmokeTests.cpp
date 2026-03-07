@@ -1,11 +1,11 @@
 #include <gtest/gtest.h>
-#include <Zgine/Scene/Components.h>
-#include <Zgine/Scene/Entity.h>
-#include <Zgine/Scene/Scene.h>
+#include <Zgine/World/Components.h>
+#include <Zgine/World/Entity.h>
+#include <Zgine/World/World.h>
 
 TEST(SceneEntityTests, CreateEntityHasDefaultComponents) {
-    Zgine::Scene scene;
-    Zgine::Entity entity = scene.CreateEntity("Player");
+    Zgine::World World;
+    Zgine::Entity entity = World.CreateEntity("Player");
 
     ASSERT_TRUE(entity);
     EXPECT_TRUE(entity.HasComponent<Zgine::TagComponent>());
@@ -24,8 +24,8 @@ TEST(SceneEntityTests, CreateEntityHasDefaultComponents) {
 }
 
 TEST(SceneEntityTests, AddAndRemoveComponent) {
-    Zgine::Scene scene;
-    Zgine::Entity entity = scene.CreateEntity();
+    Zgine::World World;
+    Zgine::Entity entity = World.CreateEntity();
 
     entity.AddComponent<Zgine::AudioListenerComponent>();
     EXPECT_TRUE(entity.HasComponent<Zgine::AudioListenerComponent>());

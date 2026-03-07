@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <span>
 
 namespace Zgine {

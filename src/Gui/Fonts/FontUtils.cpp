@@ -1,6 +1,6 @@
 #include <Zgine/Gui/Fonts/FontUtils.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/OS/File.h>
+#include <Zgine/Platform/IO/File.h>
 
 namespace Zgine {
 
@@ -21,9 +21,9 @@ std::string FontUtils::FindCjkFontPath() {
         "assets/fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf",
 
         // Static fonts / 静态字体
-        "assets/fonts/Noto_Sans/static/NotoSans-Regular.ttf",
-        "assets/fonts/Noto_Sans/static/NotoSans-Medium.ttf",
-        "assets/fonts/Noto_Sans/static/NotoSans-Bold.ttf",
+        "assets/fonts/Noto_Sans/NotoSans-Regular.ttf",
+        "assets/fonts/Noto_Sans/NotoSans-Medium.ttf",
+        "assets/fonts/Noto_Sans/NotoSans-Bold.ttf",
 
         // Legacy CJK font paths (backward compatibility) / 旧版 CJK 字体路径（向后兼容）
         "assets/fonts/NotoSansCJKsc-Regular.otf",
@@ -41,8 +41,8 @@ std::string FontUtils::FindCjkFontPath() {
         "C:/Windows/Fonts/msjh.ttc",      // Microsoft JhengHei / 微软正黑体
     };
 
-    // Search for the first available font using Core/OS/File
-    // 使用 Core/OS/File 搜索第一个可用的字体
+    // Search for the first available font using Platform/IO/File
+    // 使用 Platform/IO/File 搜索第一个可用的字体
     for (const char* path : candidates) {
         if (File::Exists(path)) {
             ZGINE_CORE_INFO("Found CJK font: {}", path);

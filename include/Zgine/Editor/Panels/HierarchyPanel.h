@@ -1,18 +1,18 @@
 #pragma once
 
 #include <Zgine/Editor/Panels/EditorPanel.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
 #include <string>
 
 namespace Zgine {
 
-class Scene;
+class World;
 
 /**
- * @brief Hierarchy panel for scene entity tree view
+ * @brief Hierarchy panel for World entity tree view
  *
- * Displays all entities in the scene in a hierarchical tree structure.
+ * Displays all entities in the World in a hierarchical tree structure.
  * Supports entity selection, creation, deletion, and drag-drop reparenting.
  *
  * **Features**:
@@ -37,16 +37,16 @@ public:
     void OnUpdate(float deltaTime) override;
     void OnGuiRender() override;
 
-    /** Set the scene to display */
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    /** Set the World to display */
+    void SetScene(World* World) { m_World = World; }
 
 private:
-    void DrawHierarchyNode(Scene* scene, Entity entity);
-    bool PassHierarchyFilter(Scene* scene, Entity entity);
-    void CreatePrimitive(Scene* scene, PrimitiveType type, Entity parent = {});
-    void DeleteEntity(Scene* scene, Entity entity);
+    void DrawHierarchyNode(World* World, Entity entity);
+    bool PassHierarchyFilter(World* World, Entity entity);
+    void CreatePrimitive(World* World, PrimitiveType type, Entity parent = {});
+    void DeleteEntity(World* World, Entity entity);
 
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
     std::string m_SearchQuery;
 };
 

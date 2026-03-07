@@ -4,14 +4,13 @@
 #include <string>
 #include <filesystem>
 #include <Zgine/Core/Math/MathTypes.h>
-#include <Zgine/Scene/Core/Entity.h>
+#include <Zgine/World/Core/Entity.h>
 #include <Zgine/Editor/Core/EditorContext.h>
 #include <Zgine/Editor/Manager/EditorPanelManager.h>
 #include <Zgine/Editor/Panels/ToolbarPanel.h>
 #include <Zgine/Editor/Core/EditorTypes.h>
 #include <Zgine/Gui/Themes/ImGuiTheme.h>
-#include <Zgine/Renderer/Core/RenderStats.h>
-#include <glm/vec4.hpp>
+#include <Zgine/Renderer/Pipeline/RenderStats.h>
 #include <imgui.h>
 
 struct ImGuiDockNode;
@@ -20,7 +19,7 @@ struct ImGuiWindow;
 
 namespace Zgine {
 
-class Scene;
+class World;
 class Window;
 
 /**
@@ -42,10 +41,10 @@ public:
     void BeginFrame();
     void EndFrame();
 
-    void OnUpdate(Scene* scene);
-    void Render(Scene* scene);
+    void OnUpdate(World* World);
+    void Render(World* World);
 
-    // Scene texture and rendering
+    // World texture and rendering
     void SetSceneTexture(unsigned int textureId);
     void SetSceneViewProjection(const Math::Matrix4& view, const Math::Matrix4& projection);
     void SetRenderStats(const RenderStats& stats);
@@ -67,18 +66,18 @@ public:
     // Theming
     void SetTheme(ImGuiThemeType theme);
     ImGuiThemeType GetCurrentTheme() const { return m_CurrentTheme; }
-    const glm::vec4& GetClearColor() const { return m_ClearColor; }
+    const Math::Vector4& GetClearColor() const { return m_ClearColor; }
 
     // Access to EditorContext
     EditorContext& GetContext() { return m_Context; }
     const EditorContext& GetContext() const { return m_Context; }
 
 private:
-    void RenderDockSpace(Scene* scene);
-    void RenderMainMenu(Scene* scene);
-    void HandleShortcuts(Scene* scene);
+    void RenderDockSpace(World* World);
+    void RenderMainMenu(World* World);
+    void HandleShortcuts(World* World);
     void InitializePanels();
-    void AttachScene(Scene* scene);
+    void AttachScene(World* World);
     void SetupEventHandlers();
     void NormalizeDockspaceNodeFlags();
 
@@ -110,7 +109,7 @@ private:
 
     // Theme
     ImGuiThemeType m_CurrentTheme = ImGuiThemeType::Dark;
-    glm::vec4 m_ClearColor = { 0.1f, 0.1f, 0.12f, 1.0f };
+    Math::Vector4 m_ClearColor = { 0.1f, 0.1f, 0.12f, 1.0f };
 
     // Dockspace layout
     ImGuiID m_DockspaceId = 0;

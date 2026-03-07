@@ -154,3 +154,5 @@ docs/fix
 build*/
 
 .gemini*
+
+.skill/*.zip

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <Zgine/Scene/Systems/ISystem.h>
+#include <Zgine/World/Systems/ISystem.h>
 #include <sol/sol.hpp>
 #include <string>
 #include <unordered_map>
 
 namespace Zgine {
-    class Scene;
+    class World;
     class Entity;
     class PhysicsSystem;
     class AudioSystem;
@@ -19,12 +19,12 @@ namespace Zgine {
         // ISystem interface implementation
         void Initialize() override;
         void Shutdown() override;
-        void Update(Scene* scene, float deltaTime) override;
+        void Update(World* World, float deltaTime) override;
         const char* GetName() const override { return "ScriptSystem"; }
         int GetPriority() const override { return 30; }  // Scripts run after physics and audio
 
         // Legacy interface (kept for compatibility)
-        void OnSceneStart(Scene* scene);
+        void OnSceneStart(World* World);
         void OnSceneStop();
 
         void SetPhysicsSystem(PhysicsSystem* physicsSystem);
@@ -39,7 +39,7 @@ namespace Zgine {
         sol::state& GetLuaState() { return m_LuaState; }
 
         // 热重载：检查文件变化
-        void CheckForChanges(Scene* scene);
+        void CheckForChanges(World* World);
 
     private:
         void BindAPI();
@@ -52,7 +52,7 @@ namespace Zgine {
 
         sol::state m_LuaState;
         bool m_Initialized = false;
-        Scene* m_Scene = nullptr;
+        World* m_World = nullptr;
         PhysicsSystem* m_PhysicsSystem = nullptr;
         AudioSystem* m_AudioSystem = nullptr;
 

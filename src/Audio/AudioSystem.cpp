@@ -1,9 +1,9 @@
 #include <Zgine/Audio/AudioSystem.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Scene/Camera/Camera.h>
+#include <Zgine/World/Camera/Camera.h>
 #include <miniaudio.h>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
@@ -58,44 +58,44 @@ void AudioSystem::Shutdown() {
     ZGINE_CORE_INFO("Audio System Shutdown");
 }
 
-void AudioSystem::OnSceneStart(Scene* scene) {
+void AudioSystem::OnSceneStart(World* World) {
     if (!m_Initialized) {
         Initialize();
     }
 
-    m_Scene = scene;
+    m_World = World;
 
     // 遍历所有有 AudioSourceComponent 的实体，创建音频源
-    if (scene) {
-        auto& registry = scene->GetRegistry();
+    if (World) {
+        auto& registry = World->GetRegistry();
         auto view = registry.view<AudioSourceComponent>();
 
         for (auto entity : view) {
-            CreateAudioSource(Entity(entity, scene));
+            CreateAudioSource(Entity(entity, World));
         }
     }
 
-    ZGINE_CORE_INFO("Audio System: Scene started");
+    ZGINE_CORE_INFO("Audio System: World started");
 }
 
 void AudioSystem::OnSceneStop() {
-    if (!m_Initialized || !m_Scene) {
+    if (!m_Initialized || !m_World) {
         return;
     }
 
     // 销毁所有音频源
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto view = registry.view<AudioSourceComponent>();
 
     for (auto entity : view) {
-        DestroyAudioSource(Entity(entity, m_Scene));
+        DestroyAudioSource(Entity(entity, m_World));
     }
 
-    m_Scene = nullptr;
-    ZGINE_CORE_INFO("Audio System: Scene stopped");
+    m_World = nullptr;
+    ZGINE_CORE_INFO("Audio System: World stopped");
 }
 
-void AudioSystem::Update(Scene* scene, float deltaTime) {
+void AudioSystem::Update(World* World, float deltaTime) {
     if (!m_Initialized || !m_Engine) {
         return;
     }
@@ -103,15 +103,15 @@ void AudioSystem::Update(Scene* scene, float deltaTime) {
     ZGINE_UNUSED(deltaTime);
 
     // 更新监听器位置和方向
-    UpdateListener(scene);
+    UpdateListener(World);
 
     // 更新所有音频源的位置（3D 空间音频）
-    if (scene) {
-        auto& registry = scene->GetRegistry();
+    if (World) {
+        auto& registry = World->GetRegistry();
         auto view = registry.view<AudioSourceComponent, TransformComponent>();
 
         for (auto entity : view) {
-            UpdateAudioSourcePosition(Entity(entity, scene));
+            UpdateAudioSourcePosition(Entity(entity, World));
         }
     }
 }
@@ -299,13 +299,13 @@ void AudioSystem::UpdateAudioSourcePosition(Entity entity) {
         transform.Translation.z);
 }
 
-void AudioSystem::UpdateListener(Scene* scene) {
-    if (!m_Initialized || !m_Engine || !scene) {
+void AudioSystem::UpdateListener(World* World) {
+    if (!m_Initialized || !m_Engine || !World) {
         return;
     }
 
     // 查找主摄像机（带 AudioListenerComponent）
-    auto& registry = scene->GetRegistry();
+    auto& registry = World->GetRegistry();
     auto listenerView = registry.view<AudioListenerComponent, CameraComponent, TransformComponent>();
 
     if (listenerView.begin() == listenerView.end()) {

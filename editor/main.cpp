@@ -11,25 +11,29 @@
 #include <Zgine/Core/Application/EntryPoint.h>
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Editor/Core/Editor.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
-#include <Zgine/Scene/Serialization/SceneSerializer.h>
-#include <Zgine/Renderer/Core/RenderSystem.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
+#include <Zgine/World/Serialization/WorldSerializer.h>
+#include <Zgine/Renderer/Pipeline/RenderSystem.h>
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
 #include <Zgine/Scripting/ScriptSystem.h>
 #include <Zgine/Resources/Core/AssetManager.h>
 #include <Zgine/Resources/Material/PBRMaterialPreset.h>
-#include <Zgine/Scene/Camera/Camera.h>
+#include <Zgine/World/Camera/Camera.h>
 
 // Event system includes
 #include <Zgine/Editor/Core/EditorEventBus.h>
 #include <Zgine/Editor/Events/EntityEvents.h>
 #include <Zgine/Editor/Events/SceneEvents.h>
-#include <Zgine/Editor/Events/EditorStateEvents.h>
-
-#include <glm/gtc/matrix_transform.hpp>
+#include <Zgine/Editor/Events/EditorEvents.h>
+#include <Zgine/Editor/Events/TransformEvents.h>
+#include <Zgine/Editor/Events/AudioEvents.h>
+#include <Zgine/Editor/Events/AssetEvents.h>
+#include <Zgine/Editor/Events/ScriptEvents.h>
+#include <Zgine/World/Serialization/WorldSerializer.h>
+#include <Zgine/World/Components/Components.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -39,10 +43,10 @@ namespace Zgine {
     public:
         EditorLayer()
             : Layer("EditorLayer"),
-              m_EditorCamera(glm::perspective(glm::radians(45.0f), 1280.0f/720.0f, 0.1f, 1000.0f))
+              m_EditorCamera(Math::Matrix4::Perspective(Math::DegToRad(45.0f), 1280.0f/720.0f, 0.1f, 1000.0f))
         {
-            m_EditorCamera.SetPosition(glm::vec3(0.0f, 2.0f, 10.0f));
-            m_EditorCamera.SetRotation(glm::vec3(-10.0f, 0.0f, 0.0f));
+            m_EditorCamera.SetPosition(Math::Vector3(0.0f, 2.0f, 10.0f));
+            m_EditorCamera.SetRotation(Math::Vector3(-10.0f, -90.0f, 0.0f));
         }
 
         virtual void OnAttach() override {
@@ -50,7 +54,7 @@ namespace Zgine {
 
             // Initialize asset manager and material presets
             AssetManager::Get().Initialize();
-            PBRMaterialPresetManager::Initialize();
+            // PBRMaterialPresetManager::Initialize();
 
             // Initialize physics system
             m_PhysicsSystem.Initialize();
@@ -66,7 +70,7 @@ namespace Zgine {
             // Initialize rendering systems
             m_RenderSystem.Initialize();
 
-            // Create framebuffer for scene rendering
+            // Create framebuffer for World rendering
             CreateFramebuffer(1280, 720);
 
             // Initialize Editor UI
@@ -76,7 +80,7 @@ namespace Zgine {
             // Setup Editor callbacks
             SetupEditorCallbacks();
 
-            // Create default scene content
+            // Create default World content
             SetupDefaultScene();
 
             ZGINE_CORE_INFO("EditorLayer initialization complete");
@@ -107,29 +111,29 @@ namespace Zgine {
             // Update systems based on editor mode
             if (m_Editor.GetMode() == EditorMode::Play) {
                 m_PhysicsSystem.Step(ts);
-                m_PhysicsSystem.SyncPhysicsToECS(&m_Scene);
-                m_AudioSystem.Update(&m_Scene, ts);
-                m_ScriptSystem.Update(&m_Scene, ts);
+                m_PhysicsSystem.SyncPhysicsToECS(&m_World);
+                m_AudioSystem.Update(&m_World, ts);
+                m_ScriptSystem.Update(&m_World, ts);
             }
 
-            // Render scene to framebuffer (now with correct size)
+            // Render World to framebuffer (now with correct size)
             RenderSceneToFramebuffer();
 
             // Update editor
-            m_Editor.OnUpdate(&m_Scene);
+            m_Editor.OnUpdate(&m_World);
         }
 
         virtual void OnGuiRender() override {
             // Note: Application's GuiLayer handles ImGui Begin/End frame
             // We just render our editor UI content here
 
-            // Provide scene texture to editor viewport (framebuffer already resized in OnUpdate)
+            // Provide World texture to editor viewport (framebuffer already resized in OnUpdate)
             m_Editor.SetSceneTexture(m_SceneColorTexture);
             m_Editor.SetSceneViewProjection(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
             m_Editor.SetRenderStats(m_RenderSystem.GetStats());
 
             // Render editor UI (dockspace, panels, menus, etc.)
-            m_Editor.Render(&m_Scene);
+            m_Editor.Render(&m_World);
         }
 
         virtual void OnEvent(Event& e) override {
@@ -137,7 +141,7 @@ namespace Zgine {
             EventDispatcher dispatcher(e);
             dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& event) {
                 m_EditorCamera.SetProjection(
-                    glm::perspective(glm::radians(45.0f),
+                    Math::Matrix4::Perspective(Math::DegToRad(45.0f),
                         (float)event.GetWidth() / (float)event.GetHeight(),
                         0.1f, 1000.0f)
                 );
@@ -202,11 +206,11 @@ namespace Zgine {
             GLint prevViewport[4];
             glGetIntegerv(GL_VIEWPORT, prevViewport);
 
-            // Bind scene framebuffer
+            // Bind World framebuffer
             glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO);
             glViewport(0, 0, m_FramebufferWidth, m_FramebufferHeight);
 
-            // Enable depth testing for scene rendering
+            // Enable depth testing for World rendering
             glEnable(GL_DEPTH_TEST);
             glDepthFunc(GL_LESS);  // 确保使用正确的深度函数
             glDepthMask(GL_TRUE);  // 确保深度写入启用
@@ -216,9 +220,9 @@ namespace Zgine {
             glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // Begin frame and render scene
+            // Begin frame and render World
             m_RenderSystem.BeginFrame();
-            m_RenderSystem.RenderScene(&m_Scene, &m_EditorCamera);
+            m_RenderSystem.RenderScene(&m_World, &m_EditorCamera);
 
             // Unbind framebuffer and restore state
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -253,14 +257,14 @@ namespace Zgine {
                     // aspect = 1.777f;
 
                     m_EditorCamera.SetProjection(
-                        glm::perspective(glm::radians(45.0f), aspect, 0.1f, 1000.0f)
+                        Math::Matrix4::Perspective(Math::DegToRad(45.0f), aspect, 0.1f, 1000.0f)
                     );
                 }
             }
         }
 
         void HandleCameraInput(Timestep ts) {
-            float moveSpeed = 10.0f * ts;
+            float moveSpeed = 10.0f * (float)ts;
             float mouseSensitivity = 0.2f;
 
             // WASD movement
@@ -270,9 +274,9 @@ namespace Zgine {
                 if (Input::IsKeyPressed(GLFW_KEY_A)) m_EditorCamera.MoveRight(-moveSpeed);
                 if (Input::IsKeyPressed(GLFW_KEY_D)) m_EditorCamera.MoveRight(moveSpeed);
                 if (Input::IsKeyPressed(GLFW_KEY_Q))
-                    m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + glm::vec3(0, -moveSpeed, 0));
+                    m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + Math::Vector3(0, -moveSpeed, 0));
                 if (Input::IsKeyPressed(GLFW_KEY_E))
-                    m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + glm::vec3(0, moveSpeed, 0));
+                    m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
             }
 
             // Right-click camera rotation (orbit)
@@ -306,7 +310,7 @@ namespace Zgine {
                 auto primitiveType = e.GetPrimitiveType();
                 if (primitiveType != PrimitiveType::None && entity.IsValid()) {
                     entity.AddComponent<PrimitiveComponent>(primitiveType);
-                    PBRMaterialPresetManager::ApplyPreset(entity, "Ceramic");
+                    // PBRMaterialPresetManager::ApplyPreset(entity, "Ceramic");
                 }
             });
 
@@ -314,14 +318,14 @@ namespace Zgine {
             eventBus.Subscribe<EntityDeletedEvent>([this](EntityDeletedEvent& e) {
                 auto entity = e.GetEntity();
                 if (entity.IsValid()) {
-                    m_Scene.DestroyEntity(entity);
+                    m_World.DestroyEntity(entity);
                 }
             });
 
             // Subscribe to transform change events
             eventBus.Subscribe<TransformChangedEvent>([this](TransformChangedEvent& e) {
                 auto entity = e.GetEntity();
-                if (entity.IsValid() && entity.HasComponent<RigidBodyComponent>()) {
+                if (entity.IsValid() && entity.HasComponent<RigidbodyComponent>()) {
                     m_PhysicsSystem.UpdateBodyTransform(entity);
                 }
             });
@@ -345,36 +349,36 @@ namespace Zgine {
                 }
             });
 
-            // Subscribe to scene save events
+            // Subscribe to World save events
             eventBus.Subscribe<SceneSavedEvent>([this](SceneSavedEvent& e) {
-                auto* scene = e.GetScene();
-                if (scene) {
-                    SceneSerializer serializer(scene);
+                auto* World = e.GetScene();
+                if (World) {
+                    WorldSerializer serializer(World);
                     serializer.SerializeToFile("assets/scenes/default.json");
-                    ZGINE_CORE_INFO("Scene saved to assets/scenes/default.json");
+                    ZGINE_CORE_INFO("World saved to assets/scenes/default.json");
                 }
             });
 
-            // Subscribe to scene load events
+            // Subscribe to World load events
             eventBus.Subscribe<SceneLoadedEvent>([this](SceneLoadedEvent& e) {
-                auto* scene = e.GetScene();
-                if (!scene) return;
+                auto* World = e.GetScene();
+                if (!World) return;
 
                 // Stop systems before loading
                 m_PhysicsSystem.OnSceneStop();
                 m_AudioSystem.OnSceneStop();
                 m_ScriptSystem.OnSceneStop();
 
-                // Load scene
-                SceneSerializer serializer(scene);
+                // Load World
+                WorldSerializer serializer(World);
                 if (serializer.DeserializeFromFile("assets/scenes/default.json")) {
-                    ZGINE_CORE_INFO("Scene loaded from assets/scenes/default.json");
+                    ZGINE_CORE_INFO("World loaded from assets/scenes/default.json");
                 }
 
                 // Restart systems
-                m_PhysicsSystem.OnSceneStart(scene);
-                m_AudioSystem.OnSceneStart(scene);
-                m_ScriptSystem.OnSceneStart(scene);
+                m_PhysicsSystem.OnSceneStart(World);
+                m_AudioSystem.OnSceneStart(World);
+                m_ScriptSystem.OnSceneStart(World);
             });
 
             // Subscribe to script reload events
@@ -386,9 +390,9 @@ namespace Zgine {
             eventBus.Subscribe<PlayModeChangedEvent>([this](PlayModeChangedEvent& e) {
                 if (e.GetMode() == EditorMode::Play) {
                     // Start play mode
-                    m_PhysicsSystem.OnSceneStart(&m_Scene);
-                    m_AudioSystem.OnSceneStart(&m_Scene);
-                    m_ScriptSystem.OnSceneStart(&m_Scene);
+                    m_PhysicsSystem.OnSceneStart(&m_World);
+                    m_AudioSystem.OnSceneStart(&m_World);
+                    m_ScriptSystem.OnSceneStart(&m_World);
                     ZGINE_CORE_INFO("Entered Play mode");
                 } else {
                     // Stop play mode
@@ -401,12 +405,12 @@ namespace Zgine {
 
             // Subscribe to asset drop events
             eventBus.Subscribe<AssetDroppedEvent>([this](AssetDroppedEvent& e) {
-                auto* scene = e.GetScene();
+                auto* World = e.GetScene();
                 const auto& path = e.GetAssetPath();
                 std::string ext = path.extension().string();
                 if (ext == ".obj" || ext == ".fbx" || ext == ".gltf" || ext == ".glb") {
                     // Load model - the MeshComponent uses AssetHandle for mesh loading
-                    auto entity = scene->CreateEntity(path.stem().string());
+                    auto entity = World->CreateEntity(path.stem().string());
                     entity.AddComponent<MeshComponent>();
                     // TODO: Use AssetManager to load mesh and assign MeshHandle
                     ZGINE_CORE_INFO("Model entity created: {}", path.string());
@@ -423,7 +427,7 @@ namespace Zgine {
         }
 
         void SetupDefaultScene() {
-            // DEBUG: Simplified scene setup - no skybox/IBL, just basic objects
+            // DEBUG: Simplified World setup - no skybox/IBL, just basic objects
             // Skip skybox loading for now
             /*
             auto skybox = std::make_shared<Skybox>();
@@ -437,40 +441,40 @@ namespace Zgine {
             */
 
             // Create directional light (sun) - essential for basic lighting
-            auto sun = m_Scene.CreateEntity("Directional Light");
+            auto sun = m_World.CreateEntity("Directional Light");
             auto& light = sun.AddComponent<DirectionalLightComponent>();
-            light.Direction = glm::vec3(-0.5f, -1.0f, -0.5f);
+            light.Direction = Math::Vector3(-0.5f, -1.0f, -0.5f);
             light.Intensity = 3.0f;
 
             // Create ground plane
-            auto ground = m_Scene.CreateEntity("Ground");
+            auto ground = m_World.CreateEntity("Ground");
             ground.AddComponent<PrimitiveComponent>(PrimitiveType::Plane);
             auto& groundTransform = ground.GetComponent<TransformComponent>();
-            groundTransform.Scale = glm::vec3(20.0f, 1.0f, 20.0f);
+            groundTransform.Scale = Math::Vector3(20.0f, 1.0f, 20.0f);
             // Replace texture preset with manual material to avoid missing asset errors
             auto& groundMat = ground.AddComponent<PBRMaterialComponent>();
-            groundMat.Albedo = glm::vec3(0.5f, 0.5f, 0.5f);
+            groundMat.Albedo = Math::Vector3(0.5f, 0.5f, 0.5f);
             groundMat.Roughness = 0.8f;
 
             // Create sample cube - 增大尺寸和调整位置以显示3D效果
-            auto cube = m_Scene.CreateEntity("Cube");
+            auto cube = m_World.CreateEntity("Cube");
             cube.AddComponent<PrimitiveComponent>(PrimitiveType::Cube);
             auto& cubeTransform = cube.GetComponent<TransformComponent>();
-            cubeTransform.Translation = glm::vec3(0.0f, 2.0f, 0.0f);  // 抬高位置
-            cubeTransform.Scale = glm::vec3(2.0f, 2.0f, 2.0f);  // 增大尺寸，更明显
-            cubeTransform.Rotation = glm::vec3(25.0f, 35.0f, 0.0f);  // 调整旋转角度
+            cubeTransform.Translation = Math::Vector3(0.0f, 2.0f, 0.0f);
+            cubeTransform.Scale = Math::Vector3(2.0f, 2.0f, 2.0f);
+            cubeTransform.Rotation = Math::Vector3(25.0f, 35.0f, 0.0f);
             // Replace texture preset with manual material
             // auto& cubeMat = cube.AddComponent<PBRMaterialComponent>();
             // cubeMat.Albedo = glm::vec3(1.0f, 0.8f, 0.0f); // Gold
             // cubeMat.Metallic = 0.9f;
             // cubeMat.Roughness = 0.2f;
 
-            ZGINE_CORE_INFO("Default scene created (DEBUG MODE - simplified)");
+            ZGINE_CORE_INFO("Default World created (DEBUG MODE - simplified)");
         }
 
     private:
         // Engine systems
-        Scene m_Scene;
+        World m_World;
         Camera m_EditorCamera;
         PhysicsSystem m_PhysicsSystem;
         AudioSystem m_AudioSystem;
@@ -480,7 +484,7 @@ namespace Zgine {
         // Editor
         Editor m_Editor;
 
-        // Framebuffer for scene rendering
+        // Framebuffer for World rendering
         unsigned int m_SceneFBO = 0;
         unsigned int m_SceneColorTexture = 0;
         unsigned int m_SceneDepthRBO = 0;

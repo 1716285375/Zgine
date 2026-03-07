@@ -1,10 +1,9 @@
 #include <Zgine/Physics/PhysicsSystem.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Core/Entity.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include <Zgine/Core/Math/Math.h>
 
 // Jolt 命名空间别名
 using namespace JPH;
@@ -158,39 +157,39 @@ void PhysicsSystem::Shutdown() {
     ZGINE_CORE_INFO("Physics System Shutdown");
 }
 
-void PhysicsSystem::OnSceneStart(Scene* scene) {
+void PhysicsSystem::OnSceneStart(World* World) {
     if (!m_Initialized) {
         Initialize();
     }
 
-    m_Scene = scene;
+    m_World = World;
 
     // 遍历所有实体，创建物理体
-    if (scene) {
-        auto& registry = scene->GetRegistry();
+    if (World) {
+        auto& registry = World->GetRegistry();
         auto view = registry.view<RigidbodyComponent, TransformComponent, BoxColliderComponent>();
         for (auto entity : view) {
-            CreateBody(Entity(entity, scene));
+            CreateBody(Entity(entity, World));
         }
     }
 
-    ZGINE_CORE_INFO("Physics System: Scene started");
+    ZGINE_CORE_INFO("Physics System: World started");
 }
 
 void PhysicsSystem::OnSceneStop() {
-    if (!m_Initialized || !m_BodyInterface || !m_Scene) {
+    if (!m_Initialized || !m_BodyInterface || !m_World) {
         return;
     }
 
     // 移除所有物理体
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto view = registry.view<RigidbodyComponent>();
     for (auto entity : view) {
-        DestroyBody(Entity(entity, m_Scene));
+        DestroyBody(Entity(entity, m_World));
     }
 
-    m_Scene = nullptr;
-    ZGINE_CORE_INFO("Physics System: Scene stopped");
+    m_World = nullptr;
+    ZGINE_CORE_INFO("Physics System: World stopped");
 }
 
 void PhysicsSystem::Step(float deltaTime) {
@@ -205,21 +204,21 @@ void PhysicsSystem::Step(float deltaTime) {
 }
 
 // ISystem interface implementations
-void PhysicsSystem::Update(Scene* scene, float deltaTime) {
+void PhysicsSystem::Update(World* World, float deltaTime) {
     // Variable timestep update (called every frame)
     // For physics, we typically use FixedUpdate instead
-    ZGINE_UNUSED(scene);
+    ZGINE_UNUSED(World);
     ZGINE_UNUSED(deltaTime);
 }
 
-void PhysicsSystem::FixedUpdate(Scene* scene, float fixedDeltaTime) {
+void PhysicsSystem::FixedUpdate(World* World, float fixedDeltaTime) {
     // Fixed timestep update for physics simulation
-    if (!m_Initialized || !m_Scene) {
+    if (!m_Initialized || !m_World) {
         return;
     }
 
     Step(fixedDeltaTime);
-    SyncPhysicsToECS(scene);
+    SyncPhysicsToECS(World);
 }
 
 
@@ -291,13 +290,13 @@ void PhysicsSystem::DestroyBody(Entity entity) {
     }
 }
 
-void PhysicsSystem::SyncPhysicsToECS(Scene* scene) {
-    if (!m_Initialized || !m_BodyInterface || !scene) {
+void PhysicsSystem::SyncPhysicsToECS(World* World) {
+    if (!m_Initialized || !m_BodyInterface || !World) {
         return;
     }
 
     // 遍历所有有 RigidBodyComponent 的实体
-    auto& registry = scene->GetRegistry();
+    auto& registry = World->GetRegistry();
     auto view = registry.view<RigidbodyComponent, TransformComponent>();
 
     for (auto entity : view) {
@@ -318,9 +317,19 @@ void PhysicsSystem::SyncPhysicsToECS(Scene* scene) {
                 transform.Translation = Math::Vector3(position.GetX(), position.GetY(), position.GetZ());
 
                 // 将 Jolt 四元数转换为欧拉角（简化实现）
-                glm::quat glmRot(rotation.GetW(), rotation.GetX(), rotation.GetY(), rotation.GetZ());
-                glm::vec3 euler = glm::eulerAngles(glmRot);
-                transform.Rotation = Math::Vector3(glm::degrees(euler.x), glm::degrees(euler.y), glm::degrees(euler.z));
+                // Convert Jolt Quat to Euler angles (ZXY order, degrees)
+                float qw = rotation.GetW(), qx = rotation.GetX(), qy = rotation.GetY(), qz = rotation.GetZ();
+                float sinX =  2.f * (qw * qx + qy * qz);
+                float cosX =  1.f - 2.f * (qx * qx + qy * qy);
+                float sinY =  2.f * (qw * qy - qz * qx);
+                float sinZ =  2.f * (qw * qz + qx * qy);
+                float cosZ =  1.f - 2.f * (qy * qy + qz * qz);
+                using namespace Math;
+                transform.Rotation = Math::Vector3(
+                    RadToDeg(std::atan2(sinX, cosX)),
+                    RadToDeg(std::asin(Math::Clamp(sinY, -1.f, 1.f))),
+                    RadToDeg(std::atan2(sinZ, cosZ))
+                );
             }
         }
     }
@@ -343,9 +352,19 @@ void PhysicsSystem::UpdateBodyTransform(Entity entity) {
     BodyID bodyID(id);
 
     Vec3 position(transform.Translation.x, transform.Translation.y, transform.Translation.z);
-    glm::vec3 rotationRad = glm::radians(glm::vec3(transform.Rotation.x, transform.Rotation.y, transform.Rotation.z));
-    glm::quat glmRot = glm::quat(rotationRad);
-    Quat rotation(glmRot.x, glmRot.y, glmRot.z, glmRot.w);
+    // Convert Euler angles (degrees) to Jolt Quat
+    float rx = Math::DegToRad(transform.Rotation.x);
+    float ry = Math::DegToRad(transform.Rotation.y);
+    float rz = Math::DegToRad(transform.Rotation.z);
+    float cy = std::cos(rz * 0.5f), sy = std::sin(rz * 0.5f);
+    float cp = std::cos(ry * 0.5f), sp = std::sin(ry * 0.5f);
+    float cr = std::cos(rx * 0.5f), sr = std::sin(rx * 0.5f);
+    Quat rotation(
+        sr * cp * cy - cr * sp * sy,  // x
+        cr * sp * cy + sr * cp * sy,  // y
+        cr * cp * sy - sr * sp * cy,  // z
+        cr * cp * cy + sr * sp * sy   // w
+    );
 
     m_BodyInterface->SetPositionAndRotation(bodyID, position, rotation, EActivation::Activate);
 }

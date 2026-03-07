@@ -3,7 +3,7 @@
 #include <Zgine/Editor/Core/EditorEventBus.h>
 #include <Zgine/Editor/Events/TransformEvents.h>
 #include <Zgine/Gui/Backend/ImGui/ImGuiWidgets.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Components/Components.h>
 #include <imgui.h>
 #include <cstring>
 

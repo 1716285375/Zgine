@@ -3,8 +3,8 @@
 #include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Commands/EntityCommands.h>
-#include <Zgine/Scene/Core/Scene.h>
-#include <Zgine/Scene/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <imgui.h>
 #include <algorithm>
@@ -30,7 +30,7 @@ void HierarchyPanel::OnUpdate(float deltaTime) {
 }
 
 void HierarchyPanel::OnGuiRender() {
-    if (!m_Scene) return;
+    if (!m_World) return;
 
     BeginPanel();
 
@@ -47,17 +47,17 @@ void HierarchyPanel::OnGuiRender() {
 
     if (ImGui::BeginPopup("HierarchyCreateMenu")) {
         if (ImGui::MenuItem("Create Empty")) {
-            Entity created = m_Scene->CreateEntity("Empty");
+            Entity created = m_World->CreateEntity("Empty");
             selectionContext.SetPrimary(created);
         }
         if (ImGui::MenuItem("Create Cube")) {
-            CreatePrimitive(m_Scene, PrimitiveType::Cube);
+            CreatePrimitive(m_World, PrimitiveType::Cube);
         }
         if (ImGui::MenuItem("Create Plane")) {
-            CreatePrimitive(m_Scene, PrimitiveType::Plane);
+            CreatePrimitive(m_World, PrimitiveType::Plane);
         }
         if (ImGui::MenuItem("Create Sphere")) {
-            CreatePrimitive(m_Scene, PrimitiveType::Sphere);
+            CreatePrimitive(m_World, PrimitiveType::Sphere);
         }
         ImGui::EndPopup();
     }
@@ -67,30 +67,30 @@ void HierarchyPanel::OnGuiRender() {
     ImGui::BeginChild("HierarchyList", ImVec2(0.0f, 0.0f), false);
 
     // Render root entities
-    auto& registry = m_Scene->GetRegistry();
+    auto& registry = m_World->GetRegistry();
     auto view = registry.view<TagComponent, RelationshipComponent>();
     for (auto entity : view) {
         auto& rel = registry.get<RelationshipComponent>(entity);
         // Only render root entities
         if (rel.Parent != entt::null) continue;
 
-        Entity e(entity, m_Scene);
-        if (!PassHierarchyFilter(m_Scene, e)) continue;
+        Entity e(entity, m_World);
+        if (!PassHierarchyFilter(m_World, e)) continue;
 
-        DrawHierarchyNode(m_Scene, e);
+        DrawHierarchyNode(m_World, e);
     }
 
     // Context menu for empty space
     if (ImGui::BeginPopupContextWindow("Hierarchy Context", ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems)) {
         if (ImGui::MenuItem("Create Empty")) {
-            Entity created = m_Scene->CreateEntity("Empty");
+            Entity created = m_World->CreateEntity("Empty");
             selectionContext.SetPrimary(created);
         }
         if (ImGui::MenuItem("Create Cube")) {
-            CreatePrimitive(m_Scene, PrimitiveType::Cube);
+            CreatePrimitive(m_World, PrimitiveType::Cube);
         }
         if (ImGui::MenuItem("Create Plane")) {
-            CreatePrimitive(m_Scene, PrimitiveType::Plane);
+            CreatePrimitive(m_World, PrimitiveType::Plane);
         }
         ImGui::EndPopup();
     }
@@ -99,8 +99,8 @@ void HierarchyPanel::OnGuiRender() {
     EndPanel();
 }
 
-bool HierarchyPanel::PassHierarchyFilter(Scene* scene, Entity entity) {
-    if (!scene || !entity) return false;
+bool HierarchyPanel::PassHierarchyFilter(World* World, Entity entity) {
+    if (!World || !entity) return false;
     if (m_SearchQuery.empty()) return true;
 
     if (entity.HasComponent<TagComponent>()) {
@@ -114,8 +114,8 @@ bool HierarchyPanel::PassHierarchyFilter(Scene* scene, Entity entity) {
     if (entity.HasComponent<RelationshipComponent>()) {
         const auto& rel = entity.GetComponent<RelationshipComponent>();
         for (auto child : rel.Children) {
-            Entity childEntity(child, scene);
-            if (PassHierarchyFilter(scene, childEntity)) {
+            Entity childEntity(child, World);
+            if (PassHierarchyFilter(World, childEntity)) {
                 return true;
             }
         }
@@ -124,9 +124,9 @@ bool HierarchyPanel::PassHierarchyFilter(Scene* scene, Entity entity) {
     return false;
 }
 
-void HierarchyPanel::DrawHierarchyNode(Scene* scene, Entity entity) {
+void HierarchyPanel::DrawHierarchyNode(World* World, Entity entity) {
     auto& selectionContext = GetContext().GetSelectionContext();
-    auto& registry = scene->GetRegistry();
+    auto& registry = World->GetRegistry();
     auto& tag = registry.get<TagComponent>(static_cast<entt::entity>(entity));
     auto* rel = registry.try_get<RelationshipComponent>(static_cast<entt::entity>(entity));
 
@@ -171,7 +171,7 @@ void HierarchyPanel::DrawHierarchyNode(Scene* scene, Entity entity) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ZGINE_ENTITY")) {
             entt::entity dropped = *static_cast<const entt::entity*>(payload->Data);
             if (dropped != static_cast<entt::entity>(entity)) {
-                scene->SetParent(Entity(dropped, scene), entity);
+                World->SetParent(Entity(dropped, World), entity);
             }
         }
         ImGui::EndDragDropTarget();
@@ -181,11 +181,11 @@ void HierarchyPanel::DrawHierarchyNode(Scene* scene, Entity entity) {
     bool deleteEntity = false;
     if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("Create Child")) {
-            Entity child = scene->CreateEntity("Empty", entity);
+            Entity child = World->CreateEntity("Empty", entity);
             selectionContext.SetPrimary(child);
         }
         if (ImGui::MenuItem("Duplicate")) {
-            Entity duplicate = scene->DuplicateEntity(entity);
+            Entity duplicate = World->DuplicateEntity(entity);
             if (duplicate) {
                 selectionContext.SetPrimary(duplicate);
             }
@@ -201,21 +201,21 @@ void HierarchyPanel::DrawHierarchyNode(Scene* scene, Entity entity) {
     if (opened && hasChildren) {
         for (auto child : rel->Children) {
             if (!registry.valid(child)) continue;
-            Entity childEntity(child, scene);
-            if (!PassHierarchyFilter(scene, childEntity)) continue;
-            DrawHierarchyNode(scene, childEntity);
+            Entity childEntity(child, World);
+            if (!PassHierarchyFilter(World, childEntity)) continue;
+            DrawHierarchyNode(World, childEntity);
         }
         ImGui::TreePop();
     }
 
     if (deleteEntity) {
-        DeleteEntity(scene, entity);
+        DeleteEntity(World, entity);
         selectionContext.Remove(entity);
     }
 }
 
-void HierarchyPanel::CreatePrimitive(Scene* scene, PrimitiveType type, Entity parent) {
-    if (!scene) return;
+void HierarchyPanel::CreatePrimitive(World* World, PrimitiveType type, Entity parent) {
+    if (!World) return;
 
     std::string name;
     switch (type) {
@@ -226,7 +226,7 @@ void HierarchyPanel::CreatePrimitive(Scene* scene, PrimitiveType type, Entity pa
     }
 
     // Create command for entity creation (supports undo/redo)
-    auto command = std::make_unique<CreateEntityCommand>(scene, name);
+    auto command = std::make_unique<CreateEntityCommand>(World, name);
 
     // Execute command through CommandHistory
     auto& commandHistory = GetContext().GetCommandHistory();
@@ -236,16 +236,16 @@ void HierarchyPanel::CreatePrimitive(Scene* scene, PrimitiveType type, Entity pa
 
         // Set parent if specified
         if (parent && created) {
-            scene->SetParent(created, parent);
+            World->SetParent(created, parent);
         }
     }
 }
 
-void HierarchyPanel::DeleteEntity(Scene* scene, Entity entity) {
-    if (!scene || !entity) return;
+void HierarchyPanel::DeleteEntity(World* World, Entity entity) {
+    if (!World || !entity) return;
 
     // Create command for entity deletion (supports undo/redo)
-    auto command = std::make_unique<DeleteEntityCommand>(scene, entity);
+    auto command = std::make_unique<DeleteEntityCommand>(World, entity);
 
     // Execute command through CommandHistory
     auto& commandHistory = GetContext().GetCommandHistory();

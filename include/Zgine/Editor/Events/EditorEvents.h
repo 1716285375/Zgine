@@ -221,7 +221,7 @@ public:
     }
 
     ZGINE_EDITOR_EVENT_CLASS_TYPE(LowPerformanceDetectedEvent)
-    ZGINE_EDITOR_EVENT_CLASS_CATEGORY(Editor | Debug)
+    ZGINE_EDITOR_EVENT_CLASS_CATEGORY(Editor)
 
 private:
     float m_CurrentFPS;

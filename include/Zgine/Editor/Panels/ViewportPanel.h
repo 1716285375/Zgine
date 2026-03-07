@@ -6,21 +6,21 @@
 
 namespace Zgine {
 
-class Scene;
+class World;
 class GizmoController;
 
 /**
- * @brief Main viewport panel for scene rendering and editing
+ * @brief Main viewport panel for World rendering and editing
  *
- * Displays the rendered scene and handles user interactions
+ * Displays the rendered World and handles user interactions
  * such as entity selection, gizmo manipulation, and asset drag-drop.
  *
  * **Features**:
- * - Real-time scene rendering
+ * - Real-time World rendering
  * - Entity selection via mouse picking
  * - Transform gizmos (Move/Rotate/Scale)
  * - Camera controls
- * - Asset drag-and-drop onto scene
+ * - Asset drag-and-drop onto World
  * - Grid and axes visualization
  *
  * **Mouse Controls**:
@@ -46,14 +46,14 @@ public:
     void OnUpdate(float deltaTime) override;
     void OnGuiRender() override;
 
-    /** Set the scene to render */
-    void SetScene(Scene* scene) { m_Scene = scene; }
+    /** Set the World to render */
+    void SetScene(World* World) { m_World = World; }
 
     /** Set the dock ID for this viewport */
     void SetDockId(ImGuiID dockId) { m_DockId = dockId; }
 
 private:
-    Scene* m_Scene = nullptr;
+    World* m_World = nullptr;
     ImGuiID m_DockId = 0;
     std::unique_ptr<GizmoController> m_GizmoController;
 };
