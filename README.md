@@ -2,6 +2,8 @@
 
 > 一个用于学习的现代 3D 游戏引擎，基于 C++20 构建。
 
+![Zgine Editor](docs/images/zgine-app.png)
+
 ## 技术栈
 
 | 领域 | 库 |
