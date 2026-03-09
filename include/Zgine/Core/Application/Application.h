@@ -6,6 +6,7 @@
 #include <Zgine/Core/Layers/LayerStack.h>
 #include <Zgine/Platform/Window.h>
 #include <Zgine/Core/Time/Timestep.h>
+#include <Zgine/Core/Time/TimerManager.h>
 #include <Zgine/Gui/GuiLayer.h>
 
 namespace Zgine {
@@ -25,6 +26,7 @@ namespace Zgine {
         inline Window& GetWindow() { return *m_Window; }
         inline float GetTime() const { return static_cast<float>(Timestep::GetTime()); }
         inline Timestep GetTimestep() const { return m_Timestep; }
+        inline TimerManager& GetTimerManager() { return m_TimerManager; }
 
         inline static Application& Get() { return *s_Instance; }
 
@@ -42,6 +44,8 @@ namespace Zgine {
         // m_LayerStack holds a raw pointer to GuiLayer, so it must destruct first.
         Ref<GuiLayer> m_GuiLayer;          // Destructs SECOND (deletes GuiLayer object)
         LayerStack m_LayerStack;            // Destructs FIRST (accesses GuiLayer via OnDetach)
+
+        TimerManager m_TimerManager;
 
         float m_LastFrameTime = 0.0f;
         Timestep m_Timestep;

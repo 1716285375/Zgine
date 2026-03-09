@@ -1,5 +1,7 @@
 #pragma once
 
+#include <tuple>
+
 // ============================================================================
 // Common Utility Macros
 // ============================================================================
@@ -42,6 +44,8 @@
 
 // Unused parameter/variable suppression
 #define ZGINE_UNUSED(x) (void)(x)
+
+#define ZGINE_IGNORE_RESULT(expr) std::ignore = (expr)
 
 // Force inline hints
 #if defined(_MSC_VER)

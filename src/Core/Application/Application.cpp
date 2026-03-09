@@ -89,18 +89,39 @@ namespace Zgine {
 
     void Application::Run()
     {
+        const float fixedDeltaTime = 1.0f / 60.0f; // 60Hz fixed update
+        float accumulator = 0.0f;
+
         while (m_Running)
         {
             float time = static_cast<float>(Timestep::GetTime());
             m_Timestep = time - m_LastFrameTime;
             m_LastFrameTime = time;
 
+            // Cap the timestep to prevent "Spiral of Death"
+            if (m_Timestep.GetSecondsF() > 0.25f)
+                m_Timestep = 0.25f;
+
+            accumulator += m_Timestep.GetSecondsF();
+
             if (!m_Minimized)
             {
-                // 更新顺序：从前往后 (Layer -> Overlay)
+                // 1. Fixed Update (Physics/Core Logic)
+                while (accumulator >= fixedDeltaTime)
+                {
+                    for (Layer* layer : m_LayerStack)
+                        layer->OnFixedUpdate(fixedDeltaTime);
+                    accumulator -= fixedDeltaTime;
+                }
+
+                // 2. Variable Update (Rendering/Animation/Input)
                 for (Layer* layer : m_LayerStack)
                     layer->OnUpdate(m_Timestep);
 
+                // 3. Process Scheduled Timers
+                m_TimerManager.Tick();
+
+                // 4. UI Rendering
                 m_GuiLayer->Begin();
                 for (Layer* layer : m_LayerStack)
                     layer->OnGuiRender();

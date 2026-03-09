@@ -19,9 +19,9 @@ struct TransformComponent {
     Math::Matrix4 GetTransform() const {
         using namespace Math;
 
-        Matrix4 rotation = Matrix4::Rotation(Rotation.x, Vector3(1, 0, 0))
-                         * Matrix4::Rotation(Rotation.y, Vector3(0, 1, 0))
-                         * Matrix4::Rotation(Rotation.z, Vector3(0, 0, 1));
+        Matrix4 rotation = Matrix4::Rotation(DegToRad(Rotation.x), Vector3(1, 0, 0))
+                         * Matrix4::Rotation(DegToRad(Rotation.y), Vector3(0, 1, 0))
+                         * Matrix4::Rotation(DegToRad(Rotation.z), Vector3(0, 0, 1));
 
         return Matrix4::Translation(Translation)
              * rotation

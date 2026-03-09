@@ -134,7 +134,6 @@ void Editor::Initialize(Window* window) {
     ImVec4 windowBg = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
     m_ClearColor = { windowBg.x, windowBg.y, windowBg.z, windowBg.w };
 
-    // ✅ CRITICAL: Initialize EditorContext (EventBus, SelectionContext, CommandHistory)
     m_Context.Initialize();
 
     InitializePanels();
