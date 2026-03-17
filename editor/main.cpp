@@ -25,13 +25,7 @@
 
 // Event system includes
 #include <Zgine/Editor/Core/EditorEventBus.h>
-#include <Zgine/Editor/Events/EntityEvents.h>
-#include <Zgine/Editor/Events/SceneEvents.h>
-#include <Zgine/Editor/Events/EditorEvents.h>
-#include <Zgine/Editor/Events/TransformEvents.h>
-#include <Zgine/Editor/Events/AudioEvents.h>
-#include <Zgine/Editor/Events/AssetEvents.h>
-#include <Zgine/Editor/Events/ScriptEvents.h>
+#include <Zgine/Editor/Events/Events.h>
 #include <Zgine/World/Serialization/WorldSerializer.h>
 #include <Zgine/World/Components/Components.h>
 #include <glad/glad.h>
@@ -83,6 +77,20 @@ namespace Zgine {
             // Create default World content
             SetupDefaultScene();
 
+            // ==========================================
+            // TEST: TimerManager integration
+            // ==========================================
+            ZGINE_IGNORE_RESULT(Application::Get().GetTimerManager().AddRepeatTimer(1.0, []() {
+                static int ticks = 0;
+                ++ticks;
+                ZGINE_CORE_INFO("TimerManager Tick! (1.0s) - Count: {}", ticks);
+            }));
+
+            ZGINE_IGNORE_RESULT(Application::Get().GetTimerManager().AddTimer(2.5, []() {
+                ZGINE_CORE_WARN("TimerManager OneShot! (2.5s) - Triggered exactly once.");
+            }));
+            // ==========================================
+
             ZGINE_CORE_INFO("EditorLayer initialization complete");
         }
 
@@ -99,9 +107,26 @@ namespace Zgine {
             m_RenderSystem.Shutdown();
         }
 
+        virtual void OnFixedUpdate(Timestep ts) override {
+            // ZGINE_CORE_INFO("EditorLayer::OnFixedUpdate! dt: {}", ts.GetSeconds());
+            // This runs at 60Hz. If we print it it will spam the console, so it's commented out.
+            // But we can update physics here if it was separated from the variable update!
+        }
+
         virtual void OnUpdate(Timestep ts) override {
             // Handle viewport resize FIRST, before rendering to ensure new framebuffer gets content
             HandleViewportResize();
+
+            // Debug: Spin the cube to prove it is 3D
+            auto view = m_World.GetRegistry().view<TransformComponent, TagComponent>();
+            for (auto entity : view) {
+                auto& transform = view.get<TransformComponent>(entity);
+                auto& tag = view.get<TagComponent>(entity);
+                if (tag.Tag == "Cube") {
+                    transform.Rotation.y += 45.0f * static_cast<float>(ts);
+                    transform.Rotation.x += 15.0f * static_cast<float>(ts);
+                }
+            }
 
             // Handle camera input when viewport is focused
             if (m_Editor.IsSceneViewportFocused() && m_Editor.GetMode() == EditorMode::Edit) {
@@ -215,6 +240,11 @@ namespace Zgine {
             glDepthFunc(GL_LESS);  // 确保使用正确的深度函数
             glDepthMask(GL_TRUE);  // 确保深度写入启用
 
+            // Enable Face Culling
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
+            glFrontFace(GL_CCW);
+
             // Clear with editor theme color
             auto clearColor = m_Editor.GetClearColor();
             glClearColor(clearColor.r, clearColor.g, clearColor.b, clearColor.a);
@@ -236,6 +266,7 @@ namespace Zgine {
 
             // Disable depth testing for ImGui (ImGui manages its own depth)
             glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
         }
 
         void HandleViewportResize() {
@@ -444,7 +475,7 @@ namespace Zgine {
             auto sun = m_World.CreateEntity("Directional Light");
             auto& light = sun.AddComponent<DirectionalLightComponent>();
             light.Direction = Math::Vector3(-0.5f, -1.0f, -0.5f);
-            light.Intensity = 3.0f;
+            light.Intensity = 1.5f;
 
             // Create ground plane
             auto ground = m_World.CreateEntity("Ground");

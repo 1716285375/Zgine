@@ -16,7 +16,7 @@ void main()
     vec3 lightDir = normalize(-u_LightDirection);
 
     // Ambient
-    float ambientStrength = 0.3;
+    float ambientStrength = 0.15;
     vec3 ambient = ambientStrength * u_LightColor;
 
     // Diffuse
@@ -24,5 +24,9 @@ void main()
     vec3 diffuse = diff * u_LightColor;
 
     vec3 result = (ambient + diffuse) * u_Color;
+
+    // Gamma correction
+    result = pow(result, vec3(1.0 / 2.2));
+
     color = vec4(result, 1.0);
 }
