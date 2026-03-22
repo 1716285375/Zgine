@@ -23,6 +23,7 @@ public:
 
     virtual uint32_t GetColorAttachmentID() const = 0;
     virtual uint32_t GetDepthAttachmentID() const = 0;
+    virtual void BindDepthTexture(uint32_t slot) const = 0;
     virtual const FramebufferSpec& GetSpec() const = 0;
 
     static std::shared_ptr<Framebuffer> Create(const FramebufferSpec& spec);

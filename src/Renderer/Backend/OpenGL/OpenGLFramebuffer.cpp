@@ -96,6 +96,11 @@ void OpenGLFramebuffer::Invalidate() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void OpenGLFramebuffer::BindDepthTexture(uint32_t slot) const {
+    glActiveTexture(GL_TEXTURE0 + slot);
+    glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
+}
+
 void OpenGLFramebuffer::Cleanup() {
     if (m_RendererID) {
         glDeleteFramebuffers(1, &m_RendererID);

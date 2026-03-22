@@ -5,6 +5,7 @@ layout(location = 0) out vec4 FragColor;
 in vec3 v_Normal;
 in vec3 v_FragPos;
 in vec2 v_TexCoord;
+in vec4 v_FragPosLightSpace;
 
 // ---- Material ----
 uniform vec3  u_Color;
@@ -12,6 +13,10 @@ uniform float u_Shininess; // specular exponent (higher = sharper highlights)
 
 // ---- Camera ----
 uniform vec3 u_CameraPos;
+
+// ---- Shadow ----
+uniform sampler2D u_ShadowMap;  // slot 5
+uniform int u_EnableShadows;
 
 // ---- Directional Light ----
 struct DirLight {
@@ -46,6 +51,39 @@ struct SpotLight {
 };
 uniform int       u_NumSpotLights;
 uniform SpotLight u_SpotLights[MAX_SPOT_LIGHTS];
+
+// ---- Shadow calculation (3x3 PCF) ----
+float CalcShadow(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+{
+    if (u_EnableShadows == 0)
+        return 0.0;
+
+    // Perspective divide
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    projCoords = projCoords * 0.5 + 0.5;
+
+    // Outside shadow map => no shadow
+    if (projCoords.z > 1.0)
+        return 0.0;
+
+    float currentDepth = projCoords.z;
+
+    // Bias based on surface angle to light
+    float bias = max(0.005 * (1.0 - dot(normal, lightDir)), 0.001);
+
+    // 3x3 PCF
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(u_ShadowMap, 0);
+    for (int x = -1; x <= 1; x++)
+    {
+        for (int y = -1; y <= 1; y++)
+        {
+            float pcfDepth = texture(u_ShadowMap, projCoords.xy + vec2(x, y) * texelSize).r;
+            shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+        }
+    }
+    return shadow / 9.0;
+}
 
 // ---- Blinn-Phong helpers ----
 
@@ -124,8 +162,10 @@ void main()
     // Accumulate light contributions
     vec3 lighting = vec3(0.0);
 
-    // Directional light
-    lighting += CalcDirLight(u_DirLight, normal, viewDir);
+    // Directional light (with shadow)
+    vec3 dirLightDir = normalize(-u_DirLight.direction);
+    float shadow = CalcShadow(v_FragPosLightSpace, normal, dirLightDir);
+    lighting += (1.0 - shadow) * CalcDirLight(u_DirLight, normal, viewDir);
 
     // Point lights
     for (int i = 0; i < u_NumPointLights; i++)

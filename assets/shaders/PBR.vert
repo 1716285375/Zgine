@@ -7,10 +7,12 @@ layout(location = 2) in vec2 a_TexCoord;
 uniform mat4 u_ViewProjection;
 uniform mat4 u_Transform;
 uniform mat3 u_NormalMatrix;
+uniform mat4 u_LightSpaceMatrix;
 
 out vec3 v_Normal;
 out vec3 v_FragPos;
 out vec2 v_TexCoord;
+out vec4 v_FragPosLightSpace;
 
 void main()
 {
@@ -18,5 +20,6 @@ void main()
     v_FragPos = worldPos.xyz;
     v_Normal = normalize(u_NormalMatrix * a_Normal);
     v_TexCoord = a_TexCoord;
+    v_FragPosLightSpace = u_LightSpaceMatrix * worldPos;
     gl_Position = u_ViewProjection * worldPos;
 }

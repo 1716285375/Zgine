@@ -3,7 +3,7 @@
 // ============================================================================
 // Rendering Feature Flags
 // ============================================================================
-#define ZGINE_BASIC_RENDERING_ONLY 1
+#define ZGINE_BASIC_RENDERING_ONLY 0
 
 #if ZGINE_BASIC_RENDERING_ONLY
     #define ZGINE_ENABLE_SHADOWS    0

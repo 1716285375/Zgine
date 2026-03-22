@@ -9,6 +9,7 @@
 #include <Zgine/Renderer/RHI/Texture.h>
 #include <Zgine/Renderer/RHI/VertexArray.h>
 #include <Zgine/Renderer/RHI/IndexBuffer.h>
+#include <Zgine/Renderer/RHI/Framebuffer.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
 #include <Zgine/Platform/IO/File.h>
 #include <Zgine/Core/Math/Math.h>
@@ -67,8 +68,42 @@ void RenderSystem::Initialize() {
         m_Config.Path = RenderPath::Basic;
     }
 
-    ZGINE_CORE_INFO("RenderSystem initialized (path: {})",
-        m_Config.Path == RenderPath::Advanced ? "PBR" : "Blinn-Phong");
+    // Depth shader (shadow pass)
+    std::string depthVert = File::ReadFile("assets/shaders/Depth.vert");
+    std::string depthFrag = File::ReadFile("assets/shaders/Depth.frag");
+    if (!depthVert.empty() && !depthFrag.empty()) {
+        m_DepthShader = Shader::Create("Depth", depthVert, depthFrag);
+    } else {
+        ZGINE_CORE_WARN("Failed to load Depth shaders, shadows disabled.");
+    }
+
+    // Shadow map FBO (depth-only, 2048x2048)
+    if (m_DepthShader) {
+        FramebufferSpec shadowSpec;
+        shadowSpec.Width = 2048;
+        shadowSpec.Height = 2048;
+        shadowSpec.HDR = false;
+        shadowSpec.DepthStencil = false;
+        shadowSpec.DepthTexture = true;
+        m_ShadowMapFBO = Framebuffer::Create(shadowSpec);
+        m_Config.EnableShadows = true;
+    }
+
+    // Set shadow map sampler slot for both shaders
+    if (m_SimpleShader) {
+        m_SimpleShader->Bind();
+        m_SimpleShader->SetUniform1i("u_ShadowMap", 5);
+        m_SimpleShader->Unbind();
+    }
+    if (m_PBRShader) {
+        m_PBRShader->Bind();
+        m_PBRShader->SetUniform1i("u_ShadowMap", 5);
+        m_PBRShader->Unbind();
+    }
+
+    ZGINE_CORE_INFO("RenderSystem initialized (path: {}, shadows: {})",
+        m_Config.Path == RenderPath::Advanced ? "PBR" : "Blinn-Phong",
+        m_Config.EnableShadows ? "on" : "off");
 }
 
 void RenderSystem::Shutdown() {
@@ -85,8 +120,58 @@ Shader* RenderSystem::GetActiveShader() const {
     return m_SimpleShader.get();
 }
 
+void RenderSystem::RenderShadowPass(World* world) {
+    if (!m_DepthShader || !m_ShadowMapFBO || !m_Config.EnableShadows) return;
+
+    // Compute light-space matrix from directional light
+    auto& dir = m_LightingData.directional;
+    Math::Vector3 lightDir = Math::Normalize(dir.direction);
+
+    // Orthographic projection centered at origin, covering the scene
+    float orthoSize = 20.0f;
+    Math::Matrix4 lightProjection = Math::Matrix4::Ortho(
+        -orthoSize, orthoSize, -orthoSize, orthoSize, 0.1f, 50.0f);
+
+    // Look from the opposite of light direction toward origin
+    Math::Vector3 lightPos = lightDir * (-25.0f);
+    Math::Matrix4 lightView = Math::Matrix4::LookAt(
+        lightPos, Math::Vector3(0.0f, 0.0f, 0.0f), Math::Vector3(0.0f, 1.0f, 0.0f));
+
+    m_LightSpaceMatrix = lightProjection * lightView;
+
+    // Render to shadow map
+    m_ShadowMapFBO->Bind();
+    s_RendererAPI->Clear();
+
+    m_DepthShader->Bind();
+    m_DepthShader->SetUniformMat4f("u_LightSpaceMatrix", m_LightSpaceMatrix);
+
+    auto view = world->GetRegistry().view<TransformComponent, PrimitiveComponent>();
+    for (auto entity : view) {
+        auto [transform, primitive] = view.get<TransformComponent, PrimitiveComponent>(entity);
+        PrimitiveMesh mesh = PrimitiveMeshFactory::GetMesh(primitive.Type);
+        if (!mesh.VertexArray) continue;
+
+        Math::Matrix4 transformMat = transform.GetTransform();
+        m_DepthShader->SetUniformMat4f("u_Transform", transformMat);
+
+        s_RendererAPI->DrawIndexed(mesh.VertexArray, mesh.IndexBuffer->GetCount());
+        m_FrameStats.DrawCalls++;
+    }
+
+    m_DepthShader->Unbind();
+    m_ShadowMapFBO->Unbind();
+}
+
 void RenderSystem::RenderScene(World* world, Camera* camera) {
     if (!world || !camera || !s_RendererAPI) return;
+
+    // Collect lights first (needed by shadow pass)
+    m_LightingData = LightingData{};
+    CollectLights(*world, m_LightingData);
+
+    // Shadow pass
+    RenderShadowPass(world);
 
     Shader* shader = GetActiveShader();
     if (!shader) return;
@@ -101,10 +186,17 @@ void RenderSystem::RenderScene(World* world, Camera* camera) {
     auto camPos = camera->GetPosition();
     shader->SetUniform3f("u_CameraPos", camPos.x, camPos.y, camPos.z);
 
-    // Collect and upload lights
-    m_LightingData = LightingData{};
-    CollectLights(*world, m_LightingData);
+    // Light uniforms
     SetupLightUniforms(shader, m_LightingData);
+
+    // Shadow uniforms
+    shader->SetUniformMat4f("u_LightSpaceMatrix", m_LightSpaceMatrix);
+    shader->SetUniform1i("u_EnableShadows", m_Config.EnableShadows ? 1 : 0);
+
+    // Bind shadow map to slot 5
+    if (m_ShadowMapFBO && m_Config.EnableShadows) {
+        m_ShadowMapFBO->BindDepthTexture(5);
+    }
 
     // Render entities
     auto view = world->GetRegistry().view<TransformComponent, PrimitiveComponent>();

@@ -15,6 +15,7 @@ public:
 
     uint32_t GetColorAttachmentID() const override { return m_ColorAttachment; }
     uint32_t GetDepthAttachmentID() const override { return m_DepthAttachment; }
+    void BindDepthTexture(uint32_t slot) const override;
     const FramebufferSpec& GetSpec() const override { return m_Spec; }
 
 private:
