@@ -15,13 +15,6 @@ namespace Zgine {
     class VertexBuffer;
     class Entity;
 
-    /**
-     * @brief Orchestrates a complete render frame.
-     *
-     * RenderSystem sits above the RHI layer: it knows *how* to draw a World
-     * (submit draw calls, bind shaders, set uniforms) but delegates the actual
-     * GPU commands to the RHI abstractions in Renderer/RHI/.
-     */
     class RenderSystem {
     public:
         RenderSystem();
@@ -31,7 +24,7 @@ namespace Zgine {
         void Shutdown();
         void BeginFrame();
 
-        void RenderScene(World* World, class Camera* camera);
+        void RenderScene(World* world, Camera* camera);
 
         void SetRenderConfig(const RenderConfig& config) { m_Config = config; }
         [[nodiscard]] const RenderConfig& GetRenderConfig() const { return m_Config; }
@@ -40,10 +33,14 @@ namespace Zgine {
     private:
         void CollectLights(World& world, LightingData& lightData);
         void SetupLightUniforms(Shader* shader, const LightingData& lightData);
-        void SetupMaterialUniforms(Shader* shader, class Entity entity);
+        void SetupMaterialUniforms(Shader* shader, World& world, uint32_t entity);
+
+        Shader* GetActiveShader() const;
 
         RenderConfig               m_Config;
         std::shared_ptr<Shader>    m_SimpleShader;
+        std::shared_ptr<Shader>    m_PBRShader;
+        LightingData               m_LightingData{};
         bool                       m_Initialized = false;
         RenderStats                m_FrameStats{};
     };

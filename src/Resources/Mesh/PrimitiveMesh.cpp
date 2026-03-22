@@ -11,36 +11,21 @@ namespace {
     PrimitiveMesh s_PlaneMesh;
     PrimitiveMesh s_SphereMesh;
 
+    // Vertex layout: position(3) + normal(3) + texcoord(2) = 8 floats, stride 32 bytes
     void ConfigureVertexLayout(const std::shared_ptr<VertexArray>& vertexArray,
                                const std::shared_ptr<VertexBuffer>& vertexBuffer,
-                               const std::shared_ptr<IndexBuffer>& indexBuffer,
-                               int strideFloats, bool hasTangents = false) {
+                               const std::shared_ptr<IndexBuffer>& indexBuffer) {
         vertexArray->Bind();
         vertexBuffer->Bind();
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, strideFloats * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, strideFloats * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, strideFloats * sizeof(float), (void*)(6 * sizeof(float)));
+        constexpr int stride = 8 * sizeof(float);
 
-        if (hasTangents) {
-            glEnableVertexAttribArray(3);
-            glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, strideFloats * sizeof(float), (void*)(8 * sizeof(float)));
-            glEnableVertexAttribArray(4);
-            glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, strideFloats * sizeof(float), (void*)(11 * sizeof(float)));
-        } else {
-            // 如果没有切线，设置默认值
-            glDisableVertexAttribArray(3);
-            glVertexAttrib3f(3, 1.0f, 0.0f, 0.0f);
-            glDisableVertexAttribArray(4);
-            glVertexAttrib3f(4, 0.0f, 1.0f, 0.0f);
-        }
-
-        // Color attribute (location 3 in old shader, but we'll use it for compatibility)
-        glDisableVertexAttribArray(5);
-        glVertexAttrib4f(5, 1.0f, 1.0f, 1.0f, 1.0f);
+        glEnableVertexAttribArray(0); // position
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+        glEnableVertexAttribArray(1); // normal
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2); // texcoord
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
 
         vertexArray->SetIndexBuffer(indexBuffer);
         vertexArray->Unbind();
@@ -112,7 +97,7 @@ PrimitiveMesh PrimitiveMeshFactory::CreateCube() {
     s_CubeMesh.VertexArray = VertexArray::Create();
     s_CubeMesh.VertexBuffer = VertexBuffer::Create(vertices, static_cast<unsigned int>(sizeof(vertices)));
     s_CubeMesh.IndexBuffer = IndexBuffer::Create(indices, 36);
-    ConfigureVertexLayout(s_CubeMesh.VertexArray, s_CubeMesh.VertexBuffer, s_CubeMesh.IndexBuffer, 8, false);
+    ConfigureVertexLayout(s_CubeMesh.VertexArray, s_CubeMesh.VertexBuffer, s_CubeMesh.IndexBuffer);
 
     return s_CubeMesh;
 }
@@ -122,46 +107,21 @@ PrimitiveMesh PrimitiveMeshFactory::CreatePlane() {
         return s_PlaneMesh;
     }
 
+    // 4 vertices: pos(3) + normal(3) + texcoord(2) = 8 floats each
+    // Vertices ordered CCW when viewed from +Y (top-down)
     float vertices[] = {
-        -0.5f, 0.0f, -0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 0.0f,
-         0.5f, 0.0f, -0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 0.0f,
-         0.5f, 0.0f,  0.5f,  0.0f, 1.0f, 0.0f,  1.0f, 1.0f,
-        -0.5f, 0.0f,  0.5f,  0.0f, 1.0f, 0.0f,  0.0f, 1.0f
+        -0.5f, 0.0f,  0.5f,   0.0f, 1.0f, 0.0f,   0.0f, 0.0f,
+         0.5f, 0.0f,  0.5f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,
+         0.5f, 0.0f, -0.5f,   0.0f, 1.0f, 0.0f,   1.0f, 1.0f,
+        -0.5f, 0.0f, -0.5f,   0.0f, 1.0f, 0.0f,   0.0f, 1.0f,
     };
 
-    unsigned int indices[] = { 0, 2, 1, 0, 3, 2 }; // CCW from +Y (top view)
+    unsigned int indices[] = { 0, 1, 2, 2, 3, 0 };
 
     s_PlaneMesh.VertexArray = VertexArray::Create();
+    s_PlaneMesh.VertexBuffer = VertexBuffer::Create(vertices, static_cast<unsigned int>(sizeof(vertices)));
     s_PlaneMesh.IndexBuffer = IndexBuffer::Create(indices, 6);
-
-    // 为平面计算切线和副切线
-    float verticesWithTangents[4 * 14];
-    for (int i = 0; i < 4; i++) {
-        int srcIdx = i * 8;
-        int dstIdx = i * 14;
-        // Position
-        verticesWithTangents[dstIdx + 0] = vertices[srcIdx + 0];
-        verticesWithTangents[dstIdx + 1] = vertices[srcIdx + 1];
-        verticesWithTangents[dstIdx + 2] = vertices[srcIdx + 2];
-        // Normal
-        verticesWithTangents[dstIdx + 3] = vertices[srcIdx + 3];
-        verticesWithTangents[dstIdx + 4] = vertices[srcIdx + 4];
-        verticesWithTangents[dstIdx + 5] = vertices[srcIdx + 5];
-        // TexCoords
-        verticesWithTangents[dstIdx + 6] = vertices[srcIdx + 6];
-        verticesWithTangents[dstIdx + 7] = vertices[srcIdx + 7];
-        // Tangent (对于平面，切线是 (1,0,0))
-        verticesWithTangents[dstIdx + 8] = 1.0f;
-        verticesWithTangents[dstIdx + 9] = 0.0f;
-        verticesWithTangents[dstIdx + 10] = 0.0f;
-        // Bitangent (对于平面，副切线是 (0,0,1))
-        verticesWithTangents[dstIdx + 11] = 0.0f;
-        verticesWithTangents[dstIdx + 12] = 0.0f;
-        verticesWithTangents[dstIdx + 13] = 1.0f;
-    }
-
-    s_PlaneMesh.VertexBuffer = VertexBuffer::Create(verticesWithTangents, static_cast<unsigned int>(sizeof(verticesWithTangents)));
-    ConfigureVertexLayout(s_PlaneMesh.VertexArray, s_PlaneMesh.VertexBuffer, s_PlaneMesh.IndexBuffer, 14, true);
+    ConfigureVertexLayout(s_PlaneMesh.VertexArray, s_PlaneMesh.VertexBuffer, s_PlaneMesh.IndexBuffer);
 
     return s_PlaneMesh;
 }
@@ -171,69 +131,47 @@ PrimitiveMesh PrimitiveMeshFactory::CreateSphere() {
         return s_SphereMesh;
     }
 
-    const int sectorCount = 32;  // horizontal segments
-    const int stackCount = 16;   // vertical stacks
+    const int sectorCount = 32;
+    const int stackCount = 16;
     const float radius = 0.5f;
     const float PI = 3.14159265359f;
 
+    // pos(3) + normal(3) + texcoord(2) = 8 floats per vertex
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
 
-    // Generate vertices
     for (int i = 0; i <= stackCount; ++i) {
-        float stackAngle = PI / 2.0f - PI * i / stackCount;  // from pi/2 to -pi/2
+        float stackAngle = PI / 2.0f - PI * i / stackCount;
         float xy = radius * cosf(stackAngle);
         float z = radius * sinf(stackAngle);
 
         for (int j = 0; j <= sectorCount; ++j) {
-            float sectorAngle = 2.0f * PI * j / sectorCount;  // from 0 to 2pi
+            float sectorAngle = 2.0f * PI * j / sectorCount;
 
-            // Position
             float x = xy * cosf(sectorAngle);
             float y = xy * sinf(sectorAngle);
-            
-            // Normal (normalized position for unit sphere)
+
             float nx = x / radius;
             float ny = y / radius;
             float nz = z / radius;
 
-            // Texture coordinates
             float u = (float)j / sectorCount;
             float v = (float)i / stackCount;
 
-            // Tangent (derivative of position with respect to sector angle)
-            float tx = -sinf(sectorAngle);
-            float ty = cosf(sectorAngle);
-            float tz = 0.0f;
-
-            // Bitangent (derivative of position with respect to stack angle)
-            float bx = -cosf(sectorAngle) * sinf(stackAngle);
-            float by = -sinf(sectorAngle) * sinf(stackAngle);
-            float bz = cosf(stackAngle);
-
-            // Position (3)
+            // Position (Y-up: swap y and z)
             vertices.push_back(x);
-            vertices.push_back(z);  // Swap y and z for Y-up coordinate system
+            vertices.push_back(z);
             vertices.push_back(y);
-            // Normal (3)
+            // Normal (Y-up: swap y and z)
             vertices.push_back(nx);
             vertices.push_back(nz);
             vertices.push_back(ny);
-            // TexCoords (2)
+            // TexCoords
             vertices.push_back(u);
             vertices.push_back(v);
-            // Tangent (3)
-            vertices.push_back(tx);
-            vertices.push_back(tz);
-            vertices.push_back(ty);
-            // Bitangent (3)
-            vertices.push_back(bx);
-            vertices.push_back(bz);
-            vertices.push_back(by);
         }
     }
 
-    // Generate indices
     for (int i = 0; i < stackCount; ++i) {
         int k1 = i * (sectorCount + 1);
         int k2 = k1 + sectorCount + 1;
@@ -253,9 +191,9 @@ PrimitiveMesh PrimitiveMeshFactory::CreateSphere() {
     }
 
     s_SphereMesh.VertexArray = VertexArray::Create();
-    s_SphereMesh.IndexBuffer = IndexBuffer::Create(indices.data(), static_cast<unsigned int>(indices.size()));
     s_SphereMesh.VertexBuffer = VertexBuffer::Create(vertices.data(), static_cast<unsigned int>(vertices.size() * sizeof(float)));
-    ConfigureVertexLayout(s_SphereMesh.VertexArray, s_SphereMesh.VertexBuffer, s_SphereMesh.IndexBuffer, 14, true);
+    s_SphereMesh.IndexBuffer = IndexBuffer::Create(indices.data(), static_cast<unsigned int>(indices.size()));
+    ConfigureVertexLayout(s_SphereMesh.VertexArray, s_SphereMesh.VertexBuffer, s_SphereMesh.IndexBuffer);
 
     return s_SphereMesh;
 }

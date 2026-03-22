@@ -22,6 +22,7 @@
 #include <Zgine/Resources/Core/AssetManager.h>
 #include <Zgine/Resources/Material/PBRMaterialPreset.h>
 #include <Zgine/World/Camera/Camera.h>
+#include <Zgine/Renderer/RHI/Framebuffer.h>
 
 // Event system includes
 #include <Zgine/Editor/Core/EditorEventBus.h>
@@ -65,7 +66,12 @@ namespace Zgine {
             m_RenderSystem.Initialize();
 
             // Create framebuffer for World rendering
-            CreateFramebuffer(1280, 720);
+            FramebufferSpec fbSpec;
+            fbSpec.Width = 1280;
+            fbSpec.Height = 720;
+            fbSpec.HDR = true;
+            fbSpec.DepthStencil = true;
+            m_SceneFramebuffer = Framebuffer::Create(fbSpec);
 
             // Initialize Editor UI
             auto& window = Application::Get().GetWindow();
@@ -153,7 +159,7 @@ namespace Zgine {
             // We just render our editor UI content here
 
             // Provide World texture to editor viewport (framebuffer already resized in OnUpdate)
-            m_Editor.SetSceneTexture(m_SceneColorTexture);
+            m_Editor.SetSceneTexture(m_SceneFramebuffer->GetColorAttachmentID());
             m_Editor.SetSceneViewProjection(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
             m_Editor.SetRenderStats(m_RenderSystem.GetStats());
 
@@ -175,70 +181,18 @@ namespace Zgine {
         }
 
     private:
-        void CreateFramebuffer(unsigned int width, unsigned int height) {
-            // Store old resources for deletion after new ones are created
-            unsigned int oldFBO = m_SceneFBO;
-            unsigned int oldColorTexture = m_SceneColorTexture;
-            unsigned int oldDepthRBO = m_SceneDepthRBO;
-
-            // Create new framebuffer first (before deleting old one to prevent flickering)
-            unsigned int newFBO = 0;
-            unsigned int newColorTexture = 0;
-            unsigned int newDepthRBO = 0;
-
-            glGenFramebuffers(1, &newFBO);
-            glBindFramebuffer(GL_FRAMEBUFFER, newFBO);
-
-            // Color attachment
-            glGenTextures(1, &newColorTexture);
-            glBindTexture(GL_TEXTURE_2D, newColorTexture);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, newColorTexture, 0);
-
-            // Depth attachment
-            glGenRenderbuffers(1, &newDepthRBO);
-            glBindRenderbuffer(GL_RENDERBUFFER, newDepthRBO);
-            glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-            glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, newDepthRBO);
-
-            if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-                ZGINE_CORE_ERROR("Editor framebuffer is not complete!");
-            }
-
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-            // Now swap to the new resources
-            m_SceneFBO = newFBO;
-            m_SceneColorTexture = newColorTexture;
-            m_SceneDepthRBO = newDepthRBO;
-            m_FramebufferWidth = width;
-            m_FramebufferHeight = height;
-
-            // Delete old resources after swap (safe to do now)
-            if (oldFBO != 0) {
-                glDeleteFramebuffers(1, &oldFBO);
-                glDeleteTextures(1, &oldColorTexture);
-                glDeleteRenderbuffers(1, &oldDepthRBO);
-            }
-        }
-
         void RenderSceneToFramebuffer() {
             // Save current viewport
             GLint prevViewport[4];
             glGetIntegerv(GL_VIEWPORT, prevViewport);
 
-            // Bind World framebuffer
-            glBindFramebuffer(GL_FRAMEBUFFER, m_SceneFBO);
-            glViewport(0, 0, m_FramebufferWidth, m_FramebufferHeight);
+            // Bind scene framebuffer (sets viewport automatically)
+            m_SceneFramebuffer->Bind();
 
             // Enable depth testing for World rendering
             glEnable(GL_DEPTH_TEST);
-            glDepthFunc(GL_LESS);  // 确保使用正确的深度函数
-            glDepthMask(GL_TRUE);  // 确保深度写入启用
+            glDepthFunc(GL_LESS);
+            glDepthMask(GL_TRUE);
 
             // Enable Face Culling
             glEnable(GL_CULL_FACE);
@@ -255,7 +209,7 @@ namespace Zgine {
             m_RenderSystem.RenderScene(&m_World, &m_EditorCamera);
 
             // Unbind framebuffer and restore state
-            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+            m_SceneFramebuffer->Unbind();
 
             // Restore viewport to window size for ImGui rendering
             glViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
@@ -275,17 +229,14 @@ namespace Zgine {
                 unsigned int newWidth = static_cast<unsigned int>(viewportSize.x);
                 unsigned int newHeight = static_cast<unsigned int>(viewportSize.y);
 
-                // Prevent resizing to tiny dimensions (e.g., during initialization)
                 if (newWidth < 100 || newHeight < 100) return;
 
-                if (newWidth != m_FramebufferWidth || newHeight != m_FramebufferHeight) {
+                auto& spec = m_SceneFramebuffer->GetSpec();
+                if (newWidth != spec.Width || newHeight != spec.Height) {
                     float aspect = (float)newWidth / (float)newHeight;
                     ZGINE_CORE_INFO("Resizing framebuffer to {}x{} (Aspect: {:.2f})", newWidth, newHeight, aspect);
 
-                    CreateFramebuffer(newWidth, newHeight);
-
-                    // DEBUG: Force standard aspect ratio to rule out distortion
-                    // aspect = 1.777f;
+                    m_SceneFramebuffer->Resize(newWidth, newHeight);
 
                     m_EditorCamera.SetProjection(
                         Math::Matrix4::Perspective(Math::DegToRad(45.0f), aspect, 0.1f, 1000.0f)
@@ -475,7 +426,7 @@ namespace Zgine {
             auto sun = m_World.CreateEntity("Directional Light");
             auto& light = sun.AddComponent<DirectionalLightComponent>();
             light.Direction = Math::Vector3(-0.5f, -1.0f, -0.5f);
-            light.Intensity = 1.5f;
+            light.Intensity = 0.8f;
 
             // Create ground plane
             auto ground = m_World.CreateEntity("Ground");
@@ -487,20 +438,63 @@ namespace Zgine {
             groundMat.Albedo = Math::Vector3(0.5f, 0.5f, 0.5f);
             groundMat.Roughness = 0.8f;
 
-            // Create sample cube - 增大尺寸和调整位置以显示3D效果
-            auto cube = m_World.CreateEntity("Cube");
+            // Gold metal cube (high metallic, low roughness = sharp reflections)
+            auto cube = m_World.CreateEntity("Gold Cube");
             cube.AddComponent<PrimitiveComponent>(PrimitiveType::Cube);
             auto& cubeTransform = cube.GetComponent<TransformComponent>();
             cubeTransform.Translation = Math::Vector3(0.0f, 2.0f, 0.0f);
             cubeTransform.Scale = Math::Vector3(2.0f, 2.0f, 2.0f);
             cubeTransform.Rotation = Math::Vector3(25.0f, 35.0f, 0.0f);
-            // Replace texture preset with manual material
-            // auto& cubeMat = cube.AddComponent<PBRMaterialComponent>();
-            // cubeMat.Albedo = glm::vec3(1.0f, 0.8f, 0.0f); // Gold
-            // cubeMat.Metallic = 0.9f;
-            // cubeMat.Roughness = 0.2f;
+            auto& cubeMat = cube.AddComponent<PBRMaterialComponent>();
+            cubeMat.Albedo = Math::Vector3(1.0f, 0.76f, 0.33f);
+            cubeMat.Metallic = 1.0f;
+            cubeMat.Roughness = 0.15f;
 
-            ZGINE_CORE_INFO("Default World created (DEBUG MODE - simplified)");
+            // Blue plastic cube (non-metal, rough = soft highlights)
+            auto cube2 = m_World.CreateEntity("Plastic Cube");
+            cube2.AddComponent<PrimitiveComponent>(PrimitiveType::Cube);
+            auto& cube2Transform = cube2.GetComponent<TransformComponent>();
+            cube2Transform.Translation = Math::Vector3(4.0f, 1.5f, 0.0f);
+            cube2Transform.Scale = Math::Vector3(1.5f, 1.5f, 1.5f);
+            auto& cube2Mat = cube2.AddComponent<PBRMaterialComponent>();
+            cube2Mat.Albedo = Math::Vector3(0.1f, 0.4f, 0.9f);
+            cube2Mat.Metallic = 0.0f;
+            cube2Mat.Roughness = 0.7f;
+
+            // Chrome sphere (full metal, very smooth)
+            auto sphere = m_World.CreateEntity("Chrome Sphere");
+            sphere.AddComponent<PrimitiveComponent>(PrimitiveType::Sphere);
+            auto& sphereTransform = sphere.GetComponent<TransformComponent>();
+            sphereTransform.Translation = Math::Vector3(-4.0f, 1.5f, 0.0f);
+            sphereTransform.Scale = Math::Vector3(2.0f, 2.0f, 2.0f);
+            auto& sphereMat = sphere.AddComponent<PBRMaterialComponent>();
+            sphereMat.Albedo = Math::Vector3(0.95f, 0.93f, 0.88f);
+            sphereMat.Metallic = 1.0f;
+            sphereMat.Roughness = 0.05f;
+
+            // Point light - red, positioned near the cube
+            auto pointLight = m_World.CreateEntity("Point Light");
+            auto& pointLightTransform = pointLight.GetComponent<TransformComponent>();
+            pointLightTransform.Translation = Math::Vector3(-3.0f, 3.0f, 2.0f);
+            auto& pl = pointLight.AddComponent<PointLightComponent>();
+            pl.Color = Math::Vector3(1.0f, 0.3f, 0.1f);
+            pl.Intensity = 5.0f;
+            pl.Constant = 1.0f;
+            pl.Linear = 0.09f;
+            pl.Quadratic = 0.032f;
+
+            // Spot light - white, pointing down at the ground
+            auto spotLight = m_World.CreateEntity("Spot Light");
+            auto& spotLightTransform = spotLight.GetComponent<TransformComponent>();
+            spotLightTransform.Translation = Math::Vector3(3.0f, 6.0f, -2.0f);
+            auto& sl = spotLight.AddComponent<SpotLightComponent>();
+            sl.Direction = Math::Vector3(0.0f, -1.0f, 0.2f);
+            sl.Color = Math::Vector3(0.4f, 0.8f, 1.0f);
+            sl.Intensity = 8.0f;
+            sl.InnerCone = 15.0f;
+            sl.OuterCone = 25.0f;
+
+            ZGINE_CORE_INFO("Default World created with multi-light demo");
         }
 
     private:
@@ -516,11 +510,7 @@ namespace Zgine {
         Editor m_Editor;
 
         // Framebuffer for World rendering
-        unsigned int m_SceneFBO = 0;
-        unsigned int m_SceneColorTexture = 0;
-        unsigned int m_SceneDepthRBO = 0;
-        unsigned int m_FramebufferWidth = 1280;
-        unsigned int m_FramebufferHeight = 720;
+        std::shared_ptr<Framebuffer> m_SceneFramebuffer;
 
         // Camera control state
         float m_LastMouseX = 0.0f;
