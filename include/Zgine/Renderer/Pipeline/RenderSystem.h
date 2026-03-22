@@ -5,6 +5,7 @@
 #include <Zgine/Renderer/Pipeline/RenderStats.h>
 #include <Zgine/Renderer/Pipeline/RenderConfig.h>
 #include <Zgine/Renderer/Lighting/LightData.h>
+#include <Zgine/Renderer/PostProcess/PostProcessPipeline.h>
 #include <Zgine/Core/Math/Matrix4.h>
 
 namespace Zgine {
@@ -28,9 +29,13 @@ namespace Zgine {
 
         void RenderScene(World* world, Camera* camera);
 
+        uint32_t PostProcess(uint32_t sceneColorTexture);
+        void ResizePostProcess(uint32_t width, uint32_t height);
+
         void SetRenderConfig(const RenderConfig& config) { m_Config = config; }
         [[nodiscard]] const RenderConfig& GetRenderConfig() const { return m_Config; }
         [[nodiscard]] const RenderStats&  GetStats()        const { return m_FrameStats; }
+        PostProcessPipeline& GetPostProcess() { return m_PostProcess; }
 
     private:
         void CollectLights(World& world, LightingData& lightData);
@@ -47,6 +52,7 @@ namespace Zgine {
         std::shared_ptr<Framebuffer> m_ShadowMapFBO;
         Math::Matrix4              m_LightSpaceMatrix;
         LightingData               m_LightingData{};
+        PostProcessPipeline        m_PostProcess;
         bool                       m_Initialized = false;
         RenderStats                m_FrameStats{};
     };

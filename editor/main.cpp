@@ -158,8 +158,9 @@ namespace Zgine {
             // Note: Application's GuiLayer handles ImGui Begin/End frame
             // We just render our editor UI content here
 
-            // Provide World texture to editor viewport (framebuffer already resized in OnUpdate)
-            m_Editor.SetSceneTexture(m_SceneFramebuffer->GetColorAttachmentID());
+            // Post-process scene and provide final texture to editor viewport
+            uint32_t finalTexture = m_RenderSystem.PostProcess(m_SceneFramebuffer->GetColorAttachmentID());
+            m_Editor.SetSceneTexture(finalTexture);
             m_Editor.SetSceneViewProjection(m_EditorCamera.GetView(), m_EditorCamera.GetProjection());
             m_Editor.SetRenderStats(m_RenderSystem.GetStats());
 
@@ -237,6 +238,7 @@ namespace Zgine {
                     ZGINE_CORE_INFO("Resizing framebuffer to {}x{} (Aspect: {:.2f})", newWidth, newHeight, aspect);
 
                     m_SceneFramebuffer->Resize(newWidth, newHeight);
+                    m_RenderSystem.ResizePostProcess(newWidth, newHeight);
 
                     m_EditorCamera.SetProjection(
                         Math::Matrix4::Perspective(Math::DegToRad(45.0f), aspect, 0.1f, 1000.0f)

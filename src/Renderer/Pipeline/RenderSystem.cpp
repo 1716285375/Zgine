@@ -101,13 +101,27 @@ void RenderSystem::Initialize() {
         m_PBRShader->Unbind();
     }
 
-    ZGINE_CORE_INFO("RenderSystem initialized (path: {}, shadows: {})",
+    // Post-process pipeline
+    m_PostProcess.Initialize(1280, 720);
+    m_Config.EnablePostProcess = true;
+
+    ZGINE_CORE_INFO("RenderSystem initialized (path: {}, shadows: {}, postprocess: {})",
         m_Config.Path == RenderPath::Advanced ? "PBR" : "Blinn-Phong",
-        m_Config.EnableShadows ? "on" : "off");
+        m_Config.EnableShadows ? "on" : "off",
+        m_Config.EnablePostProcess ? "on" : "off");
 }
 
 void RenderSystem::Shutdown() {
     ZGINE_CORE_INFO("RenderSystem shut down");
+}
+
+uint32_t RenderSystem::PostProcess(uint32_t sceneColorTexture) {
+    if (!m_Config.EnablePostProcess) return sceneColorTexture;
+    return m_PostProcess.Process(sceneColorTexture);
+}
+
+void RenderSystem::ResizePostProcess(uint32_t width, uint32_t height) {
+    m_PostProcess.Resize(width, height);
 }
 
 void RenderSystem::BeginFrame() {

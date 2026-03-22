@@ -177,11 +177,6 @@ void main()
 
     vec3 result = (ambient + lighting) * u_Color;
 
-    // Clamp before gamma (no HDR tone mapping yet)
-    result = clamp(result, 0.0, 1.0);
-
-    // Gamma correction
-    result = pow(result, vec3(1.0 / 2.2));
-
+    // Output linear HDR — tone mapping and gamma are in the composite post-process pass
     FragColor = vec4(result, 1.0);
 }
