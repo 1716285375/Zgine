@@ -226,7 +226,7 @@ void HierarchyPanel::CreatePrimitive(World* World, PrimitiveType type, Entity pa
     }
 
     // Create command for entity creation (supports undo/redo)
-    auto command = std::make_unique<CreateEntityCommand>(World, name);
+    auto command = std::make_unique<CreateEntityCommand>(World, name, type);
 
     // Execute command through CommandHistory
     auto& commandHistory = GetContext().GetCommandHistory();

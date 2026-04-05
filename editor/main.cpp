@@ -31,6 +31,7 @@
 #include <Zgine/World/Components/Components.h>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+#include <ImGuizmo.h>
 
 namespace Zgine {
 
@@ -123,18 +124,7 @@ namespace Zgine {
             // Handle viewport resize FIRST, before rendering to ensure new framebuffer gets content
             HandleViewportResize();
 
-            // Debug: Spin the cube to prove it is 3D
-            auto view = m_World.GetRegistry().view<TransformComponent, TagComponent>();
-            for (auto entity : view) {
-                auto& transform = view.get<TransformComponent>(entity);
-                auto& tag = view.get<TagComponent>(entity);
-                if (tag.Tag == "Cube") {
-                    transform.Rotation.y += 45.0f * static_cast<float>(ts);
-                    transform.Rotation.x += 15.0f * static_cast<float>(ts);
-                }
-            }
-
-            // Handle camera input when viewport is focused
+            // Handle camera input when viewport is focused and gizmo is not in use
             if (m_Editor.IsSceneViewportFocused() && m_Editor.GetMode() == EditorMode::Edit) {
                 HandleCameraInput(ts);
             }
@@ -248,11 +238,18 @@ namespace Zgine {
         }
 
         void HandleCameraInput(Timestep ts) {
+            // Don't process camera input while gizmo is being used
+            if (ImGuizmo::IsUsing()) return;
+
             float moveSpeed = 10.0f * (float)ts;
             float mouseSensitivity = 0.2f;
 
-            // WASD movement
-            if (m_Editor.IsSceneViewportFocused()) {
+            // Right-click camera rotation (orbit)
+            auto [mouseX, mouseY] = Input::GetMousePosition();
+            bool rightClick = Input::IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT);
+
+            // WASD movement only when right mouse button is held (FPS-style camera)
+            if (rightClick && m_Editor.IsSceneViewportFocused()) {
                 if (Input::IsKeyPressed(GLFW_KEY_W)) m_EditorCamera.MoveForward(moveSpeed);
                 if (Input::IsKeyPressed(GLFW_KEY_S)) m_EditorCamera.MoveForward(-moveSpeed);
                 if (Input::IsKeyPressed(GLFW_KEY_A)) m_EditorCamera.MoveRight(-moveSpeed);
@@ -262,12 +259,6 @@ namespace Zgine {
                 if (Input::IsKeyPressed(GLFW_KEY_E))
                     m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
             }
-
-            // Right-click camera rotation (orbit)
-            auto [mouseX, mouseY] = Input::GetMousePosition();
-
-            // Only rotate if right click is held AND (we just started holding it OR we are already rotating)
-            bool rightClick = Input::IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT);
 
             if (rightClick) {
                 if (m_IsRightMousePressed) {

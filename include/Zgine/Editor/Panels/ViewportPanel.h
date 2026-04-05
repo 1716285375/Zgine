@@ -53,6 +53,8 @@ public:
     void SetDockId(ImGuiID dockId) { m_DockId = dockId; }
 
 private:
+    void HandleMousePicking();
+
     World* m_World = nullptr;
     ImGuiID m_DockId = 0;
     std::unique_ptr<GizmoController> m_GizmoController;

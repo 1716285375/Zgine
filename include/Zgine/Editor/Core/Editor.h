@@ -99,7 +99,7 @@ private:
     RenderStats m_RenderStats;
 
     // Gizmo and viewport display state (for toolbar)
-    int m_GizmoOperation = 0;  // ImGuizmo::TRANSLATE
+    int m_GizmoOperation = 7;  // ImGuizmo::TRANSLATE
     int m_GizmoMode = 0;       // ImGuizmo::LOCAL
     bool m_ShowGrid = true;
     bool m_ShowAxes = true;

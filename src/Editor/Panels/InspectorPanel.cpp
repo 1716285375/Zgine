@@ -74,13 +74,18 @@ void InspectorPanel::OnGuiRender() {
 
     // Draw all components
     DrawComponentInspector<TransformComponent>(selected, &UI::Inspectors::CoreInspector::DrawTransformProperties);
+    DrawComponentInspector<PrimitiveComponent>(selected, &UI::Inspectors::RenderingInspector::DrawPrimitiveProperties);
+    DrawComponentInspector<MeshComponent>(selected, &UI::Inspectors::RenderingInspector::DrawMeshRendererProperties);
     DrawComponentInspector<ColorComponent>(selected, &UI::Inspectors::RenderingInspector::DrawColorProperties);
     DrawComponentInspector<PBRMaterialComponent>(selected, &UI::Inspectors::RenderingInspector::DrawPBRMaterialProperties);
+    DrawComponentInspector<SpriteRendererComponent>(selected, &UI::Inspectors::RenderingInspector::DrawSpriteRendererProperties);
+    DrawComponentInspector<CameraComponent>(selected, &UI::Inspectors::RenderingInspector::DrawCameraProperties);
     DrawComponentInspector<DirectionalLightComponent>(selected, &UI::Inspectors::RenderingInspector::DrawDirectionalLightProperties);
     DrawComponentInspector<PointLightComponent>(selected, &UI::Inspectors::RenderingInspector::DrawPointLightProperties);
     DrawComponentInspector<SpotLightComponent>(selected, &UI::Inspectors::RenderingInspector::DrawSpotLightProperties);
     DrawComponentInspector<RigidbodyComponent>(selected, &UI::Inspectors::PhysicsInspector::DrawRigidbody2DProperties);
     DrawComponentInspector<BoxColliderComponent>(selected, &UI::Inspectors::PhysicsInspector::DrawBoxCollider2DProperties);
+    DrawComponentInspector<CircleColliderComponent>(selected, &UI::Inspectors::PhysicsInspector::DrawCircleCollider2DProperties);
     DrawComponentInspector<AudioSourceComponent>(selected, &UI::Inspectors::AudioInspector::DrawAudioSourceProperties);
     DrawComponentInspector<AudioListenerComponent>(selected, &UI::Inspectors::AudioInspector::DrawAudioListenerProperties);
     DrawComponentInspector<ScriptComponent>(selected, &UI::Inspectors::ScriptInspector::DrawNativeScriptProperties);
@@ -93,8 +98,14 @@ void InspectorPanel::OnGuiRender() {
     }
 
     if (ImGui::BeginPopup("AddComponent")) {
+        AddComponentMenuItem<PrimitiveComponent>(selected, "Primitive");
         AddComponentMenuItem<ColorComponent>(selected, "Color");
         AddComponentMenuItem<PBRMaterialComponent>(selected, "PBR Material");
+        AddComponentMenuItem<SpriteRendererComponent>(selected, "Sprite Renderer");
+        AddComponentMenuItem<CameraComponent>(selected, "Camera");
+
+        ImGui::Separator();
+
         AddComponentMenuItem<DirectionalLightComponent>(selected, "Directional Light");
         AddComponentMenuItem<PointLightComponent>(selected, "Point Light");
         AddComponentMenuItem<SpotLightComponent>(selected, "Spot Light");
@@ -103,6 +114,7 @@ void InspectorPanel::OnGuiRender() {
 
         AddComponentMenuItem<RigidbodyComponent>(selected, "Rigid Body");
         AddComponentMenuItem<BoxColliderComponent>(selected, "Box Collider");
+        AddComponentMenuItem<CircleColliderComponent>(selected, "Circle Collider");
 
         ImGui::Separator();
 

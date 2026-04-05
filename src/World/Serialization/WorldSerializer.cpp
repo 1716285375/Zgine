@@ -1,6 +1,10 @@
 #include <Zgine/World/Serialization/WorldSerializer.h>
 #include <Zgine/World/Serialization/JsonWorldSerializer.h>
 #include <Zgine/World/Serialization/ComponentSerializers/CoreSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/PhysicsSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/AudioSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/RenderingSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/ScriptSerializers.h>
 #include <Zgine/World/Core/World.h>
 
 namespace Zgine {
@@ -23,14 +27,22 @@ WorldSerializer::WorldSerializer(World* World)
     jsonSerializer->RegisterComponentSerializer(std::make_unique<LightSerializers::PointLight>());
     jsonSerializer->RegisterComponentSerializer(std::make_unique<LightSerializers::SpotLight>());
 
-    // TODO: Register other component serializers as needed:
-    // - RigidBodySerializer
-    // - BoxColliderSerializer
-    // - AudioSourceSerializer
-    // -  MeshSerializer
-    // - ColorSerializer
-    // - ScriptSerializer
-    // etc.
+    // Physics components
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<RigidbodySerializer>());
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<BoxColliderSerializer>());
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<CircleColliderSerializer>());
+
+    // Audio components
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<AudioSourceSerializer>());
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<AudioListenerSerializer>());
+
+    // Rendering components
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<ColorSerializer>());
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<SpriteRendererSerializer>());
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<MeshSerializer>());
+
+    // Scripting components
+    jsonSerializer->RegisterComponentSerializer(std::make_unique<ScriptSerializer>());
 
     m_Serializer = std::move(jsonSerializer);
 }

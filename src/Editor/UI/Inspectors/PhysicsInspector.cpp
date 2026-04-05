@@ -20,8 +20,12 @@ void PhysicsInspector::DrawRigidbody2DProperties(Entity entity) {
     }
 
     UI::DrawFloatDrag("Mass", rb.Mass, 0.1f, 0.0f, 1000.0f);
+    UI::DrawFloatDrag("Linear Drag", rb.LinearDrag, 0.01f, 0.0f, 100.0f);
+    UI::DrawFloatDrag("Angular Drag", rb.AngularDrag, 0.01f, 0.0f, 100.0f);
+    UI::DrawFloatDrag("Gravity Scale", rb.GravityScale, 0.1f, -10.0f, 10.0f);
     UI::DrawFloatDrag("Friction", rb.Friction, 0.01f, 0.0f, 1.0f);
     UI::DrawFloatDrag("Restitution", rb.Restitution, 0.01f, 0.0f, 1.0f);
+    ImGui::Checkbox("Fixed Rotation", &rb.FixedRotation);
 }
 
 void PhysicsInspector::DrawBoxCollider2DProperties(Entity entity) {
@@ -35,9 +39,10 @@ void PhysicsInspector::DrawBoxCollider2DProperties(Entity entity) {
 void PhysicsInspector::DrawCircleCollider2DProperties(Entity entity) {
     if (!ImGui::CollapsingHeader("Circle Collider", ImGuiTreeNodeFlags_DefaultOpen)) return;
 
-    ZGINE_UNUSED(entity);
-    // Placeholder - implement if you have CircleColliderComponent
-    ImGui::TextDisabled("Circle Collider properties");
+    auto& collider = entity.GetComponent<CircleColliderComponent>();
+    UI::DrawFloatDrag("Radius", collider.Radius, 0.01f, 0.01f, 100.0f);
+    UI::DrawVec3Control("Offset", collider.Offset, 0.1f);
+    ImGui::Checkbox("Is Trigger", &collider.IsTrigger);
 }
 
 } // namespace Inspectors

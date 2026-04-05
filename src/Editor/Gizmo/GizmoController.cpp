@@ -4,22 +4,16 @@
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Commands/IEditorCommand.h>
 #include <Zgine/Editor/Commands/TransformCommands.h>
-#include <Zgine/Editor/Events/EntityEvents.h>
 #include <Zgine/Editor/Events/TransformEvents.h>
 #include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <imgui.h>
 #include <ImGuizmo.h>
 
-
 namespace Zgine {
 
 GizmoController::GizmoController(EditorContext& context)
     : m_Context(context)
-    , m_Operation(GizmoOperation::Translate)
-    , m_Space(GizmoSpace::Local)
-    , m_Active(false)
-    , m_WasActive(false)
 {
 }
 
@@ -29,85 +23,111 @@ bool GizmoController::Render(Entity entity,
                               const Math::Vector2& boundsMin,
                               const Math::Vector2& boundsMax) {
     if (!entity || !entity.HasComponent<TransformComponent>()) {
+        if (m_WasActive && m_ManipulatedEntity) {
+            CommitManipulation(m_ManipulatedEntity);
+        }
         m_Active = false;
         m_WasActive = false;
         m_ManipulatedEntity = {};
         return false;
     }
 
-    auto& transform = entity.GetComponent<TransformComponent>();
+    auto& tc = entity.GetComponent<TransformComponent>();
 
-    // Store initial transform when manipulation begins
-    if (!m_WasActive && ImGuizmo::IsOver()) {
-        m_StartTranslation = transform.Translation;
-        m_StartRotation = transform.Rotation;
-        m_StartScale = transform.Scale;
-    }
-
-    Math::Matrix4 model = transform.GetTransform();
-
-    // Setup ImGuizmo
+    // ---- Setup ImGuizmo viewport ----
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(boundsMin.x, boundsMin.y,
-                      boundsMax.x - boundsMin.x,
-                      boundsMax.y - boundsMin.y);
+    float rectX = boundsMin.x;
+    float rectY = boundsMin.y;
+    float rectW = boundsMax.x - boundsMin.x;
+    float rectH = boundsMax.y - boundsMin.y;
+    ImGuizmo::SetRect(rectX, rectY, rectW, rectH);
 
-    // Manipulate (ImGuizmo requires non-const matrix pointers)
-    Math::Matrix4 viewCopy = view;
-    Math::Matrix4 projectionCopy = projection;
-    Math::Matrix4 modelCopy = model;
-    ImGuizmo::Manipulate(Math::ValuePtr(viewCopy), Math::ValuePtr(projectionCopy),
-                         static_cast<ImGuizmo::OPERATION>(static_cast<int>(m_Operation)),
-                         static_cast<ImGuizmo::MODE>(static_cast<int>(m_Space)),
-                         Math::ValuePtr(modelCopy));
+    // ---- Build model matrix via ImGuizmo for round-trip consistency ----
+    // ImGuizmo uses degrees for rotation, matching our TransformComponent
+    float modelMatrix[16];
+    float translationArr[3] = { tc.Translation.x, tc.Translation.y, tc.Translation.z };
+    float rotationArr[3]    = { tc.Rotation.x,    tc.Rotation.y,    tc.Rotation.z };
+    float scaleArr[3]       = { tc.Scale.x,        tc.Scale.y,       tc.Scale.z };
+    ImGuizmo::RecomposeMatrixFromComponents(translationArr, rotationArr, scaleArr, modelMatrix);
 
-    // Copy back if modified
-    if (ImGuizmo::IsUsing()) {
-        model = modelCopy;
+    // ---- Map operation / mode ----
+    ImGuizmo::OPERATION imOp = ImGuizmo::TRANSLATE;
+    switch (m_Operation) {
+        case GizmoOperation::Translate: imOp = ImGuizmo::TRANSLATE; break;
+        case GizmoOperation::Rotate:    imOp = ImGuizmo::ROTATE;    break;
+        case GizmoOperation::Scale:     imOp = ImGuizmo::SCALE;     break;
     }
 
+    ImGuizmo::MODE imMode = (m_Space == GizmoSpace::World) ? ImGuizmo::WORLD : ImGuizmo::LOCAL;
+    // Scale always uses LOCAL space (world-space scale is meaningless for non-uniform)
+    if (m_Operation == GizmoOperation::Scale) {
+        imMode = ImGuizmo::LOCAL;
+    }
+
+    // ---- Snap ----
+    float snapValues[3] = { 0.0f, 0.0f, 0.0f };
+    float* snapPtr = nullptr;
+
+    bool useSnap = m_SnapEnabled || ImGui::GetIO().KeyCtrl;
+    if (useSnap) {
+        switch (m_Operation) {
+            case GizmoOperation::Translate:
+                snapValues[0] = snapValues[1] = snapValues[2] = m_TranslateSnap;
+                break;
+            case GizmoOperation::Rotate:
+                snapValues[0] = snapValues[1] = snapValues[2] = m_RotateSnap;
+                break;
+            case GizmoOperation::Scale:
+                snapValues[0] = snapValues[1] = snapValues[2] = m_ScaleSnap;
+                break;
+        }
+        snapPtr = snapValues;
+    }
+
+    // ---- Manipulate ----
+    float viewArr[16];
+    float projArr[16];
+    memcpy(viewArr, Math::ValuePtr(view), sizeof(float) * 16);
+    memcpy(projArr, Math::ValuePtr(projection), sizeof(float) * 16);
+
+    ImGuizmo::Manipulate(viewArr, projArr, imOp, imMode, modelMatrix, nullptr, snapPtr);
+
+    // ---- Process result ----
     m_Active = ImGuizmo::IsUsing();
 
-    // Detect start of manipulation
+    // Detect start of manipulation — snapshot initial values
     if (m_Active && !m_WasActive) {
-        BeginManipulation(entity, m_StartTranslation, m_StartRotation, m_StartScale);
+        m_StartTranslation = tc.Translation;
+        m_StartRotation = tc.Rotation;
+        m_StartScale = tc.Scale;
         m_ManipulatedEntity = entity;
     }
 
     bool changed = false;
     if (m_Active) {
-        // Decompose the modified matrix
-        Math::Vector3 translation;
-        Math::Vector3 rotation;
-        Math::Vector3 scale;
-        ImGuizmo::DecomposeMatrixToComponents(Math::ValuePtr(model),
-                                              &translation.x,
-                                              &rotation.x,
-                                              &scale.x);
+        // Decompose the modified matrix back to components
+        float newTranslation[3], newRotation[3], newScale[3];
+        ImGuizmo::DecomposeMatrixToComponents(modelMatrix, newTranslation, newRotation, newScale);
 
-        // Update transform component
-        if (transform.Translation != translation ||
-            transform.Rotation != rotation ||
-            transform.Scale != scale) {
+        Math::Vector3 t(newTranslation[0], newTranslation[1], newTranslation[2]);
+        Math::Vector3 r(newRotation[0],    newRotation[1],    newRotation[2]);
+        Math::Vector3 s(newScale[0],       newScale[1],       newScale[2]);
 
-            transform.Translation = translation;
-            transform.Rotation = rotation;
-            transform.Scale = scale;
+        if (tc.Translation != t || tc.Rotation != r || tc.Scale != s) {
+            tc.Translation = t;
+            tc.Rotation = r;
+            tc.Scale = s;
             changed = true;
 
-            // Publish real-time transform changed event (for visual feedback)
             TransformChangedEvent event(entity);
             m_Context.GetEventBus().PublishImmediate(event);
         }
     }
 
-    // Detect end of manipulation
+    // Detect end of manipulation — commit command for undo/redo
     if (!m_Active && m_WasActive && m_ManipulatedEntity) {
-        EndManipulation(m_ManipulatedEntity,
-                       transform.Translation,
-                       transform.Rotation,
-                       transform.Scale);
+        CommitManipulation(entity);
     }
 
     m_WasActive = m_Active;
@@ -118,47 +138,44 @@ bool GizmoController::IsUsing() const {
     return ImGuizmo::IsUsing();
 }
 
-void GizmoController::BeginManipulation(Entity entity,
-                                       const Math::Vector3& startTranslation,
-                                       const Math::Vector3& startRotation,
-                                       const Math::Vector3& startScale) {
-    // Store start values for command creation
-    m_StartTranslation = startTranslation;
-    m_StartRotation = startRotation;
-    m_StartScale = startScale;
-
-    ZGINE_CORE_TRACE("Gizmo: Begin manipulation on entity {}", static_cast<uint32_t>(static_cast<entt::entity>(entity)));
-}
-
-void GizmoController::EndManipulation(Entity entity,
-                                     const Math::Vector3& endTranslation,
-                                     const Math::Vector3& endRotation,
-                                     const Math::Vector3& endScale) {
-    // Check if transform actually changed
-    bool changed = (m_StartTranslation != endTranslation ||
-                   m_StartRotation != endRotation ||
-                   m_StartScale != endScale);
-
-    if (!changed) {
-        ZGINE_CORE_TRACE("Gizmo: Manipulation ended with no changes");
+void GizmoController::CommitManipulation(Entity entity) {
+    if (!entity || !entity.HasComponent<TransformComponent>()) {
+        m_ManipulatedEntity = {};
         return;
     }
 
-    ZGINE_CORE_TRACE("Gizmo: End manipulation, creating command");
+    auto& tc = entity.GetComponent<TransformComponent>();
 
-    // Create and execute transform command for undo/redo
-    auto command = std::make_unique<TransformEntityCommand>(
-        entity,
-        endTranslation,
-        endRotation,
-        endScale
-    );
+    bool changed = (m_StartTranslation != tc.Translation ||
+                    m_StartRotation != tc.Rotation ||
+                    m_StartScale != tc.Scale);
 
-    // Command history will handle execution and merging
-    auto& commandHistory = m_Context.GetCommandHistory();
-    commandHistory.Execute(std::move(command));
+    if (changed) {
+        // Save the final (current) values
+        Math::Vector3 finalT = tc.Translation;
+        Math::Vector3 finalR = tc.Rotation;
+        Math::Vector3 finalS = tc.Scale;
 
-    // Reset manipulation state
+        // Temporarily restore start values so the command constructor
+        // captures them as the "old" state
+        tc.Translation = m_StartTranslation;
+        tc.Rotation = m_StartRotation;
+        tc.Scale = m_StartScale;
+
+        // Create command — constructor reads old from entity, new from args
+        auto cmd = std::make_unique<TransformEntityCommand>(
+            entity, finalT, finalR, finalS);
+
+        // Restore final values before Execute overwrites them (same values, but clean)
+        tc.Translation = finalT;
+        tc.Rotation = finalR;
+        tc.Scale = finalS;
+
+        // Execute through history — command.Execute() sets entity to final values (no-op)
+        auto& commandHistory = m_Context.GetCommandHistory();
+        commandHistory.Execute(std::move(cmd));
+    }
+
     m_ManipulatedEntity = {};
 }
 

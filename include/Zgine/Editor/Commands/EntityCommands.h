@@ -4,6 +4,7 @@
 #include <Zgine/World/Core/World.h>
 #include <Zgine/World/Core/Entity.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
+#include <nlohmann/json.hpp>
 #include <string>
 
 namespace Zgine {
@@ -47,7 +48,7 @@ private:
     Entity m_Entity;
     uint32_t m_EntityID;
     std::string m_EntityName;
-    // TODO: Store entity serialized data for full restoration
+    nlohmann::json m_SerializedData;
 };
 
 } // namespace Zgine

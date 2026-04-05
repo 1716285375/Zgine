@@ -1,6 +1,13 @@
 #include <Zgine/Editor/Commands/EntityCommands.h>
 #include <Zgine/World/Components/Components.h>
+#include <Zgine/World/Serialization/ComponentSerializers/CoreSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/PhysicsSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/AudioSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/RenderingSerializers.h>
+#include <Zgine/World/Serialization/ComponentSerializers/ScriptSerializers.h>
 #include <Zgine/Core/Log/Log.h>
+
+using json = nlohmann::json;
 
 namespace Zgine {
 
@@ -27,11 +34,9 @@ bool CreateEntityCommand::Execute() {
     m_EntityID = (uint32_t)m_CreatedEntity;
 
     // Add components based on primitive type
-    // Note: This is simplified. In a real implementation, you would call
-    // the actual primitive creation logic from PrimitiveMesh or similar.
     if (m_PrimitiveType != PrimitiveType::None) {
-        // Add mesh component, etc.
-        // TODO: Implement proper primitive mesh setup
+        m_CreatedEntity.AddComponent<PrimitiveComponent>(m_PrimitiveType);
+        m_CreatedEntity.AddComponent<PBRMaterialComponent>();
     }
 
     return true;
@@ -77,8 +82,33 @@ bool DeleteEntityCommand::Execute() {
         return false;
     }
 
-    // Store entity state before deletion
-    // TODO: Implement full component serialization
+    // Serialize all components before deletion
+    m_SerializedData = json::object();
+
+    // Build serializer list
+    std::vector<std::unique_ptr<IComponentSerializer>> serializers;
+    serializers.push_back(std::make_unique<TransformSerializer>());
+    serializers.push_back(std::make_unique<CameraSerializer>());
+    serializers.push_back(std::make_unique<PrimitiveSerializer>());
+    serializers.push_back(std::make_unique<PBRMaterialSerializer>());
+    serializers.push_back(std::make_unique<LightSerializers::DirectionalLight>());
+    serializers.push_back(std::make_unique<LightSerializers::PointLight>());
+    serializers.push_back(std::make_unique<LightSerializers::SpotLight>());
+    serializers.push_back(std::make_unique<RigidbodySerializer>());
+    serializers.push_back(std::make_unique<BoxColliderSerializer>());
+    serializers.push_back(std::make_unique<CircleColliderSerializer>());
+    serializers.push_back(std::make_unique<AudioSourceSerializer>());
+    serializers.push_back(std::make_unique<AudioListenerSerializer>());
+    serializers.push_back(std::make_unique<ColorSerializer>());
+    serializers.push_back(std::make_unique<SpriteRendererSerializer>());
+    serializers.push_back(std::make_unique<MeshSerializer>());
+    serializers.push_back(std::make_unique<ScriptSerializer>());
+
+    for (const auto& serializer : serializers) {
+        if (serializer->HasComponent(m_Entity)) {
+            serializer->Serialize(m_Entity, m_SerializedData);
+        }
+    }
 
     // Actually delete the entity
     m_World->DestroyEntity(m_Entity);
@@ -92,9 +122,34 @@ bool DeleteEntityCommand::Undo() {
     }
 
     // Recreate entity with same name
-    // TODO: Restore all components from serialized data
     m_Entity = m_World->CreateEntity(m_EntityName);
     m_EntityID = (uint32_t)m_Entity;
+
+    // Restore all components from serialized data
+    std::vector<std::unique_ptr<IComponentSerializer>> serializers;
+    serializers.push_back(std::make_unique<TransformSerializer>());
+    serializers.push_back(std::make_unique<CameraSerializer>());
+    serializers.push_back(std::make_unique<PrimitiveSerializer>());
+    serializers.push_back(std::make_unique<PBRMaterialSerializer>());
+    serializers.push_back(std::make_unique<LightSerializers::DirectionalLight>());
+    serializers.push_back(std::make_unique<LightSerializers::PointLight>());
+    serializers.push_back(std::make_unique<LightSerializers::SpotLight>());
+    serializers.push_back(std::make_unique<RigidbodySerializer>());
+    serializers.push_back(std::make_unique<BoxColliderSerializer>());
+    serializers.push_back(std::make_unique<CircleColliderSerializer>());
+    serializers.push_back(std::make_unique<AudioSourceSerializer>());
+    serializers.push_back(std::make_unique<AudioListenerSerializer>());
+    serializers.push_back(std::make_unique<ColorSerializer>());
+    serializers.push_back(std::make_unique<SpriteRendererSerializer>());
+    serializers.push_back(std::make_unique<MeshSerializer>());
+    serializers.push_back(std::make_unique<ScriptSerializer>());
+
+    for (const auto& serializer : serializers) {
+        std::string typeName(serializer->GetComponentTypeName());
+        if (m_SerializedData.contains(typeName)) {
+            (void)serializer->Deserialize(m_SerializedData[typeName], m_Entity);
+        }
+    }
 
     return m_Entity.operator bool();
 }

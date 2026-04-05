@@ -66,11 +66,27 @@ void RenderingInspector::DrawCameraProperties(Entity entity) {
 }
 
 void RenderingInspector::DrawMeshRendererProperties(Entity entity) {
-    if (!ImGui::CollapsingHeader("Mesh Renderer", ImGuiTreeNodeFlags_DefaultOpen)) return;
+    if (!ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) return;
 
-    ZGINE_UNUSED(entity);
-    // Placeholder - implement based on your MeshRenderer component
-    ImGui::TextDisabled("Mesh Renderer properties");
+    auto& mesh = entity.GetComponent<MeshComponent>();
+    if (mesh.MeshHandle.IsValid()) {
+        ImGui::Text("Handle: %s", mesh.MeshHandle.ToString().c_str());
+    } else {
+        ImGui::TextDisabled("No mesh assigned");
+    }
+    ImGui::Text("Has VAO: %s", mesh.VertexArray ? "Yes" : "No");
+}
+
+void RenderingInspector::DrawPrimitiveProperties(Entity entity) {
+    if (!ImGui::CollapsingHeader("Primitive", ImGuiTreeNodeFlags_DefaultOpen)) return;
+
+    auto& primitive = entity.GetComponent<PrimitiveComponent>();
+
+    const char* typeStrings[] = { "None", "Cube", "Plane", "Sphere", "Cylinder", "Cone" };
+    int currentType = static_cast<int>(primitive.Type);
+    if (ImGui::Combo("Shape", &currentType, typeStrings, 6)) {
+        primitive.Type = static_cast<PrimitiveType>(currentType);
+    }
 }
 
 void RenderingInspector::DrawColorProperties(Entity entity) {

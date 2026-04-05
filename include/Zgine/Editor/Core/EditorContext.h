@@ -64,6 +64,13 @@ public:
     void SetShowAxes(bool show) { m_ShowAxes = show; }
     bool GetShowAxes() const { return m_ShowAxes; }
 
+    // Gizmo state
+    void SetGizmoOperation(int op) { m_GizmoOperation = op; }
+    int GetGizmoOperation() const { return m_GizmoOperation; }
+
+    void SetGizmoMode(int mode) { m_GizmoMode = mode; }
+    int GetGizmoMode() const { return m_GizmoMode; }
+
 private:
     unsigned int m_SceneTextureId = 0;
     Math::Vector2 m_ViewportSize = { 0.0f, 0.0f };
@@ -77,6 +84,9 @@ private:
 
     bool m_ShowGrid = true;
     bool m_ShowAxes = true;
+
+    int m_GizmoOperation = 7; // ImGuizmo::TRANSLATE
+    int m_GizmoMode = 0;      // ImGuizmo::LOCAL
 };
 
 /**

@@ -31,6 +31,8 @@ public:
      */
     static void DrawMeshRendererProperties(Entity entity);
 
+    static void DrawPrimitiveProperties(Entity entity);
+
     /**
      * @brief Draw Color component properties
      * @param entity Entity with ColorComponent

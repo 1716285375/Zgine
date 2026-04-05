@@ -14,6 +14,9 @@
 #include <Zgine/Editor/Panels/PerformancePanel.h>
 #include <Zgine/Editor/Panels/GameViewPanel.h>
 #include <Zgine/Editor/Panels/StatusPanel.h>
+#include <Zgine/Editor/Commands/EntityCommands.h>
+#include <Zgine/Editor/Commands/EditorCommandHistory.h>
+#include <Zgine/World/Serialization/WorldSerializer.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
@@ -466,12 +469,27 @@ void Editor::RenderMainMenu(World* World) {
             }
         }
         if (ImGui::MenuItem("Open World", "Ctrl+O")) {
-            // TODO: Implement World loading via events or commands
-            // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(World));
+            if (World) {
+                std::string path = "scene.json";
+                WorldSerializer serializer(World);
+                World->Clear();
+                m_Context.GetSelectionContext().Clear();
+                serializer.DeserializeFromFile(path);
+                ZGINE_CORE_INFO("Scene loaded from: {}", path);
+            }
         }
         if (ImGui::MenuItem("Save World", "Ctrl+S")) {
-            // TODO: Implement World saving via events or commands
-            // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(World));
+            if (World) {
+                auto& sceneCtx = m_Context.GetSceneContext();
+                std::string path = sceneCtx.GetScenePath();
+                if (path.empty()) {
+                    path = "scene.json";
+                    sceneCtx.SetScenePath(path);
+                }
+                WorldSerializer serializer(World);
+                serializer.SerializeToFile(path);
+                ZGINE_CORE_INFO("Scene saved to: {}", path);
+            }
         }
         ImGui::Separator();
         ImGui::MenuItem("Exit", nullptr, false, false);
@@ -479,8 +497,13 @@ void Editor::RenderMainMenu(World* World) {
     }
 
     if (ImGui::BeginMenu("Edit")) {
-        ImGui::MenuItem("Undo", "Ctrl+Z", false, false);
-        ImGui::MenuItem("Redo", "Ctrl+Y", false, false);
+        auto& cmdHistory = m_Context.GetCommandHistory();
+        if (ImGui::MenuItem("Undo", "Ctrl+Z", false, cmdHistory.CanUndo())) {
+            cmdHistory.Undo();
+        }
+        if (ImGui::MenuItem("Redo", "Ctrl+Y", false, cmdHistory.CanRedo())) {
+            cmdHistory.Redo();
+        }
         ImGui::Separator();
         ImGui::EndMenu();
     }
@@ -505,26 +528,29 @@ void Editor::RenderMainMenu(World* World) {
 
     if (ImGui::BeginMenu("Tools")) {
         if (ImGui::BeginMenu("Create")) {
+            auto& cmdHistory = m_Context.GetCommandHistory();
             if (ImGui::MenuItem("Empty")) {
                 if (World) {
-                    Entity created = World->CreateEntity("Empty");
-                    m_Context.GetSelectionContext().SetPrimary(created);
+                    auto cmd = std::make_unique<CreateEntityCommand>(World, "Empty");
+                    cmdHistory.Execute(std::move(cmd));
                 }
             }
             if (ImGui::MenuItem("Cube")) {
                 if (World) {
-                    Entity created = World->CreateEntity("Cube");
-                    created.AddComponent<TransformComponent>();
-                    // TODO: Add mesh rendering component for cube primitive
-                    m_Context.GetSelectionContext().SetPrimary(created);
+                    auto cmd = std::make_unique<CreateEntityCommand>(World, "Cube", PrimitiveType::Cube);
+                    cmdHistory.Execute(std::move(cmd));
                 }
             }
             if (ImGui::MenuItem("Plane")) {
                 if (World) {
-                    Entity created = World->CreateEntity("Plane");
-                    created.AddComponent<TransformComponent>();
-                    // TODO: Add mesh rendering component for plane primitive
-                    m_Context.GetSelectionContext().SetPrimary(created);
+                    auto cmd = std::make_unique<CreateEntityCommand>(World, "Plane", PrimitiveType::Plane);
+                    cmdHistory.Execute(std::move(cmd));
+                }
+            }
+            if (ImGui::MenuItem("Sphere")) {
+                if (World) {
+                    auto cmd = std::make_unique<CreateEntityCommand>(World, "Sphere", PrimitiveType::Sphere);
+                    cmdHistory.Execute(std::move(cmd));
                 }
             }
             ImGui::EndMenu();
@@ -532,19 +558,24 @@ void Editor::RenderMainMenu(World* World) {
         if (ImGui::BeginMenu("Gizmo")) {
             if (ImGui::MenuItem("Move", "W", m_GizmoOperation == ImGuizmo::TRANSLATE)) {
                 m_GizmoOperation = ImGuizmo::TRANSLATE;
+                m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
             }
             if (ImGui::MenuItem("Rotate", "E", m_GizmoOperation == ImGuizmo::ROTATE)) {
                 m_GizmoOperation = ImGuizmo::ROTATE;
+                m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
             }
             if (ImGui::MenuItem("Scale", "R", m_GizmoOperation == ImGuizmo::SCALE)) {
                 m_GizmoOperation = ImGuizmo::SCALE;
+                m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
             }
             ImGui::Separator();
             if (ImGui::MenuItem("Local", nullptr, m_GizmoMode == ImGuizmo::LOCAL)) {
                 m_GizmoMode = ImGuizmo::LOCAL;
+                m_Context.GetViewportContext().SetGizmoMode(m_GizmoMode);
             }
             if (ImGui::MenuItem("World", nullptr, m_GizmoMode == ImGuizmo::WORLD)) {
                 m_GizmoMode = ImGuizmo::WORLD;
+                m_Context.GetViewportContext().SetGizmoMode(m_GizmoMode);
             }
             ImGui::Separator();
             ImGui::MenuItem("Grid", nullptr, &m_ShowGrid);
@@ -568,13 +599,39 @@ void Editor::HandleShortcuts(World* World) {
         return;
     }
 
+    auto& cmdHistory = m_Context.GetCommandHistory();
+
+    // Undo/Redo
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Z)) {
+        if (cmdHistory.CanUndo()) cmdHistory.Undo();
+    }
+    if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_Y)) {
+        if (cmdHistory.CanRedo()) cmdHistory.Redo();
+    }
+
+    // Save/Load
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
-        // TODO: Implement World saving via events or commands
-        // GetContext().GetEventBus().PublishImmediate(SceneSaveRequestedEvent(World));
+        if (World) {
+            auto& sceneCtx = m_Context.GetSceneContext();
+            std::string path = sceneCtx.GetScenePath();
+            if (path.empty()) {
+                path = "scene.json";
+                sceneCtx.SetScenePath(path);
+            }
+            WorldSerializer serializer(World);
+            serializer.SerializeToFile(path);
+            ZGINE_CORE_INFO("Scene saved to: {}", path);
+        }
     }
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
-        // TODO: Implement World loading via events or commands
-        // GetContext().GetEventBus().PublishImmediate(SceneLoadRequestedEvent(World));
+        if (World) {
+            std::string path = "scene.json";
+            WorldSerializer serializer(World);
+            World->Clear();
+            m_Context.GetSelectionContext().Clear();
+            serializer.DeserializeFromFile(path);
+            ZGINE_CORE_INFO("Scene loaded from: {}", path);
+        }
     }
     if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
         if (World) {
@@ -582,12 +639,34 @@ void Editor::HandleShortcuts(World* World) {
             m_Context.GetSelectionContext().Clear();
         }
     }
+
+    // Don't process entity shortcuts while gizmo is being used
+    if (ImGuizmo::IsUsing()) return;
+
+    // Delete entity via command system
     Entity selected = m_Context.GetSelectionContext().GetPrimary();
     if (ImGui::IsKeyPressed(ImGuiKey_Delete) && selected) {
         if (World) {
-            World->DestroyEntity(selected);
+            auto cmd = std::make_unique<DeleteEntityCommand>(World, selected);
+            cmdHistory.Execute(std::move(cmd));
         }
         m_Context.GetSelectionContext().Remove(selected);
+    }
+
+    // Gizmo shortcuts
+    if (!io.KeyCtrl && !io.KeyAlt) {
+        if (ImGui::IsKeyPressed(ImGuiKey_W)) {
+            m_GizmoOperation = ImGuizmo::TRANSLATE;
+            m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_E)) {
+            m_GizmoOperation = ImGuizmo::ROTATE;
+            m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) {
+            m_GizmoOperation = ImGuizmo::SCALE;
+            m_Context.GetViewportContext().SetGizmoOperation(m_GizmoOperation);
+        }
     }
 }
 
