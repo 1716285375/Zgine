@@ -21,6 +21,8 @@ endif()
 # Test executable
 add_executable(ZgineTests
     EngineSmokeTests.cpp
+    RendererBackendTests.cpp
+    SystemManagerTests.cpp
 )
 
 # Link to ZgineRuntime and GoogleTest
@@ -31,7 +33,7 @@ target_link_libraries(ZgineTests PRIVATE
 
 # C++ standard
 set_target_properties(ZgineTests PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )

@@ -311,11 +311,21 @@ endif()
 FetchContent_GetProperties(imguizmo)
 if(imguizmo_POPULATED)
     if(NOT TARGET ImGuizmo)
+        set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}")
+        set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/ImGuizmo.cpp")
+
+        if(EXISTS "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
+            set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}/src")
+            set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
+        elseif(NOT EXISTS "${ZGINE_IMGUIZMO_SOURCE}")
+            message(FATAL_ERROR "ImGuizmo source file not found in ${imguizmo_SOURCE_DIR}")
+        endif()
+
         add_library(ImGuizmo STATIC
-            ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
+            ${ZGINE_IMGUIZMO_SOURCE}
         )
         target_include_directories(ImGuizmo PUBLIC
-            $<BUILD_INTERFACE:${imguizmo_SOURCE_DIR}>
+            $<BUILD_INTERFACE:${ZGINE_IMGUIZMO_INCLUDE_DIR}>
         )
         # Define IMGUI_DEFINE_MATH_OPERATORS for ImGuizmo
         # Note: CaptureMouseFromApp was removed in newer ImGui versions

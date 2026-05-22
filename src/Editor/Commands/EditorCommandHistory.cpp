@@ -16,13 +16,17 @@ EditorCommandHistory::~EditorCommandHistory() {
 
 bool EditorCommandHistory::Execute(std::unique_ptr<IEditorCommand> command) {
     if (!command) {
-        ZGINE_CORE_ERROR("EditorCommandHistory::Execute() called with null command");
+        if (auto& logger = Log::GetCoreLogger()) {
+            logger->error("EditorCommandHistory::Execute() called with null command");
+        }
         return false;
     }
 
     // Execute the command
     if (!command->Execute()) {
-        ZGINE_CORE_ERROR("Command failed to execute: {}", command->GetName());
+        if (auto& logger = Log::GetCoreLogger()) {
+            logger->error("Command failed to execute: {}", command->GetName());
+        }
         return false;
     }
 
@@ -62,7 +66,9 @@ bool EditorCommandHistory::Undo() {
 
     auto& command = m_UndoStack.back();
     if (!command->Undo()) {
-        ZGINE_CORE_ERROR("Command failed to undo: {}", command->GetName());
+        if (auto& logger = Log::GetCoreLogger()) {
+            logger->error("Command failed to undo: {}", command->GetName());
+        }
         return false;
     }
 
@@ -81,7 +87,9 @@ bool EditorCommandHistory::Redo() {
 
     auto& command = m_RedoStack.back();
     if (!command->Execute()) {
-        ZGINE_CORE_ERROR("Command failed to redo: {}", command->GetName());
+        if (auto& logger = Log::GetCoreLogger()) {
+            logger->error("Command failed to redo: {}", command->GetName());
+        }
         return false;
     }
 
@@ -134,7 +142,9 @@ size_t EditorCommandHistory::GetHistorySize() const {
 
 void EditorCommandHistory::BeginTransaction(const std::string& name) {
     if (m_InTransaction) {
-        ZGINE_CORE_WARN("EditorCommandHistory::BeginTransaction() called while already in transaction");
+        if (auto& logger = Log::GetCoreLogger()) {
+            logger->warn("EditorCommandHistory::BeginTransaction() called while already in transaction");
+        }
         return;
     }
 

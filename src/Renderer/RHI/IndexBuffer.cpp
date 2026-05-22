@@ -8,6 +8,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLIndexBuffer>(indices, count);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("IndexBuffer");
+                return nullptr;
         }
         return nullptr;
     }

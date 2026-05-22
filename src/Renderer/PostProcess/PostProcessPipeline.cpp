@@ -10,8 +10,23 @@ namespace Zgine {
 PostProcessPipeline::PostProcessPipeline() {}
 
 PostProcessPipeline::~PostProcessPipeline() {
+    Shutdown();
+}
+
+void PostProcessPipeline::Shutdown() {
     if (m_QuadVAO) glDeleteVertexArrays(1, &m_QuadVAO);
     if (m_QuadVBO) glDeleteBuffers(1, &m_QuadVBO);
+
+    m_QuadVAO = 0;
+    m_QuadVBO = 0;
+    m_BrightPassShader.reset();
+    m_BlurShader.reset();
+    m_CompositeShader.reset();
+    m_OutputFBO.reset();
+    m_BrightPassFBO.reset();
+    m_PingFBO.reset();
+    m_PongFBO.reset();
+    m_Initialized = false;
 }
 
 void PostProcessPipeline::Initialize(uint32_t width, uint32_t height) {

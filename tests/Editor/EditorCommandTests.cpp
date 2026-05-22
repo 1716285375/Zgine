@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <Zgine/Editor/Commands/EditorCommand.h>
+#include <Zgine/Editor/Commands/IEditorCommand.h>
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Commands/EntityCommands.h>
 #include <Zgine/Editor/Commands/TransformCommands.h>
@@ -12,7 +12,7 @@ using namespace Zgine;
 // Mock Command for Testing
 // ============================================================================
 
-class MockCommand : public EditorCommand {
+class MockCommand : public IEditorCommand {
 public:
     MockCommand(int* counter) : m_Counter(counter) {}
 
@@ -38,7 +38,7 @@ private:
     int* m_Counter;
 };
 
-class MergeableCommand : public EditorCommand {
+class MergeableCommand : public IEditorCommand {
 public:
     MergeableCommand(int value) : m_Value(value) {}
 
@@ -46,11 +46,11 @@ public:
     bool Undo() override { m_Executed = false; return true; }
     std::string GetName() const override { return "MergeableCommand"; }
 
-    bool CanMergeWith(const EditorCommand* other) const override {
+    bool CanMergeWith(const IEditorCommand* other) const override {
         return dynamic_cast<const MergeableCommand*>(other) != nullptr;
     }
 
-    void MergeWith(const EditorCommand* other) override {
+    void MergeWith(const IEditorCommand* other) override {
         if (auto* cmd = dynamic_cast<const MergeableCommand*>(other)) {
             m_Value += cmd->m_Value;
         }
@@ -245,47 +245,47 @@ TEST_F(EntityCommandsTest, CreateEntityCommand) {
     auto cmd = std::make_unique<CreateEntityCommand>(
         m_World, "TestEntity", PrimitiveType::Cube);
 
-    size_t initialCount = m_World->GetRegistry().storage<entt::entity>().size();
+    size_t initialCount = m_World->GetEntityCount();
 
     m_History->Execute(std::move(cmd));
 
-    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
+    EXPECT_EQ(m_World->GetEntityCount(), initialCount + 1);
 }
 
 TEST_F(EntityCommandsTest, CreateEntityCommandUndo) {
     auto cmd = std::make_unique<CreateEntityCommand>(
         m_World, "TestEntity", PrimitiveType::Cube);
 
-    size_t initialCount = m_World->GetRegistry().storage<entt::entity>().size();
+    size_t initialCount = m_World->GetEntityCount();
 
     m_History->Execute(std::move(cmd));
-    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount + 1);
+    EXPECT_EQ(m_World->GetEntityCount(), initialCount + 1);
 
     m_History->Undo();
-    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), initialCount);
+    EXPECT_EQ(m_World->GetEntityCount(), initialCount);
 }
 
 TEST_F(EntityCommandsTest, DeleteEntityCommand) {
     // Create an entity first
     Entity entity = m_World->CreateEntity("ToDelete");
-    size_t countAfterCreate = m_World->GetRegistry().storage<entt::entity>().size();
+    size_t countAfterCreate = m_World->GetEntityCount();
 
     auto cmd = std::make_unique<DeleteEntityCommand>(m_World, entity);
     m_History->Execute(std::move(cmd));
 
-    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), countAfterCreate - 1);
+    EXPECT_EQ(m_World->GetEntityCount(), countAfterCreate - 1);
 }
 
 TEST_F(EntityCommandsTest, DeleteEntityCommandUndo) {
     Entity entity = m_World->CreateEntity("ToDelete");
-    size_t countAfterCreate = m_World->GetRegistry().storage<entt::entity>().size();
+    size_t countAfterCreate = m_World->GetEntityCount();
 
     auto cmd = std::make_unique<DeleteEntityCommand>(m_World, entity);
     m_History->Execute(std::move(cmd));
     m_History->Undo();
 
     // Should restore entity
-    EXPECT_EQ(m_World->GetRegistry().storage<entt::entity>().size(), countAfterCreate);
+    EXPECT_EQ(m_World->GetEntityCount(), countAfterCreate);
 }
 
 // ============================================================================

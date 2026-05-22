@@ -13,6 +13,7 @@ public:
     ~PostProcessPipeline();
 
     void Initialize(uint32_t width, uint32_t height);
+    void Shutdown();
     void Resize(uint32_t width, uint32_t height);
 
     // Run full post-process chain on the scene framebuffer's color attachment

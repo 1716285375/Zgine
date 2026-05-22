@@ -36,6 +36,12 @@ option(ZGINE_ENABLE_SANITIZER_MEMORY "Enable MemorySanitizer" OFF)
 set(ZGINE_WARNING_LEVEL "high" CACHE STRING "Warning level: off, medium, high, error")
 option(ZGINE_GUI_NUKLEAR "Use Nuklear GUI backend instead of ImGui" OFF)
 option(ZGINE_ENABLE_RCC "Enable Runtime Compiled C++ for rapid development" OFF)
+set(ZGINE_RENDERER_BACKEND "OpenGL" CACHE STRING "Default renderer backend: OpenGL, DirectX12, Vulkan, None")
+set_property(CACHE ZGINE_RENDERER_BACKEND PROPERTY STRINGS OpenGL DirectX12 Vulkan None)
+
+if(NOT ZGINE_RENDERER_BACKEND MATCHES "^(OpenGL|DirectX12|Vulkan|None)$")
+    message(FATAL_ERROR "ZGINE_RENDERER_BACKEND must be one of: OpenGL, DirectX12, Vulkan, None")
+endif()
 
 if(ZGINE_GUI_NUKLEAR)
     add_compile_definitions(ZGINE_GUI_NUKLEAR)
@@ -74,6 +80,17 @@ include(cmake/Dependencies.cmake)
 # Fix third-party library include directories for install/export
 include(cmake/FixThirdPartyIncludes.cmake)
 
+find_package(Vulkan QUIET)
+set(ZGINE_HAS_VULKAN OFF)
+if(Vulkan_FOUND)
+    set(ZGINE_HAS_VULKAN ON)
+    message(STATUS "Found Vulkan SDK: ${Vulkan_VERSION}")
+elseif(ZGINE_RENDERER_BACKEND STREQUAL "Vulkan")
+    message(FATAL_ERROR "ZGINE_RENDERER_BACKEND=Vulkan requires the Vulkan SDK. Set VULKAN_SDK or install the Vulkan SDK.")
+else()
+    message(STATUS "Vulkan SDK not found. Vulkan backend sources will be excluded.")
+endif()
+
 # ============================================================================
 # Source Files (Runtime only - excludes Editor)
 # ============================================================================
@@ -86,11 +103,20 @@ file(GLOB_RECURSE ZGINE_SOURCES
     "${CMAKE_SOURCE_DIR}/include/Zgine/*.h"
 )
 
+# Keep editor implementation out of the runtime target. Editor code is built by
+# ZgineEditorCore in editor/CMakeLists.txt.
+list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Editor/")
+list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/include/Zgine/Editor/")
+
 # Exclude non-GLM math backend implementations to avoid duplicate definitions
 # We use GLM as the backend, so generic implementations should not be compiled
 list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Vector[234]\\.cpp$")
 list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Matrix[34]\\.cpp$")
 list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Math\\.cpp$")
+
+if(NOT ZGINE_HAS_VULKAN)
+    list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Renderer/Backend/Vulkan/")
+endif()
 
 # ============================================================================
 # ZgineRuntime Target (Core Engine Library)
@@ -159,6 +185,10 @@ target_link_libraries(ZgineRuntime PRIVATE
     physfs-static
 )
 
+if(ZGINE_HAS_VULKAN)
+    target_link_libraries(ZgineRuntime PRIVATE Vulkan::Vulkan)
+endif()
+
 # RuntimeCompiledCPlusPlus (optional)
 if(ZGINE_ENABLE_RCC AND TARGET RuntimeCompiler)
     target_link_libraries(ZgineRuntime PUBLIC
@@ -175,6 +205,8 @@ endif()
 
 target_compile_definitions(ZgineRuntime PUBLIC
     GLM_ENABLE_EXPERIMENTAL
+    ZGINE_DEFAULT_RENDERER_BACKEND="${ZGINE_RENDERER_BACKEND}"
+    ZGINE_HAS_VULKAN=$<BOOL:${ZGINE_HAS_VULKAN}>
 )
 
 if(ZGINE_BUILD_EDITOR)
@@ -207,6 +239,13 @@ if(ZGINE_USE_PCH)
     )
 endif()
 
+if(ZGINE_HAS_VULKAN)
+    set_source_files_properties(
+        ${CMAKE_SOURCE_DIR}/src/Renderer/Backend/Vulkan/VulkanRendererAPI.cpp
+        PROPERTIES SKIP_PRECOMPILE_HEADERS ON
+    )
+endif()
+
 
 
 # ============================================================================
@@ -223,6 +262,7 @@ if(ZGINE_BUILD_EDITOR)
 endif()
 
 if(ZGINE_BUILD_TESTS)
+    enable_testing()
     add_subdirectory(tests)
 endif()
 
@@ -383,6 +423,8 @@ message(STATUS "  Build Shared: ${ZGINE_BUILD_SHARED}")
 message(STATUS "  Build Tests: ${ZGINE_BUILD_TESTS}")
 message(STATUS "  Build Sandbox: ${ZGINE_BUILD_SANDBOX}")
 message(STATUS "  Build Editor: ${ZGINE_BUILD_EDITOR}")
+message(STATUS "  Renderer Backend: ${ZGINE_RENDERER_BACKEND}")
+message(STATUS "  Vulkan SDK: ${ZGINE_HAS_VULKAN}")
 message(STATUS "  Use PCH: ${ZGINE_USE_PCH}")
 message(STATUS "  Warnings as Errors: ${ZGINE_WARNINGS_AS_ERRORS}")
 message(STATUS "  Enable LTO: ${ZGINE_ENABLE_LTO}")

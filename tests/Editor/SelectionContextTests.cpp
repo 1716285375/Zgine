@@ -37,7 +37,7 @@ TEST_F(SelectionContextTest, InitialState) {
 }
 
 TEST_F(SelectionContextTest, SelectSingleEntity) {
-    m_Selection->SetSelection({m_Entity1}, m_Entity1);
+    m_Selection->Select({m_Entity1}, SelectionMode::Replace);
 
     EXPECT_FALSE(m_Selection->GetSelection().empty());
     EXPECT_EQ(m_Selection->GetPrimary(), m_Entity1);
@@ -46,7 +46,7 @@ TEST_F(SelectionContextTest, SelectSingleEntity) {
 }
 
 TEST_F(SelectionContextTest, DeselectEntity) {
-    m_Selection->SetSelection({m_Entity1}, m_Entity1);
+    m_Selection->Select({m_Entity1}, SelectionMode::Replace);
     m_Selection->Remove(m_Entity1);
 
     EXPECT_TRUE(m_Selection->GetSelection().empty());
@@ -54,7 +54,7 @@ TEST_F(SelectionContextTest, DeselectEntity) {
 }
 
 TEST_F(SelectionContextTest, SelectMultiple) {
-    m_Selection->SetSelection({m_Entity1}, m_Entity1);
+    m_Selection->Select({m_Entity1}, SelectionMode::Replace);
     m_Selection->Add(m_Entity2);  // Don't clear previous
 
     EXPECT_EQ(m_Selection->GetSelection().size(), 2);
@@ -63,8 +63,8 @@ TEST_F(SelectionContextTest, SelectMultiple) {
 }
 
 TEST_F(SelectionContextTest, SetSelectionReplacesPrevious) {
-    m_Selection->SetSelection({m_Entity1}, m_Entity1);
-    m_Selection->SetSelection({m_Entity2, m_Entity3}, m_Entity2);
+    m_Selection->Select({m_Entity1}, SelectionMode::Replace);
+    m_Selection->Select({m_Entity2, m_Entity3}, SelectionMode::Replace);
 
     EXPECT_FALSE(m_Selection->IsSelected(m_Entity1));
     EXPECT_TRUE(m_Selection->IsSelected(m_Entity2));
@@ -75,7 +75,7 @@ TEST_F(SelectionContextTest, SetSelectionReplacesPrevious) {
 // Toggle test removed as Toggle method no longer exists in SelectionContext
 
 TEST_F(SelectionContextTest, ClearSelection) {
-    m_Selection->SetSelection({m_Entity1}, m_Entity1);
+    m_Selection->Select({m_Entity1}, SelectionMode::Replace);
     m_Selection->Add(m_Entity2);
 
     m_Selection->Clear();
@@ -85,7 +85,7 @@ TEST_F(SelectionContextTest, ClearSelection) {
 }
 
 TEST_F(SelectionContextTest, RemoveFromSelection) {
-    m_Selection->SetSelection({m_Entity1, m_Entity2, m_Entity3}, m_Entity1);
+    m_Selection->Select({m_Entity1, m_Entity2, m_Entity3}, SelectionMode::Replace);
 
     m_Selection->Remove(m_Entity2);
 
@@ -96,7 +96,7 @@ TEST_F(SelectionContextTest, RemoveFromSelection) {
 }
 
 TEST_F(SelectionContextTest, RemovePrimaryUpdates) {
-    m_Selection->SetSelection({m_Entity1, m_Entity2}, m_Entity1);
+    m_Selection->Select({m_Entity1, m_Entity2}, SelectionMode::Replace);
 
     m_Selection->Remove(m_Entity1);  // Remove primary
 

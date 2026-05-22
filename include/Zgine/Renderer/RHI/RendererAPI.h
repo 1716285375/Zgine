@@ -2,6 +2,7 @@
 
 #include <Zgine/Core/Math/MathTypes.h>
 #include <memory>
+#include <string_view>
 
 namespace Zgine {
 
@@ -14,7 +15,9 @@ class RendererAPI {
 public:
     enum class API {
         None = 0,
-        OpenGL = 1
+        OpenGL = 1,
+        DirectX12 = 2,
+        Vulkan = 3
     };
 
 public:
@@ -28,6 +31,11 @@ public:
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
 
     static API GetAPI() { return s_API; }
+    static void SetAPI(API api);
+    static bool IsAvailable(API api);
+    static const char* ToString(API api);
+    static API FromString(std::string_view name);
+    static void ReportUnavailableBackend(std::string_view resourceType);
     static std::unique_ptr<RendererAPI> Create();
 
 private:

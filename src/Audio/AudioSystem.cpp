@@ -3,10 +3,9 @@
 #include <Zgine/World/Core/Entity.h>
 #include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
+#include <Zgine/Core/Math/Math.h>
 #include <Zgine/World/Camera/Camera.h>
 #include <miniaudio.h>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 namespace Zgine {
 
@@ -317,13 +316,13 @@ void AudioSystem::UpdateListener(World* World) {
                 auto& transform = cameraView.get<TransformComponent>(entity);
 
                 // 计算前方向量（从旋转）
-                glm::vec3 forward = glm::normalize(glm::vec3(
-                    glm::cos(glm::radians(transform.Rotation.y)) * glm::cos(glm::radians(transform.Rotation.x)),
-                    glm::sin(glm::radians(transform.Rotation.x)),
-                    glm::sin(glm::radians(transform.Rotation.y)) * glm::cos(glm::radians(transform.Rotation.x))
+                Math::Vector3 forward = Math::Normalize(Math::Vector3(
+                    Math::Cos(Math::DegToRad(transform.Rotation.y)) * Math::Cos(Math::DegToRad(transform.Rotation.x)),
+                    Math::Sin(Math::DegToRad(transform.Rotation.x)),
+                    Math::Sin(Math::DegToRad(transform.Rotation.y)) * Math::Cos(Math::DegToRad(transform.Rotation.x))
                 ));
 
-                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+                Math::Vector3 up = Math::Vector3(0.0f, 1.0f, 0.0f);
 
     ma_engine* engine = static_cast<ma_engine*>(m_Engine);
     ma_engine_listener_set_position(engine, 0,
@@ -343,13 +342,13 @@ void AudioSystem::UpdateListener(World* World) {
     auto& transform = listenerView.get<TransformComponent>(entity);
 
     // 计算前方向量
-    glm::vec3 forward = glm::normalize(glm::vec3(
-        glm::cos(glm::radians(transform.Rotation.y)) * glm::cos(glm::radians(transform.Rotation.x)),
-        glm::sin(glm::radians(transform.Rotation.x)),
-        glm::sin(glm::radians(transform.Rotation.y)) * glm::cos(glm::radians(transform.Rotation.x))
+    Math::Vector3 forward = Math::Normalize(Math::Vector3(
+        Math::Cos(Math::DegToRad(transform.Rotation.y)) * Math::Cos(Math::DegToRad(transform.Rotation.x)),
+        Math::Sin(Math::DegToRad(transform.Rotation.x)),
+        Math::Sin(Math::DegToRad(transform.Rotation.y)) * Math::Cos(Math::DegToRad(transform.Rotation.x))
     ));
 
-    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    Math::Vector3 up = Math::Vector3(0.0f, 1.0f, 0.0f);
 
     ma_engine* engine = static_cast<ma_engine*>(m_Engine);
     ma_engine_listener_set_position(engine, 0,

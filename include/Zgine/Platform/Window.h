@@ -7,15 +7,24 @@
 
 namespace Zgine {
 
+    enum class WindowGraphicsAPI {
+        None = 0,
+        OpenGL,
+        DirectX12,
+        Vulkan
+    };
+
     struct WindowProps {
         std::string Title;
         unsigned int Width;
         unsigned int Height;
+        WindowGraphicsAPI GraphicsAPI;
 
         WindowProps(const std::string& title = "Zgine Engine",
                     unsigned int width = 1280,
-                    unsigned int height = 720)
-            : Title(title), Width(width), Height(height) {}
+                    unsigned int height = 720,
+                    WindowGraphicsAPI graphicsAPI = WindowGraphicsAPI::OpenGL)
+            : Title(title), Width(width), Height(height), GraphicsAPI(graphicsAPI) {}
     };
 
     // Interface representing a desktop system based Window
@@ -27,9 +36,11 @@ namespace Zgine {
         virtual ~Window() = default;
 
         virtual void OnUpdate() = 0;
+        virtual void SwapBuffers() = 0;
 
         virtual unsigned int GetWidth() const = 0;
         virtual unsigned int GetHeight() const = 0;
+        virtual WindowGraphicsAPI GetGraphicsAPI() const = 0;
 
         // Window attributes
         virtual void SetEventCallback(const EventCallbackFn& callback) = 0;

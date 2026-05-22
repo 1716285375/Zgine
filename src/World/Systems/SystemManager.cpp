@@ -1,5 +1,6 @@
 #include <Zgine/World/Systems/SystemManager.h>
 #include <Zgine/Core/Log/Log.h>
+#include <limits>
 
 namespace Zgine {
 
@@ -58,20 +59,28 @@ void SystemManager::Clear() {
     m_Systems.clear();
     m_ExternalSystems.clear();
     m_SystemMap.clear();
+    m_RegistrationOrder.clear();
+    m_NextRegistrationOrder = 0;
     m_Sorted = false;
 }
 
 void SystemManager::SortSystemsByPriority() {
     // Sort owned systems
     std::stable_sort(m_Systems.begin(), m_Systems.end(),
-        [](const std::unique_ptr<ISystem>& a, const std::unique_ptr<ISystem>& b) {
-            return a->GetPriority() < b->GetPriority();
+        [this](const std::unique_ptr<ISystem>& a, const std::unique_ptr<ISystem>& b) {
+            if (a->GetPriority() != b->GetPriority()) {
+                return a->GetPriority() < b->GetPriority();
+            }
+            return m_RegistrationOrder[a.get()] < m_RegistrationOrder[b.get()];
         });
 
     // Sort external systems
     std::stable_sort(m_ExternalSystems.begin(), m_ExternalSystems.end(),
-        [](ISystem* a, ISystem* b) {
-            return a->GetPriority() < b->GetPriority();
+        [this](ISystem* a, ISystem* b) {
+            if (a->GetPriority() != b->GetPriority()) {
+                return a->GetPriority() < b->GetPriority();
+            }
+            return m_RegistrationOrder[a] < m_RegistrationOrder[b];
         });
 
     m_Sorted = true;
@@ -91,13 +100,24 @@ std::vector<ISystem*> SystemManager::GetAllSystems() {
         allSystems.push_back(system);
     }
 
-    // Sort by priority if needed
-    if (!m_Sorted) {
-        std::stable_sort(allSystems.begin(), allSystems.end(),
-            [](ISystem* a, ISystem* b) {
+    // Sort the final execution list globally. Owned and external systems must
+    // interleave by priority; registration order is the stable tie-breaker.
+    std::stable_sort(allSystems.begin(), allSystems.end(),
+        [this](ISystem* a, ISystem* b) {
+            if (a->GetPriority() != b->GetPriority()) {
                 return a->GetPriority() < b->GetPriority();
-            });
-    }
+            }
+
+            auto aOrderIt = m_RegistrationOrder.find(a);
+            auto bOrderIt = m_RegistrationOrder.find(b);
+            size_t aOrder = aOrderIt != m_RegistrationOrder.end()
+                ? aOrderIt->second
+                : std::numeric_limits<size_t>::max();
+            size_t bOrder = bOrderIt != m_RegistrationOrder.end()
+                ? bOrderIt->second
+                : std::numeric_limits<size_t>::max();
+            return aOrder < bOrder;
+        });
 
     return allSystems;
 }

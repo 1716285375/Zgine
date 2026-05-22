@@ -180,15 +180,14 @@ namespace Zgine {
 		// Render World texture
 		unsigned int textureId = viewportCtx.GetSceneTexture();
 		if (textureId != 0) {
+			// Allow ImGuizmo to receive mouse events on top of the Image widget.
+			ImGui::SetNextItemAllowOverlap();
 			ImGui::Image(reinterpret_cast<void*>(static_cast<intptr_t>(textureId)),
 				viewportPanelSize, ImVec2(0, 1), ImVec2(1, 0));
 		}
 		else {
 			ImGui::Text("World viewport is not ready.");
 		}
-
-		// Allow ImGuizmo to receive mouse events on top of the Image widget
-		ImGui::SetItemAllowOverlap();
 
 		// Handle asset drag-drop
 		if (m_World && ImGui::BeginDragDropTarget()) {

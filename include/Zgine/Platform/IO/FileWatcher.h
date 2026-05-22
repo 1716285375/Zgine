@@ -13,7 +13,7 @@ enum class FileStatus { Created, Modified, Removed };
  * @brief Polls a set of watched paths and fires a callback on filesystem changes.
  *
  * Lives in Platform/IO because filesystem notifications are OS-dependent.
- * Uses C++17 std::filesystem for cross-platform stat queries.
+ * Uses std::filesystem for cross-platform stat queries.
  */
 class FileWatcher {
 public:

@@ -14,7 +14,7 @@ namespace Zgine {
  * (backed by PhysicsFS). Allows transparent asset loading from both the
  * filesystem and packed release archives.
  *
- * Lives in Platform/IO — VFS initialization and mount points are
+ * Lives in Platform/IO; VFS initialization and mount points are
  * OS-specific operations.
  */
 class VFS {
@@ -23,7 +23,7 @@ public:
 
     /*
         Purpose : Initialize VFS; must be called before any file operations.
-        Args    : argv0 — path to the executable (required by PhysicsFS).
+        Args    : argv0 - path to the executable (required by PhysicsFS).
         Return  : true on success.
     */
     [[nodiscard]] static bool Initialize(const char* argv0);

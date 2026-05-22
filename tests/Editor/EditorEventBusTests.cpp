@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <Zgine/Editor/Core/EditorEventBus.h>
 #include <Zgine/Editor/Events/EntityEvents.h>
+#include <Zgine/Editor/Events/SelectionEvents.h>
 #include <Zgine/Editor/Events/SceneEvents.h>
-#include <Zgine/Editor/Events/EditorStateEvents.h>
+#include <Zgine/Editor/Events/TransformEvents.h>
+#include <Zgine/Editor/Events/EditorEvents.h>
 #include <thread>
 #include <chrono>
 
@@ -126,7 +128,7 @@ TEST_F(EditorEventBusTest, EntitySelectedEvent) {
     m_EventBus->Subscribe<EntitySelectedEvent>([&](EntitySelectedEvent& e) {
         received = true;
         EXPECT_EQ(e.GetEntity(), selected);
-        EXPECT_EQ(e.GetCategory(), EventCategory::Entity);
+        EXPECT_EQ(e.GetCategory(), EditorEventCategory::Selection);
         // Type check using typeid
         EXPECT_EQ(e.GetType(), EntitySelectedEvent::GetStaticType());
     });
@@ -143,7 +145,7 @@ TEST_F(EditorEventBusTest, TransformChangedEvent) {
     m_EventBus->Subscribe<TransformChangedEvent>([&](TransformChangedEvent& e) {
         received = true;
         EXPECT_EQ(e.GetEntity(), entity);
-        EXPECT_EQ(e.GetCategory(), EventCategory::Entity); // Or Transform if that exists
+        EXPECT_EQ(e.GetCategory(), EditorEventCategory::Transform);
         EXPECT_EQ(e.GetType(), TransformChangedEvent::GetStaticType());
     });
 
@@ -162,7 +164,7 @@ TEST_F(EditorEventBusTest, SceneSavedEvent) {
         received = true;
         EXPECT_EQ(e.GetScene(), &World);
         EXPECT_EQ(e.GetPath(), path);
-        EXPECT_EQ(e.GetCategory(), EventCategory::World);
+        EXPECT_EQ(e.GetCategory(), EditorEventCategory::World);
     });
 
     SceneSavedEvent event(&World, path);
@@ -177,7 +179,7 @@ TEST_F(EditorEventBusTest, PlayModeChangedEvent) {
     m_EventBus->Subscribe<PlayModeChangedEvent>([&](PlayModeChangedEvent& e) {
         received = true;
         EXPECT_EQ(e.GetMode(), newMode);
-        EXPECT_EQ(e.GetCategory(), EventCategory::Editor);
+        EXPECT_EQ(e.GetCategory(), EditorEventCategory::Editor);
     });
 
     PlayModeChangedEvent event(newMode);

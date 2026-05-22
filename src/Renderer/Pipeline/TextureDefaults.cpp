@@ -20,6 +20,12 @@ void TextureDefaults::Initialize() {
     s_FlatNormal = Texture::Create(normal, 1, 1, "default_normal");
 }
 
+void TextureDefaults::Shutdown() {
+    s_White.reset();
+    s_Black.reset();
+    s_FlatNormal.reset();
+}
+
 std::shared_ptr<Texture> TextureDefaults::White()      { return s_White; }
 std::shared_ptr<Texture> TextureDefaults::Black()      { return s_Black; }
 std::shared_ptr<Texture> TextureDefaults::FlatNormal() { return s_FlatNormal; }

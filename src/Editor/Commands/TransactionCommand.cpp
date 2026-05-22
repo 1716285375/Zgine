@@ -16,7 +16,7 @@ bool TransactionCommand::Execute() {
         if (!cmd->Execute()) {
             // Rollback
             for (int i = static_cast<int>(m_Commands.size()) - 1; i >= 0; --i) {
-                m_Commands[i]->Undo();
+                (void)m_Commands[i]->Undo();
             }
             return false;
         }

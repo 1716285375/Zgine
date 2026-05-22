@@ -9,9 +9,9 @@ add_executable(ZgineEditorTests
     SelectionContextTests.cpp
 )
 
-# 链接到ZgineRuntime（包含所有Editor代码）
+# 链接到编辑器核心库，保持 Runtime 不依赖 Editor
 target_link_libraries(ZgineEditorTests PRIVATE
-    ZgineRuntime
+    ZgineEditorCore
     GTest::GTest
     GTest::Main
 )
@@ -24,7 +24,7 @@ target_include_directories(ZgineEditorTests PRIVATE
 
 # C++标准
 set_target_properties(ZgineEditorTests PROPERTIES
-    CXX_STANDARD 17
+    CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
 )

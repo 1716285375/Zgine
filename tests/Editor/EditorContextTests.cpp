@@ -3,7 +3,7 @@
 #include <Zgine/Editor/Core/EditorEventBus.h>
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
-#include <Zgine/Editor/Events/EntityEvents.h>
+#include <Zgine/Editor/Events/SelectionEvents.h>
 #include <Zgine/World/Core/World.h>
 
 using namespace Zgine;

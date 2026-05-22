@@ -1,5 +1,15 @@
 # Zgine 代码风格规范
 
+> 本文件保留为快速入口。完整架构基线见 [docs/engine-architecture.md](docs/engine-architecture.md)，完整项目规范见 [docs/project-standards.md](docs/project-standards.md)。
+
+## 最高优先级规则
+
+- 运行时不依赖编辑器：`ZgineRuntime` 不编译、不链接、不 include `src/Editor/**`。
+- 项目基线是 C++20；C++26 特性只允许在验证所有目标编译器和标准库支持后引入。
+- 公共 API 使用 `Zgine::Math::*`，禁止暴露 `glm::*`。
+- CMake 使用 target-based 写法，依赖传播必须真实使用 `PRIVATE` / `PUBLIC` / `INTERFACE`。
+- 新功能、新 public API、bugfix、序列化、系统调度、资源异步、脚本绑定都必须补测试。
+
 ## 一、C++ 标准
 
 - **标准：C++20**，编译器标志 `/std:c++20`（MSVC）或 `-std=c++20`

@@ -7,12 +7,43 @@
 #include <ImGuizmo.h>
 
 #include <Zgine/Core/Application/Application.h>
+#include <Zgine/Core/Log/Log.h>
+#include <Zgine/Renderer/RHI/RendererAPI.h>
 
 // 暂时硬编码，后续应从 Window 或 Renderer 获取
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
 
 namespace Zgine {
+
+    namespace {
+        class NullGuiLayer final : public GuiLayer {
+        public:
+            NullGuiLayer()
+                : GuiLayer("NullGuiLayer")
+            {
+            }
+
+            void Begin() override {}
+            void End() override {}
+            void BlockEvents(bool block) override { m_BlockEvents = block; }
+            void EnableDocking(bool enable) override { m_DockingEnabled = enable; }
+            void EnableViewports(bool enable) override { m_ViewportsEnabled = enable; }
+            void SetTheme(GuiTheme theme) override { m_Theme = theme; }
+            void SetCustomTheme() override { m_Theme = GuiTheme::Custom; }
+            void LoadFont(const GuiFontConfig& config) override { ZGINE_UNUSED(config); }
+            void SetGlobalFontScale(float scale) override { m_GlobalFontScale = scale; }
+            bool IsMouseCaptured() const override { return false; }
+            bool IsKeyboardCaptured() const override { return false; }
+
+        private:
+            bool m_BlockEvents = true;
+            bool m_DockingEnabled = false;
+            bool m_ViewportsEnabled = false;
+            GuiTheme m_Theme = GuiTheme::Dark;
+            float m_GlobalFontScale = 1.0f;
+        };
+    }
 
     ImGuiLayer::ImGuiLayer()
         : GuiLayer("ImGuiLayer")
@@ -154,6 +185,14 @@ namespace Zgine {
 
     Ref<GuiLayer> GuiLayer::Create()
     {
+        if (RendererAPI::GetAPI() != RendererAPI::API::OpenGL) {
+            if (auto& logger = Log::GetCoreLogger()) {
+                logger->warn("GuiLayer is using NullGuiLayer because '{}' does not have an ImGui backend yet.",
+                    RendererAPI::ToString(RendererAPI::GetAPI()));
+            }
+            return CreateRef<NullGuiLayer>();
+        }
+
         return CreateRef<ImGuiLayer>();
     }
 

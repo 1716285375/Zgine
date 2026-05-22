@@ -17,6 +17,21 @@ namespace Zgine {
     static bool s_GLFWInitialized = false;
 
     namespace {
+        const char* ToString(WindowGraphicsAPI api) {
+            switch (api) {
+                case WindowGraphicsAPI::None:
+                    return "None";
+                case WindowGraphicsAPI::OpenGL:
+                    return "OpenGL";
+                case WindowGraphicsAPI::DirectX12:
+                    return "DirectX12";
+                case WindowGraphicsAPI::Vulkan:
+                    return "Vulkan";
+            }
+
+            return "Unknown";
+        }
+
         bool LoadWindowIcon(const std::filesystem::path& path, GLFWimage& outImage) {
             if (!std::filesystem::exists(path)) return false;
             int width = 0, height = 0, channels = 0;
@@ -41,8 +56,10 @@ namespace Zgine {
         m_Data.Title = props.Title;
         m_Data.Width = props.Width;
         m_Data.Height = props.Height;
+        m_Data.GraphicsAPI = props.GraphicsAPI;
 
-        ZGINE_CORE_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
+        ZGINE_CORE_INFO("Creating window {0} ({1}, {2}) with {3} graphics API",
+            props.Title, props.Width, props.Height, ToString(props.GraphicsAPI));
 
         if (!s_GLFWInitialized) {
             int success = glfwInit();
@@ -51,30 +68,40 @@ namespace Zgine {
             s_GLFWInitialized = true;
         }
 
+        glfwDefaultWindowHints();
+
         // Platform specific hints
+        if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
 #ifdef ZGINE_PLATFORM_MACOS
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on MacOS
-        glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // Required on MacOS
+            glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GLFW_TRUE);
 #else
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 #endif
+        } else {
+            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+        }
 
         m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+        ZGINE_CORE_ASSERT(m_Window, "Could not create GLFW window!");
 
-        glfwMakeContextCurrent(m_Window);
+        if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
+            glfwMakeContextCurrent(m_Window);
+        }
         glfwSetWindowUserPointer(m_Window, &m_Data);
 
         GLFWInput::SetWindow(m_Window);
 
-        // GLAD
-        int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
-        ZGINE_CORE_ASSERT(status, "Failed to initialize Glad!");
-        ZGINE_UNUSED(status); // Suppress unused variable warning in release builds
+        if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
+            int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+            ZGINE_CORE_ASSERT(status, "Failed to initialize Glad!");
+            ZGINE_UNUSED(status); // Suppress unused variable warning in release builds
+        }
 
         // Icon
         {
@@ -165,16 +192,27 @@ namespace Zgine {
             data->EventCallback(event);
         });
 
-        glfwSwapInterval(1); // VSync
+        if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
+            glfwSwapInterval(1); // VSync
+        }
     }
 
     void GLFWWindow::Shutdown() {
-        glfwDestroyWindow(m_Window);
+        if (m_Window) {
+            glfwDestroyWindow(m_Window);
+            m_Window = nullptr;
+        }
     }
 
     void GLFWWindow::OnUpdate() {
         glfwPollEvents();
-        glfwSwapBuffers(m_Window);
+        SwapBuffers();
+    }
+
+    void GLFWWindow::SwapBuffers() {
+        if (m_Data.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
+            glfwSwapBuffers(m_Window);
+        }
     }
 
     bool GLFWWindow::IsRunning() const {

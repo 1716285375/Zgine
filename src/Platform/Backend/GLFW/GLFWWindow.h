@@ -14,9 +14,11 @@ namespace Zgine {
         virtual ~GLFWWindow();
 
         void OnUpdate() override;
+        void SwapBuffers() override;
 
         inline unsigned int GetWidth() const override { return m_Data.Width; }
         inline unsigned int GetHeight() const override { return m_Data.Height; }
+        inline WindowGraphicsAPI GetGraphicsAPI() const override { return m_Data.GraphicsAPI; }
 
         // Window attributes
         inline void SetEventCallback(const EventCallbackFn& callback) override { m_Data.EventCallback = callback; }
@@ -35,6 +37,7 @@ namespace Zgine {
         struct WindowData {
             std::string Title;
             unsigned int Width, Height;
+            WindowGraphicsAPI GraphicsAPI = WindowGraphicsAPI::OpenGL;
             EventCallbackFn EventCallback;
             RefreshCallbackFn RefreshCallback;
         };

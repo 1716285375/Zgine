@@ -16,6 +16,7 @@
 #include <Zgine/World/Components/Components.h>
 #include <Zgine/World/Serialization/WorldSerializer.h>
 #include <Zgine/Renderer/Pipeline/RenderSystem.h>
+#include <Zgine/Renderer/RHI/RendererAPI.h>
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
 #include <Zgine/Scripting/ScriptSystem.h>
@@ -50,7 +51,7 @@ namespace Zgine {
 
             // Initialize asset manager and material presets
             AssetManager::Get().Initialize();
-            // PBRMaterialPresetManager::Initialize();
+            // PBRMaterialPresetRegistry::Initialize();
 
             // Initialize physics system
             m_PhysicsSystem.Initialize();
@@ -64,6 +65,16 @@ namespace Zgine {
             m_ScriptSystem.SetAudioSystem(&m_AudioSystem);
 
             // Initialize rendering systems
+            const RendererAPI::API rendererAPI = RendererAPI::GetAPI();
+            m_RenderingAvailable = rendererAPI == RendererAPI::API::OpenGL && RendererAPI::IsAvailable(rendererAPI);
+            if (!m_RenderingAvailable) {
+                ZGINE_CORE_WARN(
+                    "ZgineEditor currently requires the OpenGL renderer. '{}' is selectable for backend study, "
+                    "but editor rendering is disabled until that backend has a device, swapchain, and ImGui renderer.",
+                    RendererAPI::ToString(rendererAPI));
+                return;
+            }
+
             m_RenderSystem.Initialize();
 
             // Create framebuffer for World rendering
@@ -73,6 +84,12 @@ namespace Zgine {
             fbSpec.HDR = true;
             fbSpec.DepthStencil = true;
             m_SceneFramebuffer = Framebuffer::Create(fbSpec);
+            if (!m_SceneFramebuffer) {
+                ZGINE_CORE_ERROR("Failed to create editor scene framebuffer for backend '{}'.",
+                    RendererAPI::ToString(rendererAPI));
+                m_RenderingAvailable = false;
+                return;
+            }
 
             // Initialize Editor UI
             auto& window = Application::Get().GetWindow();
@@ -114,13 +131,17 @@ namespace Zgine {
             m_RenderSystem.Shutdown();
         }
 
-        virtual void OnFixedUpdate(Timestep ts) override {
-            // ZGINE_CORE_INFO("EditorLayer::OnFixedUpdate! dt: {}", ts.GetSeconds());
+        virtual void OnFixedUpdate(Timestep /*ts*/) override {
+            // ZGINE_CORE_INFO("EditorLayer::OnFixedUpdate");
             // This runs at 60Hz. If we print it it will spam the console, so it's commented out.
             // But we can update physics here if it was separated from the variable update!
         }
 
         virtual void OnUpdate(Timestep ts) override {
+            if (!m_RenderingAvailable || !m_SceneFramebuffer) {
+                return;
+            }
+
             // Handle viewport resize FIRST, before rendering to ensure new framebuffer gets content
             HandleViewportResize();
 
@@ -145,6 +166,10 @@ namespace Zgine {
         }
 
         virtual void OnGuiRender() override {
+            if (!m_RenderingAvailable || !m_SceneFramebuffer) {
+                return;
+            }
+
             // Note: Application's GuiLayer handles ImGui Begin/End frame
             // We just render our editor UI content here
 
@@ -159,6 +184,10 @@ namespace Zgine {
         }
 
         virtual void OnEvent(Event& e) override {
+            if (!m_RenderingAvailable) {
+                return;
+            }
+
             // Handle window resize
             EventDispatcher dispatcher(e);
             dispatcher.Dispatch<WindowResizeEvent>([this](WindowResizeEvent& event) {
@@ -173,6 +202,10 @@ namespace Zgine {
 
     private:
         void RenderSceneToFramebuffer() {
+            if (!m_RenderingAvailable || !m_SceneFramebuffer) {
+                return;
+            }
+
             // Save current viewport
             GLint prevViewport[4];
             glGetIntegerv(GL_VIEWPORT, prevViewport);
@@ -215,6 +248,10 @@ namespace Zgine {
         }
 
         void HandleViewportResize() {
+            if (!m_RenderingAvailable || !m_SceneFramebuffer) {
+                return;
+            }
+
             auto viewportSize = m_Editor.GetSceneViewportSize();
             if (viewportSize.x > 0 && viewportSize.y > 0) {
                 unsigned int newWidth = static_cast<unsigned int>(viewportSize.x);
@@ -238,6 +275,10 @@ namespace Zgine {
         }
 
         void HandleCameraInput(Timestep ts) {
+            if (!m_RenderingAvailable) {
+                return;
+            }
+
             // Don't process camera input while gizmo is being used
             if (ImGuizmo::IsUsing()) return;
 
@@ -285,7 +326,7 @@ namespace Zgine {
                 auto primitiveType = e.GetPrimitiveType();
                 if (primitiveType != PrimitiveType::None && entity.IsValid()) {
                     entity.AddComponent<PrimitiveComponent>(primitiveType);
-                    // PBRMaterialPresetManager::ApplyPreset(entity, "Ceramic");
+                    // PBRMaterialPresetRegistry presets can be copied into PBRMaterialComponent here.
                 }
             });
 
@@ -509,6 +550,7 @@ namespace Zgine {
         float m_LastMouseX = 0.0f;
         float m_LastMouseY = 0.0f;
         bool m_IsRightMousePressed = false;
+        bool m_RenderingAvailable = false;
     };
 
     class ZgineEditorApp : public Application {

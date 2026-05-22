@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
-#include <Zgine/World/Components.h>
-#include <Zgine/World/Entity.h>
-#include <Zgine/World/World.h>
+#include <Zgine/World/Components/Components.h>
+#include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Core/World.h>
 
 TEST(SceneEntityTests, CreateEntityHasDefaultComponents) {
     Zgine::World World;

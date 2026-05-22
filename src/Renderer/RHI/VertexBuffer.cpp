@@ -8,6 +8,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLVertexBuffer>(data, size);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("VertexBuffer");
+                return nullptr;
         }
         return nullptr;
     }

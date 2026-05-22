@@ -8,6 +8,8 @@
 #include <typeindex>
 #include <queue>
 #include <mutex>
+#include <type_traits>
+#include <utility>
 
 namespace Zgine {
 
@@ -89,14 +91,15 @@ public:
 
     /**
      * @brief Publish event to queue for deferred dispatch
-     * @param event Event to publish (will be copied)
+     * @param event Event to publish (will be moved into the queue)
      */
     template<typename T>
-    void Publish(const T& event) {
-        static_assert(std::is_base_of_v<EditorEvent, T>, "T must derive from EditorEvent");
+    void Publish(T&& event) {
+        using EventType = std::remove_cv_t<std::remove_reference_t<T>>;
+        static_assert(std::is_base_of_v<EditorEvent, EventType>, "T must derive from EditorEvent");
 
         std::lock_guard<std::mutex> lock(m_QueueMutex);
-        m_EventQueue.push(std::make_unique<T>(event));
+        m_EventQueue.push(std::make_unique<EventType>(std::forward<T>(event)));
     }
 
     /**
@@ -104,8 +107,9 @@ public:
      * @param event Event to publish
      */
     template<typename T>
-    void PublishImmediate(T& event) {
-        static_assert(std::is_base_of_v<EditorEvent, T>, "T must derive from EditorEvent");
+    void PublishImmediate(T&& event) {
+        using EventType = std::remove_cv_t<std::remove_reference_t<T>>;
+        static_assert(std::is_base_of_v<EditorEvent, EventType>, "T must derive from EditorEvent");
         DispatchEvent(event);
     }
 

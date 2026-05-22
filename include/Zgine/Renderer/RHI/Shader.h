@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Zgine/Core/Math/MathTypes.h>
+#include <memory>
+#include <string>
 
 namespace Zgine {
 

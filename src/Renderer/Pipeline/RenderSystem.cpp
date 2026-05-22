@@ -17,6 +17,7 @@
 #include <Zgine/Core/Math/Matrix4.h>
 #include <cmath>
 #include <algorithm>
+#include <exception>
 #include <string>
 
 namespace Zgine {
@@ -29,11 +30,41 @@ RenderSystem::RenderSystem() {}
 RenderSystem::~RenderSystem() { Shutdown(); }
 
 void RenderSystem::Initialize() {
+    if (m_Initialized) {
+        return;
+    }
+
+    const RendererAPI::API api = RendererAPI::GetAPI();
+    if (!RendererAPI::IsAvailable(api)) {
+        ZGINE_CORE_ERROR("RenderSystem cannot initialize renderer backend '{}'. Backend is known but not implemented yet.",
+            RendererAPI::ToString(api));
+        return;
+    }
+
     if (!s_RendererAPI) {
         s_RendererAPI = RendererAPI::Create();
-        if (s_RendererAPI) {
-            s_RendererAPI->Init();
+        if (!s_RendererAPI) {
+            ZGINE_CORE_ERROR("RenderSystem failed to create renderer backend '{}'.", RendererAPI::ToString(api));
+            return;
         }
+        try {
+            s_RendererAPI->Init();
+        } catch (const std::exception& error) {
+            ZGINE_CORE_ERROR("RenderSystem failed to initialize renderer backend '{}': {}",
+                RendererAPI::ToString(api), error.what());
+            s_RendererAPI.reset();
+            return;
+        }
+    }
+
+    if (api != RendererAPI::API::OpenGL) {
+        m_Config.EnableShadows = false;
+        m_Config.EnablePostProcess = false;
+        m_Initialized = true;
+        ZGINE_CORE_INFO(
+            "RenderSystem initialized backend '{}' with device/swapchain only. Scene rendering resources are not implemented yet.",
+            RendererAPI::ToString(api));
+        return;
     }
 
     // Default textures (1x1 white, black, flat normal)
@@ -105,13 +136,29 @@ void RenderSystem::Initialize() {
     m_PostProcess.Initialize(1280, 720);
     m_Config.EnablePostProcess = true;
 
-    ZGINE_CORE_INFO("RenderSystem initialized (path: {}, shadows: {}, postprocess: {})",
+    m_Initialized = true;
+
+    ZGINE_CORE_INFO("RenderSystem initialized (backend: {}, path: {}, shadows: {}, postprocess: {})",
+        RendererAPI::ToString(api),
         m_Config.Path == RenderPath::Advanced ? "PBR" : "Blinn-Phong",
         m_Config.EnableShadows ? "on" : "off",
         m_Config.EnablePostProcess ? "on" : "off");
 }
 
 void RenderSystem::Shutdown() {
+    if (!m_Initialized) {
+        return;
+    }
+
+    m_PostProcess.Shutdown();
+    m_ShadowMapFBO.reset();
+    m_DepthShader.reset();
+    m_PBRShader.reset();
+    m_SimpleShader.reset();
+    TextureDefaults::Shutdown();
+    s_RendererAPI.reset();
+
+    m_Initialized = false;
     ZGINE_CORE_INFO("RenderSystem shut down");
 }
 
@@ -121,6 +168,9 @@ uint32_t RenderSystem::PostProcess(uint32_t sceneColorTexture) {
 }
 
 void RenderSystem::ResizePostProcess(uint32_t width, uint32_t height) {
+    if (!m_Config.EnablePostProcess) {
+        return;
+    }
     m_PostProcess.Resize(width, height);
 }
 
@@ -178,7 +228,7 @@ void RenderSystem::RenderShadowPass(World* world) {
 }
 
 void RenderSystem::RenderScene(World* world, Camera* camera) {
-    if (!world || !camera || !s_RendererAPI) return;
+    if (!world || !camera || !s_RendererAPI || !m_Initialized) return;
 
     // Collect lights first (needed by shadow pass)
     m_LightingData = LightingData{};

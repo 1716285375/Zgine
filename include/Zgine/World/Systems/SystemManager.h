@@ -42,6 +42,7 @@ public:
 
         m_Systems.push_back(std::move(system));
         m_SystemMap[std::type_index(typeid(T))] = ptr;
+        m_RegistrationOrder[ptr] = m_NextRegistrationOrder++;
         m_Sorted = false;
 
         return ptr;
@@ -59,6 +60,7 @@ public:
 
         m_ExternalSystems.push_back(system);
         m_SystemMap[std::type_index(typeid(T))] = system;
+        m_RegistrationOrder[system] = m_NextRegistrationOrder++;
         m_Sorted = false;
 
         return system;
@@ -98,6 +100,18 @@ public:
 
         // Remove from map
         m_SystemMap.erase(typeIndex);
+
+        // Remove registration order entries before removing system storage
+        for (const auto& sys : m_Systems) {
+            if (std::type_index(typeid(*sys)) == typeIndex) {
+                m_RegistrationOrder.erase(sys.get());
+            }
+        }
+        for (ISystem* sys : m_ExternalSystems) {
+            if (std::type_index(typeid(*sys)) == typeIndex) {
+                m_RegistrationOrder.erase(sys);
+            }
+        }
 
         // Remove from owned systems
         m_Systems.erase(
@@ -165,6 +179,10 @@ private:
 
     // Type index to system pointer map for fast lookup
     std::unordered_map<std::type_index, ISystem*> m_SystemMap;
+
+    // Stable registration order used as a tie-breaker for equal priorities
+    std::unordered_map<ISystem*, size_t> m_RegistrationOrder;
+    size_t m_NextRegistrationOrder = 0;
 
     // Whether systems are sorted by priority
     bool m_Sorted = false;

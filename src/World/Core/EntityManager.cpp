@@ -72,7 +72,7 @@ bool EntityManager::IsValid(EntityHandle handle) const {
 }
 
 size_t EntityManager::GetEntityCount() const {
-    return m_Registry.storage<entt::entity>().size();
+    return m_Registry.storage<IDComponent>().size();
 }
 
 void EntityManager::Clear() {

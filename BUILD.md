@@ -4,7 +4,7 @@
 
 ### All Platforms
 - **CMake** 3.20 or higher
-- **C++17 compatible compiler**
+- **C++20 compatible compiler**
   - Windows: MSVC 2022+ or Clang
   - Linux: GCC 9+ or Clang 10+
   - macOS: Xcode 12+ (AppleClang)
@@ -16,6 +16,56 @@
 - Visual Studio 2019 or 2022 (Community Edition or higher)
 - Windows SDK 10.0.18362.0 or higher
 - Optional: Ninja build system (recommended)
+
+Verified local toolchain on this machine:
+
+```text
+Visual Studio root:
+  C:\Program Files\Microsoft Visual Studio\2022\Community
+
+MSVC toolset root:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207
+
+cl.exe:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe
+
+link.exe:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\link.exe
+
+Windows SDK tools:
+  C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64
+
+rc.exe:
+  C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\rc.exe
+
+mt.exe:
+  C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\mt.exe
+
+Visual Studio environment bootstrap:
+  C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat
+```
+
+Important: absolute compiler paths are not enough by themselves. MSVC also needs the
+Visual Studio and Windows SDK environment variables (`INCLUDE`, `LIB`, `PATH`) so the
+linker can find libraries such as `kernel32.lib`. Run CMake from `VsDevCmd.bat` or a
+Developer PowerShell/Command Prompt, then pass absolute tools if you want deterministic
+tool selection.
+
+Working local command used for configure, build, and test verification:
+
+```powershell
+$vsdev = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat'
+$build = 'build\architecture-check-msvc-devcmd'
+
+cmd.exe /S /C "`"$vsdev`" -arch=x64 -host_arch=x64 && cmake -S . -B $build -G Ninja -DCMAKE_C_COMPILER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe`" -DCMAKE_CXX_COMPILER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe`" -DCMAKE_LINKER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\link.exe`" -DCMAKE_RC_COMPILER=`"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\rc.exe`" -DCMAKE_MT=`"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\mt.exe`" && cmake --build $build --target ZgineEditor ZgineSandbox ZgineTests ZgineEditorTests -j 8 && ctest --test-dir $build --output-on-failure"
+```
+
+Expected verified result on 2026-05-22:
+
+```text
+ZgineEditor, ZgineSandbox, ZgineTests, and ZgineEditorTests build successfully.
+100% tests passed, 0 tests failed out of 50
+```
 
 #### Linux
 ```bash
@@ -190,17 +240,28 @@ cmake .. \
   -DZGINE_ENABLE_ASSERTIONS=ON \
   -DZGINE_ENABLE_PROFILING=ON \
   -DZGINE_USE_PCH=ON \
-  -DZGINE_WARNINGS_AS_ERRORS=OFF
+  -DZGINE_WARNINGS_AS_ERRORS=OFF \
+  -DZGINE_RENDERER_BACKEND=OpenGL
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `ZGINE_BUILD_TESTS` | Build unit tests | OFF |
+| `ZGINE_BUILD_TESTS` | Build unit tests | ON |
 | `ZGINE_BUILD_EXAMPLES` | Build example projects | OFF |
 | `ZGINE_ENABLE_ASSERTIONS` | Enable runtime assertions | ON |
 | `ZGINE_ENABLE_PROFILING` | Enable profiling markers | OFF |
 | `ZGINE_USE_PCH` | Use precompiled headers | ON |
 | `ZGINE_WARNINGS_AS_ERRORS` | Treat warnings as errors | OFF |
+| `ZGINE_RENDERER_BACKEND` | Default renderer backend: `OpenGL`, `DirectX12`, `Vulkan`, or `None` | OpenGL |
+
+Renderer backend status:
+
+- `OpenGL`: implemented and used by sandbox/editor.
+- `DirectX12`: selectable teaching stub; window can be created without an OpenGL context, but rendering resources are not implemented yet.
+- `Vulkan`: initial teaching backend; requires the Vulkan SDK and creates instance, validation debug messenger, surface, device, queues, swapchain, and image views. RHI resources, command buffers, pipelines, and presentation are not implemented yet.
+- `None`: headless/no-rendering selection for future tests and tools.
+
+See [docs/rendering-backends.md](docs/rendering-backends.md) for the implementation roadmap.
 
 ---
 

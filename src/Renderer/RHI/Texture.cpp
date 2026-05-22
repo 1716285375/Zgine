@@ -8,6 +8,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(path);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("Texture");
+                return nullptr;
         }
         return nullptr;
     }
@@ -16,6 +20,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(path, settings);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("Texture");
+                return nullptr;
         }
         return nullptr;
     }
@@ -24,6 +32,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(data, size, debugName);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("Texture");
+                return nullptr;
         }
         return nullptr;
     }
@@ -32,6 +44,10 @@ namespace Zgine {
         switch (RendererAPI::GetAPI()) {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLTexture>(rgbaData, width, height, debugName);
+            case RendererAPI::API::DirectX12:
+            case RendererAPI::API::Vulkan:
+                RendererAPI::ReportUnavailableBackend("Texture");
+                return nullptr;
         }
         return nullptr;
     }

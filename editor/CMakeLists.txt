@@ -16,18 +16,50 @@ else()
     message(STATUS "Using ZgineRuntime from parent project")
 endif()
 
-# Editor source files
-file(GLOB_RECURSE EDITOR_SOURCES
+# Editor core source files
+file(GLOB_RECURSE EDITOR_CORE_SOURCES
     CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/Editor/*.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/../src/Editor/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../include/Zgine/Editor/*.h"
 )
 
-# Add editor entry point
-list(APPEND EDITOR_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+add_library(ZgineEditorCore STATIC ${EDITOR_CORE_SOURCES})
+
+target_link_libraries(ZgineEditorCore
+    PUBLIC ZgineRuntime
+    PRIVATE ImGuizmo::ImGuizmo
+)
+
+target_include_directories(ZgineEditorCore PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(ZgineEditorCore PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/../src
+)
+
+# ImGuizmo is PRIVATE to ZgineRuntime, so editor core needs its include path.
+FetchContent_GetProperties(imguizmo)
+if(imguizmo_POPULATED)
+    target_include_directories(ZgineEditorCore PRIVATE ${imguizmo_SOURCE_DIR})
+endif()
+
+set_target_properties(ZgineEditorCore PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+)
+
+set_project_warnings(ZgineEditorCore)
+
+if(ZGINE_USE_PCH AND TARGET ZgineRuntime)
+    target_precompile_headers(ZgineEditorCore REUSE_FROM ZgineRuntime)
+endif()
 
 # Editor executable
-set(_editor_sources ${EDITOR_SOURCES})
+set(_editor_sources "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
 if(WIN32)
     # Add resource file if exists
     set(_editor_rc "${CMAKE_CURRENT_SOURCE_DIR}/ZgineEditor.rc")
@@ -49,20 +81,15 @@ else()
     add_executable(ZgineEditor ${_editor_sources})
 endif()
 
-# Link to ZgineRuntime - Editor depends on Runtime, not vice versa
-target_link_libraries(ZgineEditor PRIVATE ZgineRuntime)
+# Link to editor core - Editor depends on Runtime through ZgineEditorCore, not vice versa.
+# main.cpp also uses ImGuizmo directly for editor input focus checks.
+target_link_libraries(ZgineEditor PRIVATE ZgineEditorCore ImGuizmo::ImGuizmo)
 
 # Include Editor headers
 target_include_directories(ZgineEditor PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
     ${CMAKE_CURRENT_SOURCE_DIR}/../include
 )
-
-# ImGuizmo is PRIVATE to ZgineRuntime, so we need to add its include for Editor
-FetchContent_GetProperties(imguizmo)
-if(imguizmo_POPULATED)
-    target_include_directories(ZgineEditor PRIVATE ${imguizmo_SOURCE_DIR})
-endif()
 
 # C++ standard
 set_target_properties(ZgineEditor PROPERTIES

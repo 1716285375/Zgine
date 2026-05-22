@@ -6,11 +6,26 @@
 #include <Zgine/Core/Base/Assert.h>
 #include <Zgine/Core/Time/Timestep.h>
 
-#include <GLFW/glfw3.h> // For glfwSwapBuffers in refresh callback
-
 namespace Zgine {
 
     Application* Application::s_Instance = nullptr;
+
+    namespace {
+        WindowGraphicsAPI ToWindowGraphicsAPI(RendererAPI::API api) {
+            switch (api) {
+                case RendererAPI::API::None:
+                    return WindowGraphicsAPI::None;
+                case RendererAPI::API::OpenGL:
+                    return WindowGraphicsAPI::OpenGL;
+                case RendererAPI::API::DirectX12:
+                    return WindowGraphicsAPI::DirectX12;
+                case RendererAPI::API::Vulkan:
+                    return WindowGraphicsAPI::Vulkan;
+            }
+
+            return WindowGraphicsAPI::OpenGL;
+        }
+    }
 
     Application::Application(const std::string& name)
     {
@@ -28,7 +43,9 @@ namespace Zgine {
         // Set write directory to current directory
         VFS::SetWriteDir(".");
 
-        m_Window = Window::Create(WindowProps(name));
+        WindowProps windowProps(name);
+        windowProps.GraphicsAPI = ToWindowGraphicsAPI(RendererAPI::GetAPI());
+        m_Window = Window::Create(windowProps);
         m_Window->SetEventCallback(ZGINE_BIND_EVENT_FN(Application::OnEvent));
 
         m_GuiLayer = GuiLayer::Create();
@@ -50,8 +67,8 @@ namespace Zgine {
                     layer->OnGuiRender();
                 m_GuiLayer->End();
 
-                // Only swap buffers, don't poll events (would cause deadlock)
-                glfwSwapBuffers(static_cast<GLFWwindow*>(m_Window->GetNativeWindow()));
+                // Only present, don't poll events (would cause deadlock).
+                m_Window->SwapBuffers();
             }
         });
     }

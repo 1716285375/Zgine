@@ -8,6 +8,7 @@ namespace Zgine {
 class TextureDefaults {
 public:
     static void Initialize();
+    static void Shutdown();
 
     static std::shared_ptr<Texture> White();
     static std::shared_ptr<Texture> Black();
