@@ -11,7 +11,7 @@ multiple graphics APIs without hiding everything behind a production-grade abstr
 |---------|--------|---------|
 | OpenGL | Implemented | Default backend. Window context, RHI objects, shaders, framebuffers, post-process, ImGui, and the editor app use OpenGL. |
 | DirectX 12 | Selectable stub | The engine can select the backend and create a no-client-api window, but RHI resources deliberately fail with a clear unsupported message. The editor disables rendering for this backend until a real device/swapchain path exists. |
-| Vulkan | Device/swapchain skeleton | CMake finds the Vulkan SDK, the backend creates an instance, debug messenger, GLFW surface, physical/logical device, queues, swapchain, and image views. RHI resources, command buffers, pipelines, and presentation are still intentionally incomplete. |
+| Vulkan | Clear-frame backend | CMake finds the Vulkan SDK, the backend creates an instance, debug messenger, GLFW surface, physical/logical device, queues, swapchain, image views, render pass, framebuffers, command pool/buffers, frame sync, acquire/submit/present, and can clear frames. RHI resources and pipelines are still intentionally incomplete. |
 | None | Headless stub | Useful for non-rendering tests and future server/tool scenarios. |
 
 ## Backend Selection
@@ -52,7 +52,7 @@ flowchart TD
     RenderSystem --> RHI["RHI factories"]
     RHI --> GL["OpenGL backend"]
     RHI --> DX12["DirectX 12 backend stub"]
-    RHI --> VK["Vulkan backend device/swapchain"]
+    RHI --> VK["Vulkan backend clear-frame path"]
 
     Window --> GLContext["OpenGL context"]
     Window --> NoAPI["No-client-api native window"]
@@ -78,8 +78,8 @@ Already started.
 
 Started for Vulkan.
 
-- Done for Vulkan: instance, validation debug messenger, surface, physical device selection, logical device, graphics/present queues, swapchain, and image views.
-- Still missing for Vulkan: command pool, command buffers, render pass or dynamic rendering setup, frame sync objects, acquire/present, and resize recreation.
+- Done for Vulkan: instance, validation debug messenger, surface, physical device selection, logical device, graphics/present queues, swapchain, image views, render pass, framebuffers, command pool/buffers, frame sync objects, acquire/submit/present, and resize recreation for the clear-frame path.
+- Still missing for Vulkan: real RHI resource objects, shader modules, pipelines, descriptor binding, depth resources, MSAA, and editor ImGui renderer integration.
 - Still missing for DirectX 12: all device/swapchain objects.
 
 For teaching, keep this visible and simple. Do not introduce a render graph yet.

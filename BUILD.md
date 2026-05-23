@@ -258,7 +258,7 @@ Renderer backend status:
 
 - `OpenGL`: implemented and used by sandbox/editor.
 - `DirectX12`: selectable teaching stub; window can be created without an OpenGL context, but rendering resources are not implemented yet.
-- `Vulkan`: initial teaching backend; requires the Vulkan SDK and creates instance, validation debug messenger, surface, device, queues, swapchain, and image views. RHI resources, command buffers, pipelines, and presentation are not implemented yet.
+- `Vulkan`: teaching backend in progress; requires the Vulkan SDK and can create a clear-frame swapchain path with instance, validation debug messenger, surface, device, queues, swapchain, image views, render pass, framebuffers, command buffers, sync, acquire/submit/present, and resize recreation. RHI resources and pipelines are not implemented yet.
 - `None`: headless/no-rendering selection for future tests and tools.
 
 See [docs/rendering-backends.md](docs/rendering-backends.md) for the implementation roadmap.

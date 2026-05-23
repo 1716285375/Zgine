@@ -164,6 +164,8 @@ Recommended fix:
 
 ### 5. Resource manager async path is not thread-safe enough yet
 
+Status: first-pass fixed. AssetManager now protects manager state with a mutex, async loads re-enter the synchronized `LoadAsset` path, metadata writes use direct filesystem I/O instead of requiring VFS initialization, and runtime tests cover concurrent async audio loads sharing the same cache entry.
+
 Evidence:
 
 - `src/Resources/Core/AssetManager.cpp:315-329` uses `std::async` for thread-safe asset types.
@@ -175,9 +177,9 @@ Impact:
 - Concurrent loads can race cache and metadata structures.
 - Hot reload and async load may conflict.
 
-Recommended fix:
+Remaining work:
 
-- Add explicit mutex ownership around manager state, or move import work off-thread and commit cache state on the main thread.
+- For heavier assets, split background import from main-thread cache/resource commit instead of relying only on a coarse manager lock.
 - Keep GPU-backed assets on the main/render thread.
 
 ### 6. Script API advertises physics functions that are no-ops
@@ -282,13 +284,12 @@ Goal: make core engine boundaries predictable before adding features.
 
 Tasks:
 
-- Fix `SystemManager` global priority ordering across owned and external systems.
-- Add tests for system order, enable/disable behavior, and shutdown reverse order.
+- Extend `SystemManager` tests for enable/disable behavior and shutdown reverse order.
 - Move physics/audio/script lifecycle from sample code into `World` or a scene runtime coordinator.
 - Define component add/remove hooks for runtime resources, especially physics bodies and audio sources.
-- Make `AssetManager` async loading safe by separating background import from main-thread cache mutation.
-- Make `RenderSystem` lifecycle idempotent and explicit.
-- Keep OpenGL as the renderer reference backend while Vulkan advances through the staged teaching backend and DirectX 12 remains an explicit unsupported stub.
+- Evolve `AssetManager` async loading toward background import plus main-thread cache/resource commit for large assets.
+- Continue hardening `RenderSystem` lifecycle and backend ownership.
+- Keep OpenGL as the renderer reference backend while Vulkan advances from clear-frame rendering to real resources and DirectX 12 remains an explicit unsupported stub.
 
 Exit criteria:
 
@@ -308,7 +309,7 @@ Tasks:
 - Add per-script Lua environments and remove global callback collisions.
 - Implement or hide Lua physics APIs.
 - Replace remaining app-level `glm` usage with engine math types except inside backend implementations.
-- Continue Vulkan through the staged backend plan in `docs/rendering-backends.md`: command pool/buffers, frame sync, render pass or dynamic rendering, presentation, then resource classes.
+- Continue Vulkan through the staged backend plan in `docs/rendering-backends.md`: resource classes, shader modules, pipeline state, descriptors, depth resources, then editor ImGui integration.
 
 Exit criteria:
 

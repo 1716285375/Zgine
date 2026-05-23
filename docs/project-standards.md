@@ -237,7 +237,7 @@ glm::mat4 projection;
 
 ```cmake
 target_link_libraries(ZgineEditorCore
-    PUBLIC ZgineRuntime
+    PUBLIC ZgineRuntime imgui::imgui
     PRIVATE ImGuizmo::ImGuizmo
 )
 ```
@@ -274,7 +274,7 @@ C++ 类：
 渲染/资源类：
 
 - 在没有 GL context 的线程创建或销毁 OpenGL 对象。
-- 在 AssetManager 后台线程直接修改全局 cache。
+- 绕过 AssetManager 同步边界在后台线程直接修改全局 cache。
 - shader uniform 字符串散落重复且无集中约定。
 - 默认纹理、framebuffer、shader 生命周期只靠析构碰运气。
 - 低层模块在测试可单独运行时直接使用日志宏，但没有保证 `Log::Init()` 已执行。
@@ -334,7 +334,7 @@ Visual Studio/Windows SDK 注入的 `INCLUDE`、`LIB`、`PATH`。没有开发环
 
 ### 多渲染后端不能只改 enum
 
-支持 OpenGL、DirectX 12、Vulkan 至少涉及四层：窗口/Surface、Device/Swapchain、RHI resource、GUI backend。当前 OpenGL 是 reference backend，Vulkan 已进入 device/swapchain 骨架阶段，DirectX 12 仍是显式 unsupported 后端；后续必须按 `docs/rendering-backends.md` 的阶段推进。
+支持 OpenGL、DirectX 12、Vulkan 至少涉及四层：窗口/Surface、Device/Swapchain、RHI resource、GUI backend。当前 OpenGL 是 reference backend，Vulkan 已进入 clear-frame swapchain 阶段，DirectX 12 仍是显式 unsupported 后端；后续必须按 `docs/rendering-backends.md` 的阶段推进。
 
 ## 测试要求
 

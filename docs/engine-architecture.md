@@ -141,7 +141,7 @@ ZgineRuntime
 职责：
 
 - RHI 抽象、backend 选择、OpenGL reference backend、shader/texture/framebuffer、render pipeline、shadow、post-process。
-- DirectX 12 和 Vulkan 作为教学路线中的显式后端目标存在；Vulkan 已先具备 instance、surface、device、queue、swapchain、image view 的初始化骨架，后续逐步补 resource、command buffer、pipeline 和 present。
+- DirectX 12 和 Vulkan 作为教学路线中的显式后端目标存在；Vulkan 已具备 clear-frame swapchain 路径，包含 instance、surface、device、queue、swapchain、image view、render pass、framebuffer、command buffer、sync、acquire/submit/present 和 resize recreation，后续逐步补 resource、pipeline、descriptor 和 shader。
 
 规则：
 
@@ -297,8 +297,8 @@ WorldRuntime or scene coordinator
 
 ## 并发原则
 
-- 默认假设 ECS registry、Renderer backend、AssetManager cache 不是线程安全的。
-- 后台线程只做纯 CPU、无全局状态写入的任务。
+- 默认假设 ECS registry 和 Renderer backend 不是线程安全的；AssetManager 入口由管理器级锁保护，但后台任务仍不能直接越过管理器修改 cache。
+- 后台线程优先只做纯 CPU、无全局状态写入的任务；需要触碰全局状态时必须通过明确同步边界。
 - OpenGL 资源创建和销毁默认只在拥有上下文的线程执行。
 - 共享状态必须明确 mutex 或主线程提交点。
 - 新并发代码优先使用 `std::jthread`、`stop_token`、RAII join；禁止裸线程失控。
@@ -322,9 +322,9 @@ P1：统一运行时生命周期。
 
 P2：稳定资源、脚本、编辑器工作流。
 
-1. AssetManager 异步线程模型明确化。
-2. Lua per-instance environment。
-3. Editor save/open 接入 WorldSerializer。
+1. Lua per-instance environment。
+2. Editor save/open 接入 WorldSerializer。
+3. Asset hot reload 事件与更高层资源测试。
 4. Sandbox 成为运行时 API 编译样例和手动验收场景。
 
 ## 参考
