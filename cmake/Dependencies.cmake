@@ -18,6 +18,38 @@ if(EXISTS "${ZGINE_DEPS_VERSION_FILE}")
     include("${ZGINE_DEPS_VERSION_FILE}")
 endif()
 
+set(_zgine_dependency_defaults
+    spdlog v1.17.0
+    glfw 3.4
+    glm 1.0.3
+    entt v3.16.0
+    assimp v6.0.5
+    jolt v5.5.0
+    imgui v1.92.8-docking
+    imguizmo be8aa4aeab86b402701c8c1df011bd8cd776760b
+    miniaudio 0.11.25
+    json v3.12.0
+    lua v5.4.8
+    sol2 v3.5.0
+    stduuid v1.2.3
+    tinyexr v1.0.13
+    physfs release-3.2.0
+    googletest v1.17.0
+    stb 31c1ad37456438565541f4919958214b6e762fb4
+    rcc 005c05145d98b87d974c36fc885003ea88bf3932
+)
+
+list(LENGTH _zgine_dependency_defaults _zgine_dependency_defaults_length)
+math(EXPR _zgine_dependency_defaults_last "${_zgine_dependency_defaults_length} - 1")
+foreach(_index RANGE 0 ${_zgine_dependency_defaults_last} 2)
+    math(EXPR _tag_index "${_index} + 1")
+    list(GET _zgine_dependency_defaults ${_index} _dep_name)
+    list(GET _zgine_dependency_defaults ${_tag_index} _dep_tag)
+    if(NOT DEFINED ZGINE_DEPS_${_dep_name}_GIT_TAG)
+        set(ZGINE_DEPS_${_dep_name}_GIT_TAG "${_dep_tag}")
+    endif()
+endforeach()
+
 # ============================================================================
 # Helper Function: Find or Fetch Dependency
 # ============================================================================
@@ -80,9 +112,9 @@ endfunction()
 
 # spdlog
 zgine_find_or_fetch_dependency(spdlog
-    VERSION 1.14.0
+    VERSION 1.17.0
     GIT_REPOSITORY https://github.com/gabime/spdlog.git
-    GIT_TAG v1.14.0
+    GIT_TAG v1.17.0
 )
 if(TARGET spdlog)
     set(SPDLOG_INSTALL OFF CACHE BOOL "" FORCE)
@@ -104,9 +136,9 @@ zgine_find_or_fetch_dependency(glfw
 set(_zgine_saved_warn_deprecated "${CMAKE_WARN_DEPRECATED}")
 set(CMAKE_WARN_DEPRECATED OFF)
 zgine_find_or_fetch_dependency(glm
-    VERSION 1.0.1
+    VERSION 1.0.3
     GIT_REPOSITORY https://github.com/g-truc/glm.git
-    GIT_TAG 1.0.1
+    GIT_TAG 1.0.3
 )
 if(_zgine_saved_warn_deprecated)
     set(CMAKE_WARN_DEPRECATED "${_zgine_saved_warn_deprecated}")
@@ -116,18 +148,18 @@ endif()
 
 # EnTT
 zgine_find_or_fetch_dependency(entt
-    VERSION 3.13.2
+    VERSION 3.16.0
     GIT_REPOSITORY https://github.com/skypjack/entt.git
-    GIT_TAG v3.13.2
+    GIT_TAG v3.16.0
 )
 
 # Assimp
 set(_zgine_saved_message_log_level "${CMAKE_MESSAGE_LOG_LEVEL}")
 set(CMAKE_MESSAGE_LOG_LEVEL "WARNING")
 zgine_find_or_fetch_dependency(assimp
-    VERSION 5.4.3
+    VERSION 6.0.5
     GIT_REPOSITORY https://github.com/assimp/assimp.git
-    GIT_TAG v5.4.3
+    GIT_TAG v6.0.5
 )
 if(TARGET assimp)
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -149,18 +181,18 @@ endif()
 set(USE_STATIC_MSVC_RUNTIME_LIBRARY OFF CACHE BOOL "" FORCE)
 set(JPH_FLOATING_POINT_EXCEPTIONS_ENABLED OFF CACHE BOOL "" FORCE)
 zgine_find_or_fetch_dependency(jolt
-    VERSION 4.0.2
+    VERSION 5.5.0
     GIT_REPOSITORY https://github.com/jrouwe/JoltPhysics.git
-    GIT_TAG v4.0.2
+    GIT_TAG v5.5.0
     SOURCE_SUBDIR Build
     FIND_PACKAGE_NAME JoltPhysics
 )
 
 # ImGui
 zgine_find_or_fetch_dependency(imgui
-    VERSION 1.92.5
+    VERSION 1.92.8
     GIT_REPOSITORY https://github.com/ocornut/imgui.git
-    GIT_TAG v1.92.5-docking
+    GIT_TAG v1.92.8-docking
 )
 if(TARGET imgui)
     set(IMGUI_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
@@ -168,31 +200,31 @@ endif()
 
 # ImGuizmo
 zgine_find_or_fetch_dependency(imguizmo
-    VERSION master
+    VERSION be8aa4aeab86b402701c8c1df011bd8cd776760b
     GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
-    GIT_TAG master
+    GIT_TAG be8aa4aeab86b402701c8c1df011bd8cd776760b
 )
 
 # miniaudio
 zgine_find_or_fetch_dependency(miniaudio
-    VERSION 0.11.23
+    VERSION 0.11.25
     GIT_REPOSITORY https://github.com/mackron/miniaudio.git
-    GIT_TAG 0.11.23
+    GIT_TAG 0.11.25
 )
 
 # nlohmann/json
 zgine_find_or_fetch_dependency(json
-    VERSION 3.11.3
+    VERSION 3.12.0
     GIT_REPOSITORY https://github.com/nlohmann/json.git
-    GIT_TAG v3.11.3
+    GIT_TAG v3.12.0
     FIND_PACKAGE_NAME nlohmann_json
 )
 
 # Lua
 zgine_find_or_fetch_dependency(lua
-    VERSION 5.4.6
+    VERSION 5.4.8
     GIT_REPOSITORY https://github.com/lua/lua.git
-    GIT_TAG v5.4.6
+    GIT_TAG v5.4.8
 )
 
 # Sol2
@@ -205,7 +237,7 @@ zgine_find_or_fetch_dependency(sol2
 # stduuid (Header-only)
 FetchContent_Declare(stduuid
     GIT_REPOSITORY https://github.com/mariusbancila/stduuid.git
-    GIT_TAG v1.2.3
+    GIT_TAG ${ZGINE_DEPS_stduuid_GIT_TAG}
 )
 FetchContent_MakeAvailable(stduuid)
 
@@ -222,7 +254,7 @@ if(ZGINE_ENABLE_RCC)
 
     zgine_find_or_fetch_dependency(rcc
         GIT_REPOSITORY https://github.com/RuntimeCompiledCPlusPlus/RuntimeCompiledCPlusPlus.git
-        GIT_TAG master
+        GIT_TAG ${ZGINE_DEPS_rcc_GIT_TAG}
         FIND_PACKAGE_NAME RuntimeCompiledCPlusPlus
     )
 
@@ -240,7 +272,7 @@ endif()
 # TinyEXR (header-only)
 FetchContent_Declare(tinyexr
     GIT_REPOSITORY https://github.com/syoyo/tinyexr.git
-    GIT_TAG v1.0.8
+    GIT_TAG ${ZGINE_DEPS_tinyexr_GIT_TAG}
     GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(tinyexr)
@@ -259,7 +291,7 @@ set(PHYSFS_INSTALL OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(physfs
     GIT_REPOSITORY https://github.com/icculus/physfs.git
-    GIT_TAG release-3.2.0
+    GIT_TAG ${ZGINE_DEPS_physfs_GIT_TAG}
     GIT_SHALLOW TRUE
 )
 
@@ -268,9 +300,9 @@ FetchContent_MakeAvailable(physfs)
 # GoogleTest (tests only)
 if(ZGINE_BUILD_TESTS)
     zgine_find_or_fetch_dependency(googletest
-        VERSION 1.14.0
+        VERSION 1.17.0
         GIT_REPOSITORY https://github.com/google/googletest.git
-        GIT_TAG v1.14.0
+        GIT_TAG v1.17.0
         FIND_PACKAGE_NAME GTest
     )
     if(TARGET gtest)
@@ -429,7 +461,7 @@ target_link_libraries(glad PUBLIC OpenGL::GL)
 # stb is a collection of single-file public domain libraries
 FetchContent_Declare(stb
     GIT_REPOSITORY https://github.com/nothings/stb.git
-    GIT_TAG master
+    GIT_TAG ${ZGINE_DEPS_stb_GIT_TAG}
     GIT_SHALLOW TRUE
 )
 FetchContent_GetProperties(stb)

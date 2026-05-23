@@ -139,7 +139,7 @@ mkdir -p vendor/stb
 
 # Download stb_image.h
 curl -o vendor/stb/stb_image.h \
-    https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
+    https://raw.githubusercontent.com/nothings/stb/31c1ad37456438565541f4919958214b6e762fb4/stb_image.h
 ```
 
 Or manually:
@@ -262,6 +262,10 @@ Renderer backend status:
 - `None`: headless/no-rendering selection for future tests and tools.
 
 See [docs/rendering-backends.md](docs/rendering-backends.md) for the implementation roadmap.
+
+Dependency versions are pinned in `cmake/deps_versions.cmake`. Use stable upstream tags when
+available. If a dependency has no stable release tag, pin a commit SHA instead of a moving branch
+name such as `master`.
 
 ---
 
