@@ -62,7 +62,7 @@ void RenderSystem::Initialize() {
         m_Config.EnablePostProcess = false;
         m_Initialized = true;
         ZGINE_CORE_INFO(
-            "RenderSystem initialized backend '{}' with device/swapchain only. Scene rendering resources are not implemented yet.",
+            "RenderSystem initialized backend '{}' for clear-frame rendering. Scene pipelines and resources are not implemented yet.",
             RendererAPI::ToString(api));
         return;
     }
@@ -229,6 +229,11 @@ void RenderSystem::RenderShadowPass(World* world) {
 
 void RenderSystem::RenderScene(World* world, Camera* camera) {
     if (!world || !camera || !s_RendererAPI || !m_Initialized) return;
+
+    if (RendererAPI::GetAPI() != RendererAPI::API::OpenGL) {
+        s_RendererAPI->Clear();
+        return;
+    }
 
     // Collect lights first (needed by shadow pass)
     m_LightingData = LightingData{};

@@ -31,6 +31,8 @@ constexpr std::array<const char*, 1> kDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
+constexpr size_t kMaxFramesInFlight = 2;
+
 #if defined(NDEBUG)
 constexpr bool kEnableValidationLayers = false;
 #else
@@ -309,6 +311,12 @@ const char* DeviceTypeToString(VkPhysicalDeviceType type) {
     }
 }
 
+void CheckVk(VkResult result, const char* message) {
+    if (result != VK_SUCCESS) {
+        throw std::runtime_error(message);
+    }
+}
+
 } // namespace
 
 struct VulkanRendererAPI::VulkanContext {
@@ -324,9 +332,16 @@ struct VulkanRendererAPI::VulkanContext {
     VkExtent2D SwapchainExtent{};
     std::vector<VkImage> SwapchainImages;
     std::vector<VkImageView> SwapchainImageViews;
+    VkRenderPass RenderPass = VK_NULL_HANDLE;
+    std::vector<VkFramebuffer> SwapchainFramebuffers;
+    VkCommandPool CommandPool = VK_NULL_HANDLE;
+    std::array<VkCommandBuffer, kMaxFramesInFlight> CommandBuffers{};
+    std::array<VkSemaphore, kMaxFramesInFlight> ImageAvailableSemaphores{};
+    std::vector<VkSemaphore> RenderFinishedSemaphores;
+    std::array<VkFence, kMaxFramesInFlight> InFlightFences{};
     QueueFamilyIndices QueueFamilies;
     Math::Vector4 ClearColor{0.1f, 0.1f, 0.1f, 1.0f};
-    bool ClearWarningIssued = false;
+    uint32_t CurrentFrame = 0;
     bool DrawWarningIssued = false;
     bool ValidationLayersEnabled = false;
     bool PortabilityEnumerationEnabled = false;
@@ -534,6 +549,108 @@ void VulkanRendererAPI::Init() {
         }
     }
 
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = m_Context->SwapchainImageFormat;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    CheckVk(
+        vkCreateRenderPass(m_Context->Device, &renderPassInfo, nullptr, &m_Context->RenderPass),
+        "Failed to create Vulkan render pass.");
+
+    m_Context->SwapchainFramebuffers.resize(m_Context->SwapchainImageViews.size());
+    for (size_t index = 0; index < m_Context->SwapchainImageViews.size(); ++index) {
+        VkImageView attachments[] = {
+            m_Context->SwapchainImageViews[index],
+        };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = m_Context->RenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = m_Context->SwapchainExtent.width;
+        framebufferInfo.height = m_Context->SwapchainExtent.height;
+        framebufferInfo.layers = 1;
+
+        CheckVk(
+            vkCreateFramebuffer(m_Context->Device, &framebufferInfo, nullptr, &m_Context->SwapchainFramebuffers[index]),
+            "Failed to create Vulkan framebuffer.");
+    }
+
+    VkCommandPoolCreateInfo commandPoolInfo{};
+    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolInfo.queueFamilyIndex = m_Context->QueueFamilies.GraphicsFamily.value();
+
+    CheckVk(
+        vkCreateCommandPool(m_Context->Device, &commandPoolInfo, nullptr, &m_Context->CommandPool),
+        "Failed to create Vulkan command pool.");
+
+    VkCommandBufferAllocateInfo commandBufferInfo{};
+    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferInfo.commandPool = m_Context->CommandPool;
+    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferInfo.commandBufferCount = static_cast<uint32_t>(m_Context->CommandBuffers.size());
+
+    CheckVk(
+        vkAllocateCommandBuffers(m_Context->Device, &commandBufferInfo, m_Context->CommandBuffers.data()),
+        "Failed to allocate Vulkan command buffers.");
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    m_Context->RenderFinishedSemaphores.resize(m_Context->SwapchainImages.size(), VK_NULL_HANDLE);
+    for (size_t image = 0; image < m_Context->RenderFinishedSemaphores.size(); ++image) {
+        CheckVk(
+            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &m_Context->RenderFinishedSemaphores[image]),
+            "Failed to create Vulkan render-finished semaphore.");
+    }
+
+    for (size_t frame = 0; frame < kMaxFramesInFlight; ++frame) {
+        CheckVk(
+            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &m_Context->ImageAvailableSemaphores[frame]),
+            "Failed to create Vulkan image-available semaphore.");
+        CheckVk(
+            vkCreateFence(m_Context->Device, &fenceInfo, nullptr, &m_Context->InFlightFences[frame]),
+            "Failed to create Vulkan frame fence.");
+    }
+
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(m_Context->PhysicalDevice, &properties);
 
@@ -553,6 +670,45 @@ void VulkanRendererAPI::Shutdown() {
 
     if (m_Context->Device != VK_NULL_HANDLE) {
         vkDeviceWaitIdle(m_Context->Device);
+
+        for (VkFence fence : m_Context->InFlightFences) {
+            if (fence != VK_NULL_HANDLE) {
+                vkDestroyFence(m_Context->Device, fence, nullptr);
+            }
+        }
+        m_Context->InFlightFences = {};
+
+        for (VkSemaphore semaphore : m_Context->RenderFinishedSemaphores) {
+            if (semaphore != VK_NULL_HANDLE) {
+                vkDestroySemaphore(m_Context->Device, semaphore, nullptr);
+            }
+        }
+        m_Context->RenderFinishedSemaphores.clear();
+
+        for (VkSemaphore semaphore : m_Context->ImageAvailableSemaphores) {
+            if (semaphore != VK_NULL_HANDLE) {
+                vkDestroySemaphore(m_Context->Device, semaphore, nullptr);
+            }
+        }
+        m_Context->ImageAvailableSemaphores = {};
+
+        if (m_Context->CommandPool != VK_NULL_HANDLE) {
+            vkDestroyCommandPool(m_Context->Device, m_Context->CommandPool, nullptr);
+            m_Context->CommandPool = VK_NULL_HANDLE;
+            m_Context->CommandBuffers = {};
+        }
+
+        for (VkFramebuffer framebuffer : m_Context->SwapchainFramebuffers) {
+            if (framebuffer != VK_NULL_HANDLE) {
+                vkDestroyFramebuffer(m_Context->Device, framebuffer, nullptr);
+            }
+        }
+        m_Context->SwapchainFramebuffers.clear();
+
+        if (m_Context->RenderPass != VK_NULL_HANDLE) {
+            vkDestroyRenderPass(m_Context->Device, m_Context->RenderPass, nullptr);
+            m_Context->RenderPass = VK_NULL_HANDLE;
+        }
 
         for (VkImageView imageView : m_Context->SwapchainImageViews) {
             if (imageView != VK_NULL_HANDLE) {
@@ -596,10 +752,97 @@ void VulkanRendererAPI::SetClearColor(const Math::Vector4& color) {
 }
 
 void VulkanRendererAPI::Clear() {
-    if (!m_Context->ClearWarningIssued) {
-        ZGINE_CORE_WARN("Vulkan Clear() is not implemented yet. Device and swapchain initialization are available first.");
-        m_Context->ClearWarningIssued = true;
+    if (!m_Context || m_Context->Device == VK_NULL_HANDLE || m_Context->Swapchain == VK_NULL_HANDLE) {
+        return;
     }
+
+    const uint32_t frame = m_Context->CurrentFrame;
+    const VkFence inFlightFence = m_Context->InFlightFences[frame];
+    const VkSemaphore imageAvailableSemaphore = m_Context->ImageAvailableSemaphores[frame];
+    const VkCommandBuffer commandBuffer = m_Context->CommandBuffers[frame];
+
+    vkWaitForFences(m_Context->Device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+
+    uint32_t imageIndex = 0;
+    VkResult acquireResult = vkAcquireNextImageKHR(
+        m_Context->Device,
+        m_Context->Swapchain,
+        UINT64_MAX,
+        imageAvailableSemaphore,
+        VK_NULL_HANDLE,
+        &imageIndex);
+
+    if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
+        ZGINE_CORE_WARN("Vulkan swapchain is out of date. Resize/recreate support is not implemented yet.");
+        return;
+    }
+    if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("Failed to acquire Vulkan swapchain image.");
+    }
+
+    const VkSemaphore renderFinishedSemaphore = m_Context->RenderFinishedSemaphores[imageIndex];
+
+    vkResetFences(m_Context->Device, 1, &inFlightFence);
+    CheckVk(vkResetCommandBuffer(commandBuffer, 0), "Failed to reset Vulkan command buffer.");
+
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    CheckVk(vkBeginCommandBuffer(commandBuffer, &beginInfo), "Failed to begin Vulkan command buffer.");
+
+    VkClearValue clearColor{};
+    clearColor.color = {{
+        m_Context->ClearColor.r,
+        m_Context->ClearColor.g,
+        m_Context->ClearColor.b,
+        m_Context->ClearColor.a,
+    }};
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = m_Context->RenderPass;
+    renderPassInfo.framebuffer = m_Context->SwapchainFramebuffers[imageIndex];
+    renderPassInfo.renderArea.offset = {0, 0};
+    renderPassInfo.renderArea.extent = m_Context->SwapchainExtent;
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearColor;
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdEndRenderPass(commandBuffer);
+
+    CheckVk(vkEndCommandBuffer(commandBuffer), "Failed to record Vulkan command buffer.");
+
+    VkPipelineStageFlags waitStages[] = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+    };
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = &imageAvailableSemaphore;
+    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &commandBuffer;
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
+
+    CheckVk(vkQueueSubmit(m_Context->GraphicsQueue, 1, &submitInfo, inFlightFence), "Failed to submit Vulkan clear frame.");
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = &renderFinishedSemaphore;
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = &m_Context->Swapchain;
+    presentInfo.pImageIndices = &imageIndex;
+
+    const VkResult presentResult = vkQueuePresentKHR(m_Context->PresentQueue, &presentInfo);
+    if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR) {
+        ZGINE_CORE_WARN("Vulkan swapchain needs recreation. Resize/recreate support is not implemented yet.");
+    } else if (presentResult != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present Vulkan clear frame.");
+    }
+
+    m_Context->CurrentFrame = (m_Context->CurrentFrame + 1) % kMaxFramesInFlight;
 }
 
 void VulkanRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount) {

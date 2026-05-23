@@ -36,18 +36,23 @@ namespace Zgine {
 
             // 初始化渲染系统 / Initialize rendering system
             const RendererAPI::API rendererAPI = RendererAPI::GetAPI();
-            m_RenderingAvailable = rendererAPI == RendererAPI::API::OpenGL && RendererAPI::IsAvailable(rendererAPI);
-            m_RenderSystem.Initialize();
-
+            m_RenderingAvailable = RendererAPI::IsAvailable(rendererAPI);
+            m_OpenGLSceneRendering = rendererAPI == RendererAPI::API::OpenGL && m_RenderingAvailable;
             if (m_RenderingAvailable) {
+                m_RenderSystem.Initialize();
+            }
+
+            if (m_OpenGLSceneRendering) {
                 // 设置基本渲染配置（禁用高级特性）/ Set basic rendering config (disable advanced features)
                 RenderConfig config = RenderConfig::CreateBasic();
                 m_RenderSystem.SetRenderConfig(config);
-            } else {
+            } else if (m_RenderingAvailable) {
                 ZGINE_CORE_WARN(
-                    "Sandbox scene rendering currently requires OpenGL. '{}' can initialize backend study code, "
-                    "but draw calls are skipped until Vulkan resources and pipelines are implemented.",
+                    "Sandbox scene rendering currently requires OpenGL. '{}' renders clear frames while "
+                    "pipelines and resource bindings are being implemented.",
                     RendererAPI::ToString(rendererAPI));
+            } else {
+                ZGINE_CORE_WARN("Sandbox rendering backend '{}' is unavailable.", RendererAPI::ToString(rendererAPI));
             }
 
             // 注意：在ZGINE_BASIC_RENDERING_ONLY=1时，下面的高级系统不可用
@@ -133,6 +138,12 @@ namespace Zgine {
                 return;
             }
 
+            if (!m_OpenGLSceneRendering) {
+                m_RenderSystem.BeginFrame();
+                m_RenderSystem.RenderScene(&m_World, &m_Camera);
+                return;
+            }
+
             // Render to default framebuffer (screen)
             auto& window = Application::Get().GetWindow();
             glViewport(0, 0, window.GetWidth(), window.GetHeight());
@@ -179,6 +190,7 @@ namespace Zgine {
         // ShadowSystem m_ShadowSystem;
         // IBLSystem m_IBLSystem;
         bool m_RenderingAvailable = false;
+        bool m_OpenGLSceneRendering = false;
     };
 
     class Sandbox : public Application {
