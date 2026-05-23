@@ -5,6 +5,22 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/Math.h>
 
+#include <Jolt/Jolt.h>
+#include <Jolt/RegisterTypes.h>
+#include <Jolt/Core/Factory.h>
+#include <Jolt/Core/TempAllocator.h>
+#include <Jolt/Core/JobSystemThreadPool.h>
+#include <Jolt/Physics/PhysicsSettings.h>
+#include <Jolt/Physics/PhysicsSystem.h>
+#include <Jolt/Physics/Collision/Shape/BoxShape.h>
+#include <Jolt/Physics/Body/BodyCreationSettings.h>
+#include <Jolt/Physics/Body/BodyActivationListener.h>
+#include <Jolt/Physics/Body/BodyLock.h>
+
+#include <algorithm>
+#include <cstdlib>
+#include <thread>
+
 // Jolt 命名空间别名
 using namespace JPH;
 
@@ -91,7 +107,16 @@ namespace {
     ObjectLayerPairFilterImpl s_ObjectLayerPairFilter;
 }
 
-PhysicsSystem::PhysicsSystem() {
+struct PhysicsSystem::Impl {
+    std::unique_ptr<TempAllocatorImpl> TempAllocator;
+    std::unique_ptr<JobSystemThreadPool> JobSystem;
+    std::unique_ptr<JPH::PhysicsSystem> PhysicsSystem;
+    BodyInterface* BodyInterface = nullptr;
+};
+
+PhysicsSystem::PhysicsSystem()
+    : m_Impl(std::make_unique<Impl>())
+{
 }
 
 PhysicsSystem::~PhysicsSystem() {
@@ -111,25 +136,35 @@ void PhysicsSystem::Initialize() {
     RegisterTypes();
 
     // 创建临时分配器
-    m_TempAllocator = std::make_unique<TempAllocatorImpl>(10 * 1024 * 1024);
+    m_Impl->TempAllocator = std::make_unique<TempAllocatorImpl>(10 * 1024 * 1024);
 
     // 创建任务系统
-    m_JobSystem = std::make_unique<JobSystemThreadPool>(cMaxPhysicsJobs, cMaxPhysicsBarriers, std::thread::hardware_concurrency() - 1);
+    const uint workerThreads = std::max(1u, std::thread::hardware_concurrency());
+    m_Impl->JobSystem = std::make_unique<JobSystemThreadPool>(
+        cMaxPhysicsJobs,
+        cMaxPhysicsBarriers,
+        workerThreads > 1 ? workerThreads - 1 : 1);
 
     // 创建物理系统
-    m_PhysicsSystem = std::make_unique<JPH::PhysicsSystem>();
+    m_Impl->PhysicsSystem = std::make_unique<JPH::PhysicsSystem>();
     const uint cMaxBodies = 1024;
     const uint cNumBodyMutexes = 0;
     const uint cMaxBodyPairs = 1024;
     const uint cMaxContactConstraints = 1024;
-    m_PhysicsSystem->Init(cMaxBodies, cNumBodyMutexes, cMaxBodyPairs, cMaxContactConstraints,
-                          s_BroadPhaseLayerInterface, s_ObjectVsBroadPhaseLayerFilter, s_ObjectLayerPairFilter);
+    m_Impl->PhysicsSystem->Init(
+        cMaxBodies,
+        cNumBodyMutexes,
+        cMaxBodyPairs,
+        cMaxContactConstraints,
+        s_BroadPhaseLayerInterface,
+        s_ObjectVsBroadPhaseLayerFilter,
+        s_ObjectLayerPairFilter);
 
     // 获取 BodyInterface
-    m_BodyInterface = &m_PhysicsSystem->GetBodyInterface();
+    m_Impl->BodyInterface = &m_Impl->PhysicsSystem->GetBodyInterface();
 
     // 设置重力
-    m_PhysicsSystem->SetGravity(Vec3(0.0f, -9.81f, 0.0f));
+    m_Impl->PhysicsSystem->SetGravity(Vec3(0.0f, -9.81f, 0.0f));
 
     m_Initialized = true;
     ZGINE_CORE_INFO("Physics System Initialized");
@@ -142,10 +177,10 @@ void PhysicsSystem::Shutdown() {
 
     OnSceneStop();
 
-    m_BodyInterface = nullptr;
-    m_PhysicsSystem.reset();
-    m_JobSystem.reset();
-    m_TempAllocator.reset();
+    m_Impl->BodyInterface = nullptr;
+    m_Impl->PhysicsSystem.reset();
+    m_Impl->JobSystem.reset();
+    m_Impl->TempAllocator.reset();
 
     // 清理工厂
     if (Factory::sInstance) {
@@ -177,7 +212,7 @@ void PhysicsSystem::OnSceneStart(World* World) {
 }
 
 void PhysicsSystem::OnSceneStop() {
-    if (!m_Initialized || !m_BodyInterface || !m_World) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !m_World) {
         return;
     }
 
@@ -193,14 +228,18 @@ void PhysicsSystem::OnSceneStop() {
 }
 
 void PhysicsSystem::Step(float deltaTime) {
-    if (!m_Initialized || !m_PhysicsSystem) {
+    if (!m_Initialized || !m_Impl->PhysicsSystem) {
         return;
     }
 
     // 更新物理系统
     const int cCollisionSteps = 1;
     const float cDeltaTime = deltaTime;
-    m_PhysicsSystem->Update(cDeltaTime, cCollisionSteps, m_TempAllocator.get(), m_JobSystem.get());
+    m_Impl->PhysicsSystem->Update(
+        cDeltaTime,
+        cCollisionSteps,
+        m_Impl->TempAllocator.get(),
+        m_Impl->JobSystem.get());
 }
 
 // ISystem interface implementations
@@ -223,7 +262,7 @@ void PhysicsSystem::FixedUpdate(World* World, float fixedDeltaTime) {
 
 
 void PhysicsSystem::CreateBody(Entity entity) {
-    if (!m_Initialized || !m_BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
         return;
     }
 
@@ -264,10 +303,10 @@ void PhysicsSystem::CreateBody(Entity entity) {
     bodySettings.mRestitution = rigidBody.Restitution;
 
     // Create body
-    Body* body = m_BodyInterface->CreateBody(bodySettings);
+    Body* body = m_Impl->BodyInterface->CreateBody(bodySettings);
     if (body) {
         BodyID bodyID = body->GetID();
-        m_BodyInterface->AddBody(bodyID, EActivation::Activate);
+        m_Impl->BodyInterface->AddBody(bodyID, EActivation::Activate);
         // Store as type-safe handle
         rigidBody.RuntimeBody.Set(reinterpret_cast<void*>(
             static_cast<uintptr_t>(bodyID.GetIndexAndSequenceNumber())));
@@ -276,7 +315,7 @@ void PhysicsSystem::CreateBody(Entity entity) {
 }
 
 void PhysicsSystem::DestroyBody(Entity entity) {
-    if (!m_Initialized || !m_BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
         return;
     }
 
@@ -284,14 +323,14 @@ void PhysicsSystem::DestroyBody(Entity entity) {
     if (rigidBody.RuntimeBody.IsValid()) {
         uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(rigidBody.RuntimeBody.Get()));
         BodyID bodyID(id);
-        m_BodyInterface->RemoveBody(bodyID);
-        m_BodyInterface->DestroyBody(bodyID);
+        m_Impl->BodyInterface->RemoveBody(bodyID);
+        m_Impl->BodyInterface->DestroyBody(bodyID);
         rigidBody.RuntimeBody.Reset();
     }
 }
 
 void PhysicsSystem::SyncPhysicsToECS(World* World) {
-    if (!m_Initialized || !m_BodyInterface || !World) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !World) {
         return;
     }
 
@@ -307,7 +346,7 @@ void PhysicsSystem::SyncPhysicsToECS(World* World) {
             uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(rigidBody.RuntimeBody.Get()));
             BodyID bodyID(id);
 
-            BodyLockRead lock(m_PhysicsSystem->GetBodyLockInterface(), bodyID);
+            BodyLockRead lock(m_Impl->PhysicsSystem->GetBodyLockInterface(), bodyID);
             if (lock.Succeeded()) {
                 const Body& body = lock.GetBody();
                 Vec3 position = body.GetPosition();
@@ -336,7 +375,7 @@ void PhysicsSystem::SyncPhysicsToECS(World* World) {
 }
 
 void PhysicsSystem::UpdateBodyTransform(Entity entity) {
-    if (!m_Initialized || !m_BodyInterface || !entity.HasComponent<RigidbodyComponent>() || !entity.HasComponent<TransformComponent>()) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>() || !entity.HasComponent<TransformComponent>()) {
         return;
     }
 
@@ -366,7 +405,7 @@ void PhysicsSystem::UpdateBodyTransform(Entity entity) {
         cr * cp * cy + sr * sp * sy   // w
     );
 
-    m_BodyInterface->SetPositionAndRotation(bodyID, position, rotation, EActivation::Activate);
+    m_Impl->BodyInterface->SetPositionAndRotation(bodyID, position, rotation, EActivation::Activate);
 }
 
 }

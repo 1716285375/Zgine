@@ -1,17 +1,6 @@
 #pragma once
 
 #include <Zgine/World/Systems/ISystem.h>
-#include <Jolt/Jolt.h>
-#include <Jolt/RegisterTypes.h>
-#include <Jolt/Core/Factory.h>
-#include <Jolt/Core/TempAllocator.h>
-#include <Jolt/Core/JobSystemThreadPool.h>
-#include <Jolt/Physics/PhysicsSettings.h>
-#include <Jolt/Physics/PhysicsSystem.h>
-#include <Jolt/Physics/Collision/Shape/BoxShape.h>
-#include <Jolt/Physics/Body/BodyCreationSettings.h>
-#include <Jolt/Physics/Body/BodyActivationListener.h>
-#include <Jolt/Physics/Body/BodyLock.h>
 #include <memory>
 
 namespace Zgine {
@@ -45,10 +34,9 @@ public:
     void UpdateBodyTransform(class Entity entity);
 
 private:
-    std::unique_ptr<JPH::TempAllocatorImpl> m_TempAllocator;
-    std::unique_ptr<JPH::JobSystemThreadPool> m_JobSystem;
-    std::unique_ptr<JPH::PhysicsSystem> m_PhysicsSystem;
-    JPH::BodyInterface* m_BodyInterface = nullptr;
+    struct Impl;
+
+    std::unique_ptr<Impl> m_Impl;
 
     bool m_Initialized = false;
     World* m_World = nullptr;
