@@ -8,16 +8,38 @@
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
 #include <Zgine/Platform/IO/File.h>
+
+#include <sol/sol.hpp>
 #include <GLFW/glfw3.h>
+
 #include <ctime>
 #include <chrono>
+#include <cstdint>
 #include <filesystem>
+#include <string>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
 namespace Zgine {
 
-ScriptSystem::ScriptSystem() {
+struct ScriptSystem::Impl {
+    sol::state LuaState;
+
+    struct ScriptInstance {
+        sol::function OnStart;
+        sol::function OnUpdate;
+        sol::function OnDestroy;
+        std::string ScriptPath;
+        int64_t LastModified = 0;
+    };
+
+    std::unordered_map<uint32_t, ScriptInstance> ScriptInstances;
+};
+
+ScriptSystem::ScriptSystem()
+    : m_Impl(std::make_unique<Impl>())
+{
 }
 
 ScriptSystem::~ScriptSystem() {
@@ -30,7 +52,7 @@ void ScriptSystem::Initialize() {
     }
 
     // 初始化 Lua 状态
-    m_LuaState.open_libraries(
+    m_Impl->LuaState.open_libraries(
         sol::lib::base,
         sol::lib::package,
         sol::lib::string,
@@ -39,9 +61,9 @@ void ScriptSystem::Initialize() {
     );
 
     // 禁用危险函数（安全考虑）
-    m_LuaState["os"] = sol::nil;
-    m_LuaState["io"] = sol::nil;
-    m_LuaState["debug"] = sol::nil;
+    m_Impl->LuaState["os"] = sol::nil;
+    m_Impl->LuaState["io"] = sol::nil;
+    m_Impl->LuaState["debug"] = sol::nil;
 
     // 绑定 C++ API
     BindAPI();
@@ -56,7 +78,7 @@ void ScriptSystem::Shutdown() {
     }
 
     OnSceneStop();
-    m_LuaState = sol::state(); // 清理 Lua 状态
+    m_Impl->LuaState = sol::state(); // 清理 Lua 状态
 
     m_Initialized = false;
     ZGINE_CORE_INFO("Script System Shutdown");
@@ -73,22 +95,22 @@ void ScriptSystem::BindAPI() {
 
 void ScriptSystem::BindTransformAPI() {
     // 绑定 TransformComponent
-    auto transformType = m_LuaState.new_usertype<TransformComponent>("Transform",
+    auto transformType = m_Impl->LuaState.new_usertype<TransformComponent>("Transform",
         "translation", &TransformComponent::Translation,
         "rotation", &TransformComponent::Rotation,
         "scale", &TransformComponent::Scale
     );
 
     // 便捷函数
-    m_LuaState["setPosition"] = [](Entity entity, float x, float y, float z) {
+    m_Impl->LuaState["setPosition"] = [](Entity entity, float x, float y, float z) {
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             transform.Translation = Math::Vector3(x, y, z);
         }
     };
 
-    m_LuaState["getPosition"] = [this](Entity entity) -> sol::table {
-        auto table = m_LuaState.create_table();
+    m_Impl->LuaState["getPosition"] = [this](Entity entity) -> sol::table {
+        auto table = m_Impl->LuaState.create_table();
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             table["x"] = transform.Translation.x;
@@ -98,15 +120,15 @@ void ScriptSystem::BindTransformAPI() {
         return table;
     };
 
-    m_LuaState["setRotation"] = [](Entity entity, float x, float y, float z) {
+    m_Impl->LuaState["setRotation"] = [](Entity entity, float x, float y, float z) {
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             transform.Rotation = Math::Vector3(x, y, z);
         }
     };
 
-    m_LuaState["getRotation"] = [this](Entity entity) -> sol::table {
-        auto table = m_LuaState.create_table();
+    m_Impl->LuaState["getRotation"] = [this](Entity entity) -> sol::table {
+        auto table = m_Impl->LuaState.create_table();
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             table["x"] = transform.Rotation.x;
@@ -116,15 +138,15 @@ void ScriptSystem::BindTransformAPI() {
         return table;
     };
 
-    m_LuaState["setScale"] = [](Entity entity, float x, float y, float z) {
+    m_Impl->LuaState["setScale"] = [](Entity entity, float x, float y, float z) {
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             transform.Scale = Math::Vector3(x, y, z);
         }
     };
 
-    m_LuaState["getScale"] = [this](Entity entity) -> sol::table {
-        auto table = m_LuaState.create_table();
+    m_Impl->LuaState["getScale"] = [this](Entity entity) -> sol::table {
+        auto table = m_Impl->LuaState.create_table();
         if (entity.HasComponent<TransformComponent>()) {
             auto& transform = entity.GetComponent<TransformComponent>();
             table["x"] = transform.Scale.x;
@@ -136,46 +158,46 @@ void ScriptSystem::BindTransformAPI() {
 }
 
 void ScriptSystem::BindInputAPI() {
-    m_LuaState["isKeyPressed"] = [](int key) -> bool {
+    m_Impl->LuaState["isKeyPressed"] = [](int key) -> bool {
         return Input::IsKeyPressed(key);
     };
 
-    m_LuaState["isMouseButtonPressed"] = [](int button) -> bool {
+    m_Impl->LuaState["isMouseButtonPressed"] = [](int button) -> bool {
         return Input::IsMouseButtonPressed(button);
     };
 
-    m_LuaState["getMousePosition"] = [this]() -> sol::table {
+    m_Impl->LuaState["getMousePosition"] = [this]() -> sol::table {
         auto [x, y] = Input::GetMousePosition();
-        auto table = m_LuaState.create_table();
+        auto table = m_Impl->LuaState.create_table();
         table["x"] = x;
         table["y"] = y;
         return table;
     };
 
     // GLFW 键码常量
-    m_LuaState["KEY_W"] = GLFW_KEY_W;
-    m_LuaState["KEY_S"] = GLFW_KEY_S;
-    m_LuaState["KEY_A"] = GLFW_KEY_A;
-    m_LuaState["KEY_D"] = GLFW_KEY_D;
-    m_LuaState["KEY_SPACE"] = GLFW_KEY_SPACE;
-    m_LuaState["KEY_ESCAPE"] = GLFW_KEY_ESCAPE;
+    m_Impl->LuaState["KEY_W"] = GLFW_KEY_W;
+    m_Impl->LuaState["KEY_S"] = GLFW_KEY_S;
+    m_Impl->LuaState["KEY_A"] = GLFW_KEY_A;
+    m_Impl->LuaState["KEY_D"] = GLFW_KEY_D;
+    m_Impl->LuaState["KEY_SPACE"] = GLFW_KEY_SPACE;
+    m_Impl->LuaState["KEY_ESCAPE"] = GLFW_KEY_ESCAPE;
 }
 
 void ScriptSystem::BindTimeAPI() {
-    m_LuaState["getDeltaTime"] = []() -> float {
+    m_Impl->LuaState["getDeltaTime"] = []() -> float {
         return Application::Get().GetTimestep();
     };
 
-    m_LuaState["getTime"] = []() -> float {
+    m_Impl->LuaState["getTime"] = []() -> float {
         return Application::Get().GetTime();
     };
 }
 
 void ScriptSystem::BindEntityAPI() {
     // 绑定 Entity 类型
-    auto entityType = m_LuaState.new_usertype<Entity>("Entity");
+    auto entityType = m_Impl->LuaState.new_usertype<Entity>("Entity");
 
-    m_LuaState["findEntity"] = [this](const std::string& name) -> Entity {
+    m_Impl->LuaState["findEntity"] = [this](const std::string& name) -> Entity {
         if (!m_World) return Entity();
 
         auto& registry = m_World->GetRegistry();
@@ -190,19 +212,19 @@ void ScriptSystem::BindEntityAPI() {
         return Entity();
     };
 
-    m_LuaState["createEntity"] = [this](const std::string& name) -> Entity {
+    m_Impl->LuaState["createEntity"] = [this](const std::string& name) -> Entity {
         if (!m_World) return Entity();
         return m_World->CreateEntity(name);
     };
 
-    m_LuaState["destroyEntity"] = [this](Entity entity) {
+    m_Impl->LuaState["destroyEntity"] = [this](Entity entity) {
         if (!m_World) return;
         m_World->DestroyEntity(entity);
     };
 }
 
 void ScriptSystem::BindPhysicsAPI() {
-    m_LuaState["applyForce"] = [this](Entity entity, float x, float y, float z) {
+    m_Impl->LuaState["applyForce"] = [this](Entity entity, float x, float y, float z) {
         // 通过 PhysicsSystem 应用力
         if (m_PhysicsSystem && entity.HasComponent<RigidbodyComponent>()) {
             // 需要 PhysicsSystem 提供应用力的接口
@@ -211,7 +233,7 @@ void ScriptSystem::BindPhysicsAPI() {
         }
     };
 
-    m_LuaState["setVelocity"] = [this](Entity entity, float x, float y, float z) {
+    m_Impl->LuaState["setVelocity"] = [this](Entity entity, float x, float y, float z) {
         // 设置速度
         if (m_PhysicsSystem && entity.HasComponent<RigidbodyComponent>()) {
             // 需要 PhysicsSystem 提供设置速度的接口
@@ -222,7 +244,7 @@ void ScriptSystem::BindPhysicsAPI() {
 }
 
 void ScriptSystem::BindAudioAPI() {
-    m_LuaState["playSound"] = [this](Entity entity, const std::string& path) {
+    m_Impl->LuaState["playSound"] = [this](Entity entity, const std::string& path) {
         if (entity.HasComponent<AudioSourceComponent>()) {
             auto& audio = entity.GetComponent<AudioSourceComponent>();
             audio.FilePath = path;
@@ -235,7 +257,7 @@ void ScriptSystem::BindAudioAPI() {
         }
     };
 
-    m_LuaState["stopSound"] = [this](Entity entity) {
+    m_Impl->LuaState["stopSound"] = [this](Entity entity) {
         if (entity.HasComponent<AudioSourceComponent>()) {
             if (m_AudioSystem) {
                 m_AudioSystem->StopAudioSource(entity);
@@ -271,7 +293,7 @@ void ScriptSystem::OnSceneStop() {
         UnloadScript(Entity(entity, m_World));
     }
 
-    m_ScriptInstances.clear();
+    m_Impl->ScriptInstances.clear();
     m_World = nullptr;
 }
 
@@ -300,8 +322,8 @@ void ScriptSystem::Update(World* World, float deltaTime) {
 
         // 从缓存获取函数
         uint32_t entityId = static_cast<uint32_t>(entity);
-        auto it = m_ScriptInstances.find(entityId);
-        if (it == m_ScriptInstances.end()) {
+        auto it = m_Impl->ScriptInstances.find(entityId);
+        if (it == m_Impl->ScriptInstances.end()) {
             continue;
         }
 
@@ -341,7 +363,7 @@ bool ScriptSystem::LoadScript(Entity entity) {
         }
 
         // 执行脚本
-        auto result = m_LuaState.script(scriptContent, script.ScriptPath);
+        auto result = m_Impl->LuaState.script(scriptContent, script.ScriptPath);
 
         if (!result.valid()) {
             sol::error err = result;
@@ -351,11 +373,11 @@ bool ScriptSystem::LoadScript(Entity entity) {
 
         // 缓存函数引用
         uint32_t entityId = static_cast<uint32_t>(entity);
-        ScriptInstance instance;
+        Impl::ScriptInstance instance;
         instance.ScriptPath = script.ScriptPath;
-        instance.OnStart = m_LuaState["OnStart"];
-        instance.OnUpdate = m_LuaState["OnUpdate"];
-        instance.OnDestroy = m_LuaState["OnDestroy"];
+        instance.OnStart = m_Impl->LuaState["OnStart"];
+        instance.OnUpdate = m_Impl->LuaState["OnUpdate"];
+        instance.OnDestroy = m_Impl->LuaState["OnDestroy"];
 
         // 获取文件修改时间
         try {
@@ -371,7 +393,7 @@ bool ScriptSystem::LoadScript(Entity entity) {
             instance.LastModified = 0;
         }
 
-        m_ScriptInstances[entityId] = instance;
+        m_Impl->ScriptInstances[entityId] = instance;
 
         // 调用 OnStart
         if (instance.OnStart.valid()) {
@@ -401,8 +423,8 @@ void ScriptSystem::UnloadScript(Entity entity) {
     if (script.IsInitialized) {
         // 调用 OnDestroy
         uint32_t entityId = static_cast<uint32_t>(entity);
-        auto it = m_ScriptInstances.find(entityId);
-        if (it != m_ScriptInstances.end()) {
+        auto it = m_Impl->ScriptInstances.find(entityId);
+        if (it != m_Impl->ScriptInstances.end()) {
             try {
                 if (it->second.OnDestroy.valid()) {
                     auto result = it->second.OnDestroy(entity);
@@ -414,7 +436,7 @@ void ScriptSystem::UnloadScript(Entity entity) {
             } catch (const sol::error& e) {
                 ZGINE_CORE_ERROR("Script exception in OnDestroy: {}", e.what());
             }
-            m_ScriptInstances.erase(it);
+            m_Impl->ScriptInstances.erase(it);
         }
     }
 
@@ -441,8 +463,8 @@ void ScriptSystem::CheckForChanges(World* World) {
         }
 
         uint32_t entityId = static_cast<uint32_t>(entity);
-        auto it = m_ScriptInstances.find(entityId);
-        if (it == m_ScriptInstances.end()) {
+        auto it = m_Impl->ScriptInstances.find(entityId);
+        if (it == m_Impl->ScriptInstances.end()) {
             continue;
         }
 

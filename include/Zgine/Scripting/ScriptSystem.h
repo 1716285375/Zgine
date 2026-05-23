@@ -1,9 +1,7 @@
 #pragma once
 
 #include <Zgine/World/Systems/ISystem.h>
-#include <sol/sol.hpp>
-#include <string>
-#include <unordered_map>
+#include <memory>
 
 namespace Zgine {
     class World;
@@ -35,9 +33,6 @@ namespace Zgine {
         void UnloadScript(Entity entity);
         bool ReloadScript(Entity entity);
 
-        // 获取 Lua 状态（用于绑定 API）
-        sol::state& GetLuaState() { return m_LuaState; }
-
         // 热重载：检查文件变化
         void CheckForChanges(World* World);
 
@@ -50,21 +45,13 @@ namespace Zgine {
         void BindPhysicsAPI();
         void BindAudioAPI();
 
-        sol::state m_LuaState;
+        struct Impl;
+
+        std::unique_ptr<Impl> m_Impl;
         bool m_Initialized = false;
         World* m_World = nullptr;
         PhysicsSystem* m_PhysicsSystem = nullptr;
         AudioSystem* m_AudioSystem = nullptr;
-
-        // 脚本函数缓存（性能优化）
-        struct ScriptInstance {
-            sol::function OnStart;
-            sol::function OnUpdate;
-            sol::function OnDestroy;
-            std::string ScriptPath;
-            int64_t LastModified = 0;
-        };
-        std::unordered_map<uint32_t, ScriptInstance> m_ScriptInstances;
     };
 }
 
