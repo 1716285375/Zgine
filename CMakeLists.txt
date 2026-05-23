@@ -138,14 +138,14 @@ target_include_directories(ZgineRuntime PUBLIC
 
 
 
-# Jolt include path (if fetched) - PUBLIC as it's an implementation detail used in PhysicsSystem.h
+# Jolt include path is an implementation detail hidden behind PhysicsSystem.
 if(DEFINED jolt_SOURCE_DIR)
-    target_include_directories(ZgineRuntime PUBLIC $<BUILD_INTERFACE:${jolt_SOURCE_DIR}>)
+    target_include_directories(ZgineRuntime PRIVATE $<BUILD_INTERFACE:${jolt_SOURCE_DIR}>)
 endif()
 
-# Sol2 include path (if fetched) - PUBLIC as it's an implementation detail used in ScriptSystem.h
+# Sol2 include path is an implementation detail hidden behind ScriptSystem.
 if(DEFINED sol2_SOURCE_DIR)
-    target_include_directories(ZgineRuntime PUBLIC $<BUILD_INTERFACE:${sol2_SOURCE_DIR}/include>)
+    target_include_directories(ZgineRuntime PRIVATE $<BUILD_INTERFACE:${sol2_SOURCE_DIR}/include>)
 endif()
 
 # TinyEXR include paths (if fetched)
@@ -160,7 +160,7 @@ endif()
 # 链接第三方库
 # Link third-party libraries
 # PUBLIC: Used in public API headers (include/ and src/ headers exposed to users)
-# EnTT and GLM types appear in Components.h, so they must be PUBLIC
+# EnTT and GLM types still appear in the ECS public API, so they remain PUBLIC.
 # glad appears in include/Zgine/Renderer/GL.h
 target_link_libraries(ZgineRuntime PUBLIC
     glm::glm
@@ -169,17 +169,17 @@ target_link_libraries(ZgineRuntime PUBLIC
     spdlog::spdlog
     stduuid
     glfw
-    imgui::imgui
     nlohmann_json::nlohmann_json
     assimp
-    Jolt
-    lua::lua
-    sol2
 )
 
 # PRIVATE: Implementation details not exposed in public API
 target_link_libraries(ZgineRuntime PRIVATE
     stb_image
+    Jolt
+    lua::lua
+    sol2
+    imgui::imgui
     ImGuizmo::ImGuizmo
     miniaudio::miniaudio
     physfs-static
@@ -215,10 +215,8 @@ endif()
 
 # Jolt 专用宏定义 (防止 ABI 冲突)
 if(TARGET Jolt)
-    target_compile_definitions(ZgineRuntime PUBLIC
-        JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=0
-    )
     target_compile_definitions(ZgineRuntime PRIVATE
+        JPH_FLOATING_POINT_EXCEPTIONS_ENABLED=0
         JPH_DEBUG_RENDERER
     )
 endif()

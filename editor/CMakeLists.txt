@@ -27,7 +27,7 @@ file(GLOB_RECURSE EDITOR_CORE_SOURCES
 add_library(ZgineEditorCore STATIC ${EDITOR_CORE_SOURCES})
 
 target_link_libraries(ZgineEditorCore
-    PUBLIC ZgineRuntime
+    PUBLIC ZgineRuntime imgui::imgui
     PRIVATE ImGuizmo::ImGuizmo
 )
 
