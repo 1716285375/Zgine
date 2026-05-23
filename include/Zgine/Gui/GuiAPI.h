@@ -9,8 +9,9 @@ namespace Zgine {
      * @brief GuiAPI provides a backend-agnostic GUI API.
      * Implementation is provided by the active GuiLayer.
      *
-     * This class serves as a facade for the underlying GUI backend (e.g., ImGui).
-     * Use this for backend-independent GUI operations.
+     * This class serves as a facade for the active GUI backend.
+     * Keep backend-specific helpers under Gui/Backend/* so runtime UI callers do
+     * not inherit editor/debug backend dependencies such as ImGui.
      */
     class GuiAPI {
     public:
@@ -39,6 +40,3 @@ namespace Zgine {
     };
 
 } // namespace Zgine
-
-// Include ImGui widget helpers (provides namespace UI with helper functions)
-#include <Zgine/Gui/Backend/ImGui/ImGuiWidgets.h>
