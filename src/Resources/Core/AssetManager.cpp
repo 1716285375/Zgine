@@ -1,5 +1,4 @@
 #include <Zgine/Resources/Core/AssetManager.h>
-#include <Zgine/Platform/IO/File.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Base/Macro.h>
 #include <algorithm>
@@ -25,6 +24,8 @@ void AssetManager::CacheEntryDeleter::operator()(CacheEntry* entry) const {
 }
 
 void AssetManager::Initialize(const AssetManagerConfig& config) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     m_Config = config;
     m_Metadata.clear();
     m_PathToHandle.clear();
@@ -50,6 +51,8 @@ void AssetManager::Initialize(const AssetManagerConfig& config) {
 }
 
 void AssetManager::Shutdown() {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     m_FileWatcher.Clear();
     m_Importers.clear();
     m_Cache.clear();
@@ -60,6 +63,11 @@ void AssetManager::Shutdown() {
     m_CurrentCacheBytes = 0;
     m_AccessCounter = 0;
     m_Initialized = false;
+}
+
+bool AssetManager::IsInitialized() const {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+    return m_Initialized;
 }
 
 void AssetManager::RegisterImporters() {
@@ -99,8 +107,18 @@ std::filesystem::path AssetManager::GetMetaPath(const std::filesystem::path& ass
 
 void AssetManager::SaveMetadata(const AssetMetadata& metadata) const {
     const auto metaPath = GetMetaPath(metadata.SourcePath);
+    std::error_code ec;
+    if (metaPath.has_parent_path()) {
+        std::filesystem::create_directories(metaPath.parent_path(), ec);
+    }
+
+    std::ofstream file(metaPath, std::ios::trunc);
+    if (!file.is_open()) {
+        return;
+    }
+
     auto data = metadata.Serialize();
-    File::WriteFile(metaPath.string(), data.dump(4));
+    file << data.dump(4);
 }
 
 std::optional<AssetMetadata> AssetManager::LoadMetadata(const std::filesystem::path& metaPath) const {
@@ -123,6 +141,8 @@ void AssetManager::WatchAssetPaths(const AssetMetadata& metadata) {
 }
 
 void AssetManager::ScanAssets() {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_Initialized) {
         return;
     }
@@ -156,6 +176,8 @@ void AssetManager::ScanAssets() {
 }
 
 AssetHandle AssetManager::RegisterAsset(const std::filesystem::path& assetPath, AssetType type) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_Initialized) {
         return AssetHandle();
     }
@@ -200,6 +222,8 @@ AssetHandle AssetManager::RegisterAsset(const std::filesystem::path& assetPath, 
 
 AssetHandle AssetManager::ImportAsset(const std::filesystem::path& sourcePath,
                                       const std::filesystem::path& destPath) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_Initialized) {
         return AssetHandle();
     }
@@ -227,6 +251,8 @@ AssetHandle AssetManager::ImportAsset(const std::filesystem::path& sourcePath,
 }
 
 AssetHandle AssetManager::GetHandleFromPath(const std::filesystem::path& path) const {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     std::string normalized = NormalizePath(path);
     auto it = m_PathToHandle.find(normalized);
     if (it != m_PathToHandle.end()) {
@@ -236,6 +262,8 @@ AssetHandle AssetManager::GetHandleFromPath(const std::filesystem::path& path) c
 }
 
 const AssetMetadata* AssetManager::GetMetadata(AssetHandle handle) const {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     auto it = m_Metadata.find(handle);
     if (it == m_Metadata.end()) {
         return nullptr;
@@ -300,6 +328,8 @@ std::shared_ptr<Asset> AssetManager::LoadAssetInternal(AssetHandle handle) {
 }
 
 std::shared_ptr<Asset> AssetManager::LoadAsset(AssetHandle handle) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_Initialized || !handle.IsValid()) {
         return nullptr;
     }
@@ -313,16 +343,21 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(AssetHandle handle) {
 }
 
 std::future<std::shared_ptr<Asset>> AssetManager::LoadAssetAsync(AssetHandle handle) {
-    if (!m_Initialized || !handle.IsValid()) {
-        return std::async(std::launch::deferred, []() { return std::shared_ptr<Asset>(); });
+    AssetType type = AssetType::Unknown;
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+        if (!m_Initialized || !handle.IsValid()) {
+            return std::async(std::launch::deferred, []() { return std::shared_ptr<Asset>(); });
+        }
+
+        auto metadataIt = m_Metadata.find(handle);
+        if (metadataIt == m_Metadata.end()) {
+            return std::async(std::launch::deferred, []() { return std::shared_ptr<Asset>(); });
+        }
+        type = metadataIt->second.Type;
     }
 
-    const AssetMetadata* metadata = GetMetadata(handle);
-    if (!metadata) {
-        return std::async(std::launch::deferred, []() { return std::shared_ptr<Asset>(); });
-    }
-
-    if (!IsThreadSafeAsset(metadata->Type)) {
+    if (!IsThreadSafeAsset(type)) {
         return std::async(std::launch::deferred, [this, handle]() { return LoadAsset(handle); });
     }
 
@@ -330,6 +365,8 @@ std::future<std::shared_ptr<Asset>> AssetManager::LoadAssetAsync(AssetHandle han
 }
 
 void AssetManager::UnloadAsset(AssetHandle handle) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     auto it = m_Cache.find(handle);
     if (it == m_Cache.end()) {
         return;
@@ -346,6 +383,8 @@ void AssetManager::UnloadAsset(AssetHandle handle) {
 }
 
 void AssetManager::TrimCache() {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (m_CurrentCacheBytes <= m_Config.MaxCacheSizeBytes) {
         return;
     }
@@ -380,6 +419,8 @@ void AssetManager::TrimCache() {
 }
 
 void AssetManager::OnFileChanged(const std::filesystem::path& path, FileStatus status) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_HotReloadEnabled) {
         return;
     }
@@ -413,6 +454,8 @@ void AssetManager::OnFileChanged(const std::filesystem::path& path, FileStatus s
 }
 
 void AssetManager::MarkDirty(AssetHandle handle) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!handle.IsValid()) {
         return;
     }
@@ -420,6 +463,8 @@ void AssetManager::MarkDirty(AssetHandle handle) {
 }
 
 void AssetManager::Update() {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+
     if (!m_Initialized || !m_HotReloadEnabled) {
         return;
     }
@@ -469,6 +514,16 @@ bool AssetManager::IsThreadSafeAsset(AssetType type) const {
         default:
             return true;
     }
+}
+
+void AssetManager::SetHotReloadEnabled(bool enabled) {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+    m_HotReloadEnabled = enabled;
+}
+
+bool AssetManager::IsHotReloadEnabled() const {
+    std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+    return m_HotReloadEnabled;
 }
 
 }

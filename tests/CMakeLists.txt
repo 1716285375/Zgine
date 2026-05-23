@@ -20,6 +20,7 @@ endif()
 
 # Test executable
 add_executable(ZgineTests
+    AssetManagerTests.cpp
     EngineSmokeTests.cpp
     RendererBackendTests.cpp
     SystemManagerTests.cpp

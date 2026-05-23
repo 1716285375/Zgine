@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <Zgine/Resources/Core/AssetMetadata.h>
@@ -25,7 +26,7 @@ public:
     void Initialize(const AssetManagerConfig& config = {});
     void Shutdown();
 
-    bool IsInitialized() const { return m_Initialized; }
+    bool IsInitialized() const;
 
     void ScanAssets();
     AssetHandle ImportAsset(const std::filesystem::path& sourcePath,
@@ -50,8 +51,8 @@ public:
     void TrimCache();
     void Update();
 
-    void SetHotReloadEnabled(bool enabled) { m_HotReloadEnabled = enabled; }
-    bool IsHotReloadEnabled() const { return m_HotReloadEnabled; }
+    void SetHotReloadEnabled(bool enabled);
+    bool IsHotReloadEnabled() const;
 
     const std::filesystem::path& GetAssetsRoot() const { return m_Config.AssetsRoot; }
 
@@ -87,6 +88,7 @@ private:
     AssetManagerConfig m_Config;
     bool m_Initialized = false;
     bool m_HotReloadEnabled = true;
+    mutable std::recursive_mutex m_Mutex;
 
     std::unordered_map<AssetHandle, AssetMetadata> m_Metadata;
     std::unordered_map<std::string, AssetHandle> m_PathToHandle;
