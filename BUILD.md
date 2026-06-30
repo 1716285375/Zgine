@@ -43,6 +43,9 @@ mt.exe:
 
 Visual Studio environment bootstrap:
   C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat
+
+Vulkan SDK:
+  C:\VulkanSDK\1.4.321.1
 ```
 
 Important: absolute compiler paths are not enough by themselves. MSVC also needs the
@@ -55,16 +58,16 @@ Working local command used for configure, build, and test verification:
 
 ```powershell
 $vsdev = 'C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat'
-$build = 'build\architecture-check-msvc-devcmd'
+$build = 'build\vulkan-dev-check2'
 
-cmd.exe /S /C "`"$vsdev`" -arch=x64 -host_arch=x64 && cmake -S . -B $build -G Ninja -DCMAKE_C_COMPILER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe`" -DCMAKE_CXX_COMPILER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\cl.exe`" -DCMAKE_LINKER=`"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\bin\Hostx64\x64\link.exe`" -DCMAKE_RC_COMPILER=`"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\rc.exe`" -DCMAKE_MT=`"C:\Program Files (x86)\Windows Kits\10\bin\10.0.26100.0\x64\mt.exe`" && cmake --build $build --target ZgineEditor ZgineSandbox ZgineTests ZgineEditorTests -j 8 && ctest --test-dir $build --output-on-failure"
+cmd.exe /S /C "`"$vsdev`" -arch=x64 -host_arch=x64 && cmake -S . -B $build -G Ninja -DZGINE_RENDERER_BACKEND=Vulkan -DZGINE_BUILD_EDITOR=ON -DZGINE_BUILD_TESTS=ON -DCMAKE_C_COMPILER=`"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe`" -DCMAKE_CXX_COMPILER=`"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe`" -DCMAKE_LINKER=`"C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/link.exe`" -DCMAKE_RC_COMPILER=`"C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/rc.exe`" -DCMAKE_MT=`"C:/Program Files (x86)/Windows Kits/10/bin/10.0.26100.0/x64/mt.exe`" && cmake --build $build --target ZgineEditor ZgineSandbox ZgineTests ZgineEditorTests -j 8 && ctest --test-dir $build --output-on-failure"
 ```
 
-Expected verified result on 2026-05-22:
+Expected verified result on 2026-05-29:
 
 ```text
 ZgineEditor, ZgineSandbox, ZgineTests, and ZgineEditorTests build successfully.
-100% tests passed, 0 tests failed out of 50
+100% tests passed, 0 tests failed out of 79
 ```
 
 #### Linux
@@ -258,7 +261,7 @@ Renderer backend status:
 
 - `OpenGL`: implemented and used by sandbox/editor.
 - `DirectX12`: selectable teaching stub; window can be created without an OpenGL context, but rendering resources are not implemented yet.
-- `Vulkan`: teaching backend in progress; requires the Vulkan SDK and can create a clear-frame swapchain path with instance, validation debug messenger, surface, device, queues, swapchain, image views, render pass, framebuffers, command buffers, sync, acquire/submit/present, and resize recreation. RHI resources and pipelines are not implemented yet.
+- `Vulkan`: teaching backend in progress; requires the Vulkan SDK and can create a clear-frame swapchain path with instance, validation debug messenger, surface, device, queues, swapchain, image views, render pass, framebuffers, command buffers, sync, acquire/submit/present, and resize recreation. Vertex-array metadata and device-local vertex/index buffers have started; shader modules, pipelines, descriptors, and real draw recording are not implemented yet.
 - `None`: headless/no-rendering selection for future tests and tools.
 
 See [docs/rendering-backends.md](docs/rendering-backends.md) for the implementation roadmap.

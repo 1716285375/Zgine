@@ -1,7 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <Zgine/Renderer/RHI/BufferLayout.h>
+#include <Zgine/Renderer/RHI/IndexBuffer.h>
 #include <Zgine/Renderer/RHI/RendererAPI.h>
+#include <Zgine/Renderer/RHI/VertexBuffer.h>
 #include <Zgine/Renderer/RHI/VertexArray.h>
+
+#include <array>
 
 namespace {
 
@@ -44,6 +49,20 @@ TEST(RendererBackendTest, ReportsImplementedBackendAvailability) {
     EXPECT_FALSE(Zgine::RendererAPI::IsAvailable(Zgine::RendererAPI::API::None));
 }
 
+TEST(RendererBackendTest, BufferLayoutCalculatesOffsetsAndStride) {
+    Zgine::BufferLayout layout{
+        { Zgine::ShaderDataType::Float3, "a_Position" },
+        { Zgine::ShaderDataType::Float3, "a_Normal" },
+        { Zgine::ShaderDataType::Float2, "a_TexCoord" },
+    };
+
+    ASSERT_EQ(layout.GetElements().size(), 3u);
+    EXPECT_EQ(layout.GetStride(), 8u * sizeof(float));
+    EXPECT_EQ(layout.GetElements()[0].Offset, 0u);
+    EXPECT_EQ(layout.GetElements()[1].Offset, 3u * sizeof(float));
+    EXPECT_EQ(layout.GetElements()[2].Offset, 6u * sizeof(float));
+}
+
 TEST(RendererBackendTest, UnsupportedBackendFactoriesFailExplicitly) {
     RendererAPIGuard guard;
 
@@ -68,6 +87,10 @@ TEST(RendererBackendTest, VulkanRendererAPIFactoryIsAvailableWhenSDKIsPresent) {
     Zgine::RendererAPI::SetAPI(Zgine::RendererAPI::API::Vulkan);
 
     EXPECT_NE(Zgine::RendererAPI::Create(), nullptr);
-    EXPECT_EQ(Zgine::VertexArray::Create(), nullptr);
+    EXPECT_NE(Zgine::VertexArray::Create(), nullptr);
+
+    std::array<uint32_t, 3> indices{0, 1, 2};
+    EXPECT_EQ(Zgine::VertexBuffer::Create(nullptr, 16), nullptr);
+    EXPECT_EQ(Zgine::IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size())), nullptr);
 }
 #endif

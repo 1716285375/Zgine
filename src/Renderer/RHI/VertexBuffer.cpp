@@ -1,6 +1,11 @@
 #include <Zgine/Renderer/RHI/RendererAPI.h>
 #include <Zgine/Renderer/RHI/VertexBuffer.h>
+#include <Zgine/Core/Log/Log.h>
 #include <Renderer/Backend/OpenGL/OpenGLVertexBuffer.h>
+#if ZGINE_HAS_VULKAN
+#include <Renderer/Backend/Vulkan/VulkanContextAccess.h>
+#include <Renderer/Backend/Vulkan/VulkanVertexBuffer.h>
+#endif
 
 namespace Zgine {
 
@@ -9,9 +14,21 @@ namespace Zgine {
             case RendererAPI::API::None:    return nullptr;
             case RendererAPI::API::OpenGL:  return std::make_shared<OpenGLVertexBuffer>(data, size);
             case RendererAPI::API::DirectX12:
-            case RendererAPI::API::Vulkan:
                 RendererAPI::ReportUnavailableBackend("VertexBuffer");
                 return nullptr;
+            case RendererAPI::API::Vulkan:
+#if ZGINE_HAS_VULKAN
+                if (!Vulkan::HasDeviceContext()) {
+                    if (auto& logger = Log::GetCoreLogger()) {
+                        logger->error("VertexBuffer requires an initialized Vulkan renderer.");
+                    }
+                    return nullptr;
+                }
+                return std::make_shared<VulkanVertexBuffer>(data, size);
+#else
+                RendererAPI::ReportUnavailableBackend("VertexBuffer");
+                return nullptr;
+#endif
         }
         return nullptr;
     }

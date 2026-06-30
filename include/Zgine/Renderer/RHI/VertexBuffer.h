@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Zgine/Renderer/RHI/BufferLayout.h>
+
 #include <memory>
 #include <cstdint>
 
@@ -13,6 +15,8 @@ namespace Zgine {
         virtual void Unbind() const = 0;
 
         virtual uint32_t GetID() const = 0;
+        virtual void SetLayout(const BufferLayout& layout) = 0;
+        virtual const BufferLayout& GetLayout() const = 0;
 
         static std::shared_ptr<VertexBuffer> Create(const void* data, uint32_t size);
     };

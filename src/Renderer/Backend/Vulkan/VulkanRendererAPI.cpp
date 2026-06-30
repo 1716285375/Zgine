@@ -3,6 +3,8 @@
 
 #include "VulkanRendererAPI.h"
 
+#include "VulkanContextAccess.h"
+
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/MathTypes.h>
@@ -475,11 +477,68 @@ void VulkanRendererAPI::Init() {
     vkGetDeviceQueue(m_Context->Device, m_Context->QueueFamilies.GraphicsFamily.value(), 0, &m_Context->GraphicsQueue);
     vkGetDeviceQueue(m_Context->Device, m_Context->QueueFamilies.PresentFamily.value(), 0, &m_Context->PresentQueue);
 
+    CreateSwapchainResources(glfwWindow);
+
+    VkCommandPoolCreateInfo commandPoolInfo{};
+    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    commandPoolInfo.queueFamilyIndex = m_Context->QueueFamilies.GraphicsFamily.value();
+
+    CheckVk(
+        vkCreateCommandPool(m_Context->Device, &commandPoolInfo, nullptr, &m_Context->CommandPool),
+        "Failed to create Vulkan command pool.");
+
+    Vulkan::SetDeviceContext({
+        m_Context->PhysicalDevice,
+        m_Context->Device,
+        m_Context->GraphicsQueue,
+        m_Context->CommandPool,
+    });
+
+    VkCommandBufferAllocateInfo commandBufferInfo{};
+    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    commandBufferInfo.commandPool = m_Context->CommandPool;
+    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    commandBufferInfo.commandBufferCount = static_cast<uint32_t>(m_Context->CommandBuffers.size());
+
+    CheckVk(
+        vkAllocateCommandBuffers(m_Context->Device, &commandBufferInfo, m_Context->CommandBuffers.data()),
+        "Failed to allocate Vulkan command buffers.");
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    for (size_t frame = 0; frame < kMaxFramesInFlight; ++frame) {
+        CheckVk(
+            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &m_Context->ImageAvailableSemaphores[frame]),
+            "Failed to create Vulkan image-available semaphore.");
+        CheckVk(
+            vkCreateFence(m_Context->Device, &fenceInfo, nullptr, &m_Context->InFlightFences[frame]),
+            "Failed to create Vulkan frame fence.");
+    }
+
+    VkPhysicalDeviceProperties properties{};
+    vkGetPhysicalDeviceProperties(m_Context->PhysicalDevice, &properties);
+
+    ZGINE_CORE_INFO(
+        "Vulkan initialized: {} ({}) swapchain={}x{} images={}",
+        properties.deviceName,
+        DeviceTypeToString(properties.deviceType),
+        m_Context->SwapchainExtent.width,
+        m_Context->SwapchainExtent.height,
+        m_Context->SwapchainImages.size());
+}
+
+void VulkanRendererAPI::CreateSwapchainResources(GLFWwindow* window) {
     const SwapchainSupportDetails swapchainSupport =
         QuerySwapchainSupport(m_Context->PhysicalDevice, m_Context->Surface);
     const VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapchainSupport.Formats);
     const VkPresentModeKHR presentMode = ChooseSwapPresentMode(swapchainSupport.PresentModes);
-    const VkExtent2D extent = ChooseSwapExtent(swapchainSupport.Capabilities, glfwWindow);
+    const VkExtent2D extent = ChooseSwapExtent(swapchainSupport.Capabilities, window);
 
     uint32_t imageCount = swapchainSupport.Capabilities.minImageCount + 1;
     if (swapchainSupport.Capabilities.maxImageCount > 0 &&
@@ -516,9 +575,9 @@ void VulkanRendererAPI::Init() {
     swapchainCreateInfo.clipped = VK_TRUE;
     swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-    if (vkCreateSwapchainKHR(m_Context->Device, &swapchainCreateInfo, nullptr, &m_Context->Swapchain) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan swapchain.");
-    }
+    CheckVk(
+        vkCreateSwapchainKHR(m_Context->Device, &swapchainCreateInfo, nullptr, &m_Context->Swapchain),
+        "Failed to create Vulkan swapchain.");
 
     vkGetSwapchainImagesKHR(m_Context->Device, m_Context->Swapchain, &imageCount, nullptr);
     m_Context->SwapchainImages.resize(imageCount);
@@ -544,9 +603,9 @@ void VulkanRendererAPI::Init() {
         viewCreateInfo.subresourceRange.baseArrayLayer = 0;
         viewCreateInfo.subresourceRange.layerCount = 1;
 
-        if (vkCreateImageView(m_Context->Device, &viewCreateInfo, nullptr, &m_Context->SwapchainImageViews[index]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create Vulkan swapchain image view.");
-        }
+        CheckVk(
+            vkCreateImageView(m_Context->Device, &viewCreateInfo, nullptr, &m_Context->SwapchainImageViews[index]),
+            "Failed to create Vulkan swapchain image view.");
     }
 
     VkAttachmentDescription colorAttachment{};
@@ -609,55 +668,78 @@ void VulkanRendererAPI::Init() {
             "Failed to create Vulkan framebuffer.");
     }
 
-    VkCommandPoolCreateInfo commandPoolInfo{};
-    commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    commandPoolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    commandPoolInfo.queueFamilyIndex = m_Context->QueueFamilies.GraphicsFamily.value();
-
-    CheckVk(
-        vkCreateCommandPool(m_Context->Device, &commandPoolInfo, nullptr, &m_Context->CommandPool),
-        "Failed to create Vulkan command pool.");
-
-    VkCommandBufferAllocateInfo commandBufferInfo{};
-    commandBufferInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    commandBufferInfo.commandPool = m_Context->CommandPool;
-    commandBufferInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    commandBufferInfo.commandBufferCount = static_cast<uint32_t>(m_Context->CommandBuffers.size());
-
-    CheckVk(
-        vkAllocateCommandBuffers(m_Context->Device, &commandBufferInfo, m_Context->CommandBuffers.data()),
-        "Failed to allocate Vulkan command buffers.");
-
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
     m_Context->RenderFinishedSemaphores.resize(m_Context->SwapchainImages.size(), VK_NULL_HANDLE);
-    for (size_t image = 0; image < m_Context->RenderFinishedSemaphores.size(); ++image) {
+    for (VkSemaphore& semaphore : m_Context->RenderFinishedSemaphores) {
         CheckVk(
-            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &m_Context->RenderFinishedSemaphores[image]),
+            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &semaphore),
             "Failed to create Vulkan render-finished semaphore.");
     }
+}
 
-    for (size_t frame = 0; frame < kMaxFramesInFlight; ++frame) {
-        CheckVk(
-            vkCreateSemaphore(m_Context->Device, &semaphoreInfo, nullptr, &m_Context->ImageAvailableSemaphores[frame]),
-            "Failed to create Vulkan image-available semaphore.");
-        CheckVk(
-            vkCreateFence(m_Context->Device, &fenceInfo, nullptr, &m_Context->InFlightFences[frame]),
-            "Failed to create Vulkan frame fence.");
+void VulkanRendererAPI::CleanupSwapchainResources() {
+    if (!m_Context || m_Context->Device == VK_NULL_HANDLE) {
+        return;
     }
 
-    VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(m_Context->PhysicalDevice, &properties);
+    for (VkSemaphore semaphore : m_Context->RenderFinishedSemaphores) {
+        if (semaphore != VK_NULL_HANDLE) {
+            vkDestroySemaphore(m_Context->Device, semaphore, nullptr);
+        }
+    }
+    m_Context->RenderFinishedSemaphores.clear();
+
+    for (VkFramebuffer framebuffer : m_Context->SwapchainFramebuffers) {
+        if (framebuffer != VK_NULL_HANDLE) {
+            vkDestroyFramebuffer(m_Context->Device, framebuffer, nullptr);
+        }
+    }
+    m_Context->SwapchainFramebuffers.clear();
+
+    if (m_Context->RenderPass != VK_NULL_HANDLE) {
+        vkDestroyRenderPass(m_Context->Device, m_Context->RenderPass, nullptr);
+        m_Context->RenderPass = VK_NULL_HANDLE;
+    }
+
+    for (VkImageView imageView : m_Context->SwapchainImageViews) {
+        if (imageView != VK_NULL_HANDLE) {
+            vkDestroyImageView(m_Context->Device, imageView, nullptr);
+        }
+    }
+    m_Context->SwapchainImageViews.clear();
+
+    if (m_Context->Swapchain != VK_NULL_HANDLE) {
+        vkDestroySwapchainKHR(m_Context->Device, m_Context->Swapchain, nullptr);
+        m_Context->Swapchain = VK_NULL_HANDLE;
+    }
+
+    m_Context->SwapchainImages.clear();
+    m_Context->SwapchainImageFormat = VK_FORMAT_UNDEFINED;
+    m_Context->SwapchainExtent = {};
+}
+
+void VulkanRendererAPI::RecreateSwapchain(GLFWwindow* window) {
+    if (!window || !m_Context || m_Context->Device == VK_NULL_HANDLE) {
+        return;
+    }
+
+    int width = 0;
+    int height = 0;
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0) {
+        glfwWaitEvents();
+        glfwGetFramebufferSize(window, &width, &height);
+    }
+
+    vkDeviceWaitIdle(m_Context->Device);
+    CleanupSwapchainResources();
+    CreateSwapchainResources(window);
+    m_Context->CurrentFrame = 0;
 
     ZGINE_CORE_INFO(
-        "Vulkan initialized: {} ({}) swapchain={}x{} images={}",
-        properties.deviceName,
-        DeviceTypeToString(properties.deviceType),
+        "Vulkan swapchain recreated: {}x{} images={}",
         m_Context->SwapchainExtent.width,
         m_Context->SwapchainExtent.height,
         m_Context->SwapchainImages.size());
@@ -678,13 +760,6 @@ void VulkanRendererAPI::Shutdown() {
         }
         m_Context->InFlightFences = {};
 
-        for (VkSemaphore semaphore : m_Context->RenderFinishedSemaphores) {
-            if (semaphore != VK_NULL_HANDLE) {
-                vkDestroySemaphore(m_Context->Device, semaphore, nullptr);
-            }
-        }
-        m_Context->RenderFinishedSemaphores.clear();
-
         for (VkSemaphore semaphore : m_Context->ImageAvailableSemaphores) {
             if (semaphore != VK_NULL_HANDLE) {
                 vkDestroySemaphore(m_Context->Device, semaphore, nullptr);
@@ -698,29 +773,9 @@ void VulkanRendererAPI::Shutdown() {
             m_Context->CommandBuffers = {};
         }
 
-        for (VkFramebuffer framebuffer : m_Context->SwapchainFramebuffers) {
-            if (framebuffer != VK_NULL_HANDLE) {
-                vkDestroyFramebuffer(m_Context->Device, framebuffer, nullptr);
-            }
-        }
-        m_Context->SwapchainFramebuffers.clear();
+        CleanupSwapchainResources();
 
-        if (m_Context->RenderPass != VK_NULL_HANDLE) {
-            vkDestroyRenderPass(m_Context->Device, m_Context->RenderPass, nullptr);
-            m_Context->RenderPass = VK_NULL_HANDLE;
-        }
-
-        for (VkImageView imageView : m_Context->SwapchainImageViews) {
-            if (imageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(m_Context->Device, imageView, nullptr);
-            }
-        }
-        m_Context->SwapchainImageViews.clear();
-
-        if (m_Context->Swapchain != VK_NULL_HANDLE) {
-            vkDestroySwapchainKHR(m_Context->Device, m_Context->Swapchain, nullptr);
-            m_Context->Swapchain = VK_NULL_HANDLE;
-        }
+        Vulkan::ResetDeviceContext();
 
         vkDestroyDevice(m_Context->Device, nullptr);
         m_Context->Device = VK_NULL_HANDLE;
@@ -756,6 +811,11 @@ void VulkanRendererAPI::Clear() {
         return;
     }
 
+    auto* glfwWindow = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    if (!glfwWindow) {
+        return;
+    }
+
     const uint32_t frame = m_Context->CurrentFrame;
     const VkFence inFlightFence = m_Context->InFlightFences[frame];
     const VkSemaphore imageAvailableSemaphore = m_Context->ImageAvailableSemaphores[frame];
@@ -773,13 +833,14 @@ void VulkanRendererAPI::Clear() {
         &imageIndex);
 
     if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
-        ZGINE_CORE_WARN("Vulkan swapchain is out of date. Resize/recreate support is not implemented yet.");
+        RecreateSwapchain(glfwWindow);
         return;
     }
     if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("Failed to acquire Vulkan swapchain image.");
     }
 
+    bool shouldRecreateSwapchain = acquireResult == VK_SUBOPTIMAL_KHR;
     const VkSemaphore renderFinishedSemaphore = m_Context->RenderFinishedSemaphores[imageIndex];
 
     vkResetFences(m_Context->Device, 1, &inFlightFence);
@@ -837,12 +898,16 @@ void VulkanRendererAPI::Clear() {
 
     const VkResult presentResult = vkQueuePresentKHR(m_Context->PresentQueue, &presentInfo);
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR) {
-        ZGINE_CORE_WARN("Vulkan swapchain needs recreation. Resize/recreate support is not implemented yet.");
+        shouldRecreateSwapchain = true;
     } else if (presentResult != VK_SUCCESS) {
         throw std::runtime_error("Failed to present Vulkan clear frame.");
     }
 
-    m_Context->CurrentFrame = (m_Context->CurrentFrame + 1) % kMaxFramesInFlight;
+    if (shouldRecreateSwapchain) {
+        RecreateSwapchain(glfwWindow);
+    } else {
+        m_Context->CurrentFrame = (m_Context->CurrentFrame + 1) % kMaxFramesInFlight;
+    }
 }
 
 void VulkanRendererAPI::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount) {

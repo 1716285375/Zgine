@@ -1,6 +1,6 @@
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
+#include <Zgine/Renderer/RHI/BufferLayout.h>
 #include <Zgine/Renderer/RHI/VertexBuffer.h>
-#include <glad/glad.h>
 #include <cmath>
 #include <vector>
 
@@ -15,20 +15,22 @@ namespace {
     void ConfigureVertexLayout(const std::shared_ptr<VertexArray>& vertexArray,
                                const std::shared_ptr<VertexBuffer>& vertexBuffer,
                                const std::shared_ptr<IndexBuffer>& indexBuffer) {
-        vertexArray->Bind();
-        vertexBuffer->Bind();
+        if (!vertexArray || !vertexBuffer || !indexBuffer) {
+            return;
+        }
 
-        constexpr int stride = 8 * sizeof(float);
+        vertexBuffer->SetLayout({
+            { ShaderDataType::Float3, "a_Position" },
+            { ShaderDataType::Float3, "a_Normal" },
+            { ShaderDataType::Float2, "a_TexCoord" },
+        });
 
-        glEnableVertexAttribArray(0); // position
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
-        glEnableVertexAttribArray(1); // normal
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(2); // texcoord
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
-
+        vertexArray->AddVertexBuffer(vertexBuffer);
         vertexArray->SetIndexBuffer(indexBuffer);
-        vertexArray->Unbind();
+    }
+
+    bool IsComplete(const PrimitiveMesh& mesh) {
+        return mesh.VertexArray && mesh.VertexBuffer && mesh.IndexBuffer;
     }
 }
 
@@ -98,6 +100,9 @@ PrimitiveMesh PrimitiveMeshFactory::CreateCube() {
     s_CubeMesh.VertexBuffer = VertexBuffer::Create(vertices, static_cast<unsigned int>(sizeof(vertices)));
     s_CubeMesh.IndexBuffer = IndexBuffer::Create(indices, 36);
     ConfigureVertexLayout(s_CubeMesh.VertexArray, s_CubeMesh.VertexBuffer, s_CubeMesh.IndexBuffer);
+    if (!IsComplete(s_CubeMesh)) {
+        s_CubeMesh = {};
+    }
 
     return s_CubeMesh;
 }
@@ -122,6 +127,9 @@ PrimitiveMesh PrimitiveMeshFactory::CreatePlane() {
     s_PlaneMesh.VertexBuffer = VertexBuffer::Create(vertices, static_cast<unsigned int>(sizeof(vertices)));
     s_PlaneMesh.IndexBuffer = IndexBuffer::Create(indices, 6);
     ConfigureVertexLayout(s_PlaneMesh.VertexArray, s_PlaneMesh.VertexBuffer, s_PlaneMesh.IndexBuffer);
+    if (!IsComplete(s_PlaneMesh)) {
+        s_PlaneMesh = {};
+    }
 
     return s_PlaneMesh;
 }
@@ -194,6 +202,9 @@ PrimitiveMesh PrimitiveMeshFactory::CreateSphere() {
     s_SphereMesh.VertexBuffer = VertexBuffer::Create(vertices.data(), static_cast<unsigned int>(vertices.size() * sizeof(float)));
     s_SphereMesh.IndexBuffer = IndexBuffer::Create(indices.data(), static_cast<unsigned int>(indices.size()));
     ConfigureVertexLayout(s_SphereMesh.VertexArray, s_SphereMesh.VertexBuffer, s_SphereMesh.IndexBuffer);
+    if (!IsComplete(s_SphereMesh)) {
+        s_SphereMesh = {};
+    }
 
     return s_SphereMesh;
 }
