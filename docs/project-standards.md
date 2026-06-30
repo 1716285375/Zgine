@@ -1,8 +1,35 @@
 # Zgine 项目规范
 
-版本日期：2026-05-22
+版本日期：2026-05-29
 
 本文档定义 Zgine 的项目规范。后续开发默认遵守本文档；如果与旧代码冲突，新代码按本文档写，旧代码在相关改动中逐步迁移。
+
+## 开发流程规范
+
+Zgine 使用 OpenSpec 风格管理持续演进：
+
+- 项目底线：`docs/constitution.md`。
+- 长期模块设计：`docs/specs/*.md`。
+- 架构专题：`docs/architecture/*.md`。
+- 功能变更：`docs/changes/<change-id>/`。
+
+非平凡功能默认先创建 change：
+
+```text
+proposal.md
+requirements.md
+design.md
+tasks.md
+acceptance.md
+```
+
+规则：
+
+- 小 bugfix 可以使用轻量 change，但必须说明验收方式。
+- Renderer、Asset Pipeline、Prefab、Play Mode、Scripting、Editor Docking 等复杂模块可以在 `design.md` 中使用 BMAD 多角色分析，但最终必须收敛为一个具体设计。
+- AI 或人工实现前必须先读 `constitution.md` 和相关 specs。
+- 实现完成后必须同步更新相关 specs、architecture 或 roadmap。
+- `acceptance.md` 是最终验收依据，不以“代码看起来完成”为准。
 
 ## 标准基线
 
@@ -322,7 +349,7 @@ Visual Studio/Windows SDK 注入的 `INCLUDE`、`LIB`、`PATH`。没有开发环
 
 ### 日志系统不是所有单元测试的前置条件
 
-低层类如果可在单元测试中独立构造，不能默认日志 singleton 已初始化。需要记录诊断时，先判断 logger 是否存在，或在 fixture 中显式初始化/关闭日志。
+低层类如果可在单元测试中独立构造，不能默认日志系统完整初始化。当前 `Log::GetCoreLogger()` / `GetClientLogger()` 提供 fallback logger，日志宏在 `Log::Init()` 前允许用于诊断；应用程序入口仍必须显式执行 `Log::Init()`，以启用正式 sink、日志级别和文件输出。
 
 ### 异步资源加载不等于线程安全
 

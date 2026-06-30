@@ -1,6 +1,6 @@
 # Zgine Architecture Review and Roadmap
 
-Date: 2026-05-22
+Date: 2026-05-24
 
 ## Scope
 
@@ -29,11 +29,15 @@ Verified command path:
 3. Build `ZgineTests` and `ZgineEditorTests`.
 4. Run CTest.
 
-Verified result on 2026-05-22:
+Verified result on 2026-05-29:
 
-- CMake configure succeeded in `build/architecture-check-msvc-devcmd`.
+- CMake configure succeeded in `build/vulkan-dev-check2` with `ZGINE_RENDERER_BACKEND=Vulkan` and `ZGINE_BUILD_EDITOR=ON`.
 - `ZgineEditor`, `ZgineSandbox`, `ZgineTests`, and `ZgineEditorTests` built successfully.
-- CTest passed: `50/50` tests, `0` failures.
+- CTest passed: `79/79` tests, `0` failures.
+- Vulkan now has clear-frame rendering, swapchain resize recreation, backend-private device context access, vertex-array metadata, and device-local vertex/index buffer creation through staging uploads. Shader/pipeline/descriptor/draw-command work remains pending.
+- Runtime Prefab support now covers JSON prefab assets, entity hierarchy capture, file save/load without VFS initialization, fresh UUID/runtime handle instantiation, and AssetDatabase classification for `.prefab` / `.zgprefab`.
+- Editor Prefab support now has undoable create/instantiate commands and basic Content Browser entry points.
+- Core logging now provides safe fallback loggers so low-level runtime tests can use logging macros before `Log::Init()`.
 
 ## Current Architecture
 
@@ -219,7 +223,7 @@ Recommended fix:
 
 ### 8. RenderSystem lifecycle is incomplete
 
-Status: partially fixed. `RenderSystem::Initialize`/`Shutdown` are now guarded, release the owned RHI resources more explicitly, refuse unsupported renderer backends, and can initialize the Vulkan device/swapchain skeleton without entering OpenGL resource setup. Full cleanup of every OpenGL-owned helper remains a later renderer task.
+Status: partially fixed. `RenderSystem::Initialize`/`Shutdown` are now guarded, release the owned RHI resources more explicitly, refuse unsupported renderer backends, and can initialize the Vulkan device/swapchain/resource skeleton without entering OpenGL scene-pipeline setup. Full cleanup of every OpenGL-owned helper remains a later renderer task.
 
 Evidence:
 
@@ -274,7 +278,7 @@ Exit criteria:
 
 - CMake configure succeeds through the documented MSVC developer environment command. Verified.
 - `ZgineTests` and `ZgineEditorTests` build. Verified.
-- CTest runs runtime and editor-core tests. Verified, `50/50`.
+- CTest runs runtime and editor-core tests. Verified, `79/79`.
 - Sandbox target compiles. Verified.
 - Editor target compiles. Verified.
 
@@ -289,7 +293,7 @@ Tasks:
 - Define component add/remove hooks for runtime resources, especially physics bodies and audio sources.
 - Evolve `AssetManager` async loading toward background import plus main-thread cache/resource commit for large assets.
 - Continue hardening `RenderSystem` lifecycle and backend ownership.
-- Keep OpenGL as the renderer reference backend while Vulkan advances from clear-frame rendering to real resources and DirectX 12 remains an explicit unsupported stub.
+- Keep OpenGL as the renderer reference backend while Vulkan advances from early buffer resources to shader modules, pipeline state, descriptors, and draw recording. DirectX 12 remains an explicit unsupported stub.
 
 Exit criteria:
 
@@ -309,7 +313,7 @@ Tasks:
 - Add per-script Lua environments and remove global callback collisions.
 - Implement or hide Lua physics APIs.
 - Replace remaining app-level `glm` usage with engine math types except inside backend implementations.
-- Continue Vulkan through the staged backend plan in `docs/rendering-backends.md`: resource classes, shader modules, pipeline state, descriptors, depth resources, then editor ImGui integration.
+- Continue Vulkan through the staged backend plan in `docs/rendering-backends.md`: shader modules, pipeline state, descriptors, command-buffer draw recording, depth resources, then editor ImGui integration.
 
 Exit criteria:
 

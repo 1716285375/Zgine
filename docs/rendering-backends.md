@@ -1,6 +1,6 @@
 # Zgine Rendering Backend Plan
 
-Date: 2026-05-23
+Date: 2026-05-24
 
 Zgine is a teaching engine. The renderer architecture should expose the core ideas behind
 multiple graphics APIs without hiding everything behind a production-grade abstraction too early.
@@ -11,7 +11,7 @@ multiple graphics APIs without hiding everything behind a production-grade abstr
 |---------|--------|---------|
 | OpenGL | Implemented | Default backend. Window context, RHI objects, shaders, framebuffers, post-process, ImGui, and the editor app use OpenGL. |
 | DirectX 12 | Selectable stub | The engine can select the backend and create a no-client-api window, but RHI resources deliberately fail with a clear unsupported message. The editor disables rendering for this backend until a real device/swapchain path exists. |
-| Vulkan | Clear-frame backend | CMake finds the Vulkan SDK, the backend creates an instance, debug messenger, GLFW surface, physical/logical device, queues, swapchain, image views, render pass, framebuffers, command pool/buffers, frame sync, acquire/submit/present, and can clear frames. RHI resources and pipelines are still intentionally incomplete. |
+| Vulkan | Early resource backend | CMake finds the Vulkan SDK, the backend creates an instance, debug messenger, GLFW surface, physical/logical device, queues, swapchain, image views, render pass, framebuffers, command pool/buffers, frame sync, acquire/submit/present, resize recreation, and can clear frames. Vertex-array metadata plus device-local vertex/index buffers are started; shader modules, pipelines, descriptors, and real draw recording are still incomplete. |
 | None | Headless stub | Useful for non-rendering tests and future server/tool scenarios. |
 
 ## Backend Selection
@@ -52,7 +52,7 @@ flowchart TD
     RenderSystem --> RHI["RHI factories"]
     RHI --> GL["OpenGL backend"]
     RHI --> DX12["DirectX 12 backend stub"]
-    RHI --> VK["Vulkan backend clear-frame path"]
+    RHI --> VK["Vulkan backend early resource path"]
 
     Window --> GLContext["OpenGL context"]
     Window --> NoAPI["No-client-api native window"]
@@ -79,7 +79,8 @@ Already started.
 Started for Vulkan.
 
 - Done for Vulkan: instance, validation debug messenger, surface, physical device selection, logical device, graphics/present queues, swapchain, image views, render pass, framebuffers, command pool/buffers, frame sync objects, acquire/submit/present, and resize recreation for the clear-frame path.
-- Still missing for Vulkan: real RHI resource objects, shader modules, pipelines, descriptor binding, depth resources, MSAA, and editor ImGui renderer integration.
+- Started for Vulkan: backend-private device context access, vertex-array metadata, and device-local vertex/index buffers uploaded through a staging buffer.
+- Still missing for Vulkan: shader modules, pipelines, descriptor binding, command-buffer draw recording, depth resources, MSAA, and editor ImGui renderer integration.
 - Still missing for DirectX 12: all device/swapchain objects.
 
 For teaching, keep this visible and simple. Do not introduce a render graph yet.
@@ -88,7 +89,7 @@ For teaching, keep this visible and simple. Do not introduce a render graph yet.
 
 Implement resources in this order:
 
-1. Vertex buffer and index buffer.
+1. Vertex buffer and index buffer. Started for Vulkan.
 2. Shader module / pipeline state.
 3. Texture.
 4. Framebuffer or render target abstraction.
@@ -117,7 +118,7 @@ Editor support should wait until the runtime sample can render a triangle or cub
 ## Rules
 
 - OpenGL remains the reference implementation.
-- DirectX 12 and incomplete Vulkan resource paths must not silently no-op as if they were complete.
+- DirectX 12 and incomplete Vulkan pipeline paths must not silently no-op as if they were complete.
 - Backend-specific includes stay in `src/Renderer/Backend/<API>/**`.
 - Public RHI headers expose Zgine types, not `ID3D12*`, `Vk*`, or OpenGL IDs except where the old teaching OpenGL path still exposes texture IDs.
 - Tests should validate backend selection and unsupported behavior before real resources are implemented.

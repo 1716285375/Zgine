@@ -1,8 +1,17 @@
 # Zgine 游戏引擎架构基线
 
-版本日期：2026-05-22
+版本日期：2026-05-24
 
 本文档是 Zgine 后续开发的架构基线。除非明确修改本文档并同步更新相关模块，后续功能、重构、测试和文档都应按这里的边界推进。
+
+相关文档：
+
+- `docs/constitution.md`：项目宪法和最高约束。
+- `docs/engine-vision.md`：教学引擎定位和阶段目标。
+- `docs/project-standards.md`：代码、测试和 OpenSpec 流程规范。
+- `docs/architecture/`：Runtime/Editor、ECS、Renderer 等架构专题。
+- `docs/specs/`：长期模块规格。
+- `docs/changes/`：功能变更记录。
 
 ## 目标
 
@@ -141,13 +150,13 @@ ZgineRuntime
 职责：
 
 - RHI 抽象、backend 选择、OpenGL reference backend、shader/texture/framebuffer、render pipeline、shadow、post-process。
-- DirectX 12 和 Vulkan 作为教学路线中的显式后端目标存在；Vulkan 已具备 clear-frame swapchain 路径，包含 instance、surface、device、queue、swapchain、image view、render pass、framebuffer、command buffer、sync、acquire/submit/present 和 resize recreation，后续逐步补 resource、pipeline、descriptor 和 shader。
+- DirectX 12 和 Vulkan 作为教学路线中的显式后端目标存在；Vulkan 已具备 clear-frame swapchain 路径，包含 instance、surface、device、queue、swapchain、image view、render pass、framebuffer、command buffer、sync、acquire/submit/present 和 resize recreation，并已开始接入 vertex-array 元数据与 device-local vertex/index buffer。后续逐步补 shader module、pipeline、descriptor、depth 和 draw command recording。
 
 规则：
 
 - Renderer 读取 World 进行绘制，但不拥有 World。
 - Renderer 不依赖 Editor；编辑器 viewport 只是 Renderer 的消费者。
-- OpenGL 调用集中在 RHI/backend/pipeline，不散落到 World 或 Resources。
+- OpenGL 调用集中在 RHI/backend/pipeline，不散落到 World 或通用 Resources；旧 `Resources/Mesh/Mesh` 的 OpenGL 直连路径是待收敛项。
 - DirectX 12 / Vulkan 类型不得泄漏到 public RHI 头文件。
 - 非 OpenGL backend 未完成的 resource/pipeline 路径必须显式失败，不能静默 no-op。
 - `RenderSystem` 生命周期必须幂等：重复 `Initialize`/`Shutdown` 不应破坏状态。
