@@ -206,20 +206,22 @@ Recommended fix:
 
 ### 7. Lua script instances share one global namespace
 
-Evidence:
+Status: fixed. `ScriptSystem` now loads each entity script into its own `sol::environment` with the engine API exposed through the global fallback table, then caches lifecycle callbacks from that environment.
+
+Original evidence:
 
 - `src/Scripting/ScriptSystem.cpp:344` executes each script in `m_LuaState`.
 - `src/Scripting/ScriptSystem.cpp:356-358` reads global `OnStart`, `OnUpdate`, and `OnDestroy` after execution.
 
-Impact:
+Resolved impact:
 
-- Loading one script can overwrite global callbacks from another script.
-- Multi-entity script behavior depends on load order.
+- Script-local variables and lifecycle callbacks no longer collide across entities.
+- `ScriptSystemTest.ScriptInstancesUseIsolatedGlobals` covers two entities using conflicting script globals.
 
-Recommended fix:
+Remaining work:
 
-- Load each script into an environment/table and cache functions from that environment.
-- Define a script module convention, then test two entities with different scripts.
+- Define a clearer script module convention before exposing a larger gameplay API.
+- Add binding-level smoke tests for each public Lua helper.
 
 ### 8. RenderSystem lifecycle is incomplete
 

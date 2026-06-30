@@ -28,6 +28,7 @@ struct ScriptSystem::Impl {
     sol::state LuaState;
 
     struct ScriptInstance {
+        sol::environment Environment;
         sol::function OnStart;
         sol::function OnUpdate;
         sol::function OnDestroy;
@@ -322,7 +323,8 @@ void ScriptSystem::Update(World* World, float deltaTime) {
         }
 
         // 从缓存获取函数
-        uint32_t entityId = static_cast<uint32_t>(entity);
+        const Entity scriptEntity(Internal::FromEnTT(entity), World);
+        const uint32_t entityId = scriptEntity.GetHandle().GetValue();
         auto it = m_Impl->ScriptInstances.find(entityId);
         if (it == m_Impl->ScriptInstances.end()) {
             continue;
@@ -331,7 +333,7 @@ void ScriptSystem::Update(World* World, float deltaTime) {
         // 调用 OnUpdate
         try {
             if (it->second.OnUpdate.valid()) {
-                auto result = it->second.OnUpdate(Entity(Internal::FromEnTT(entity), World), deltaTime);
+                auto result = it->second.OnUpdate(scriptEntity, deltaTime);
                 if (!result.valid()) {
                     sol::error err = result;
                     ZGINE_CORE_ERROR("Script error in OnUpdate (entity {}): {}", entityId, err.what());
@@ -363,8 +365,14 @@ bool ScriptSystem::LoadScript(Entity entity) {
             return false;
         }
 
-        // 执行脚本
-        auto result = m_Impl->LuaState.script(scriptContent, script.ScriptPath);
+        // Each entity script gets its own environment. Engine bindings remain
+        // available through the global fallback, while script globals stay local.
+        sol::environment environment(m_Impl->LuaState, sol::create, m_Impl->LuaState.globals());
+        auto result = m_Impl->LuaState.script(
+            scriptContent,
+            environment,
+            sol::script_default_on_error,
+            script.ScriptPath);
 
         if (!result.valid()) {
             sol::error err = result;
@@ -375,10 +383,11 @@ bool ScriptSystem::LoadScript(Entity entity) {
         // 缓存函数引用
         uint32_t entityId = entity.GetHandle().GetValue();
         Impl::ScriptInstance instance;
+        instance.Environment = environment;
         instance.ScriptPath = script.ScriptPath;
-        instance.OnStart = m_Impl->LuaState["OnStart"];
-        instance.OnUpdate = m_Impl->LuaState["OnUpdate"];
-        instance.OnDestroy = m_Impl->LuaState["OnDestroy"];
+        instance.OnStart = environment["OnStart"];
+        instance.OnUpdate = environment["OnUpdate"];
+        instance.OnDestroy = environment["OnDestroy"];
 
         // 获取文件修改时间
         try {
@@ -463,7 +472,8 @@ void ScriptSystem::CheckForChanges(World* World) {
             continue;
         }
 
-        uint32_t entityId = static_cast<uint32_t>(entity);
+        const Entity scriptEntity(Internal::FromEnTT(entity), World);
+        const uint32_t entityId = scriptEntity.GetHandle().GetValue();
         auto it = m_Impl->ScriptInstances.find(entityId);
         if (it == m_Impl->ScriptInstances.end()) {
             continue;

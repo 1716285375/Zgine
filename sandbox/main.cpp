@@ -28,11 +28,12 @@ namespace Zgine {
             AssetManager::Get().Initialize();
             PBRMaterialPresetRegistry::Initialize();
 
-            m_PhysicsSystem.Initialize();
-            m_AudioSystem.Initialize();
-            m_ScriptSystem.Initialize();
-            // m_PhysicsSystem.SetPhysicsSystem(&m_PhysicsSystem); // Removed: not needed
             m_ScriptSystem.SetAudioSystem(&m_AudioSystem);
+            auto& systems = m_World.GetSystemManager();
+            systems.RegisterExternalSystem(&m_PhysicsSystem);
+            systems.RegisterExternalSystem(&m_AudioSystem);
+            systems.RegisterExternalSystem(&m_ScriptSystem);
+            systems.InitializeAll();
 
             // 初始化渲染系统 / Initialize rendering system
             const RendererAPI::API rendererAPI = RendererAPI::GetAPI();
@@ -65,9 +66,7 @@ namespace Zgine {
             // Set up test World
             SetupTestScene();
 
-            m_PhysicsSystem.OnSceneStart(&m_World);
-            m_AudioSystem.OnSceneStart(&m_World);
-            m_ScriptSystem.OnSceneStart(&m_World);
+            m_World.GetSystemManager().StartScene(&m_World);
         }
 
         void SetupTestScene() {
@@ -111,10 +110,12 @@ namespace Zgine {
         }
 
         virtual void OnDetach() override {
-            m_PhysicsSystem.OnSceneStop();
-            m_AudioSystem.OnSceneStop();
-            m_ScriptSystem.OnSceneStop();
+            m_World.GetSystemManager().ShutdownAll();
             m_RenderSystem.Shutdown();
+        }
+
+        virtual void OnFixedUpdate(Timestep ts) override {
+            m_World.GetSystemManager().FixedUpdateAll(&m_World, ts.GetSecondsF());
         }
 
         virtual void OnUpdate(Timestep ts) override {
@@ -129,10 +130,7 @@ namespace Zgine {
             if (Input::IsKeyPressed(GLFW_KEY_Q)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, -moveSpeed, 0));
             if (Input::IsKeyPressed(GLFW_KEY_E)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
 
-            // System updates
-            m_PhysicsSystem.Step(ts);
-            m_PhysicsSystem.SyncPhysicsToECS(&m_World);
-            m_AudioSystem.Update(&m_World, ts);
+            m_World.GetSystemManager().UpdateAll(&m_World, ts.GetSecondsF());
 
             if (!m_RenderingAvailable) {
                 return;

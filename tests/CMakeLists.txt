@@ -27,6 +27,7 @@ add_executable(ZgineTests
     PrefabTests.cpp
     RendererBackendTests.cpp
     SceneRuntimeTests.cpp
+    ScriptSystemTests.cpp
     SystemManagerTests.cpp
 )
 
