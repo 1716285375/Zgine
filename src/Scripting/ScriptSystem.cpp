@@ -227,20 +227,14 @@ void ScriptSystem::BindEntityAPI() {
 
 void ScriptSystem::BindPhysicsAPI() {
     m_Impl->LuaState["applyForce"] = [this](Entity entity, float x, float y, float z) {
-        // 通过 PhysicsSystem 应用力
         if (m_PhysicsSystem && entity.HasComponent<RigidbodyComponent>()) {
-            // 需要 PhysicsSystem 提供应用力的接口
-            // 暂时留空，等待 PhysicsSystem 扩展
-            ZGINE_UNUSED(x); ZGINE_UNUSED(y); ZGINE_UNUSED(z);
+            m_PhysicsSystem->ApplyForce(entity, Math::Vector3(x, y, z));
         }
     };
 
     m_Impl->LuaState["setVelocity"] = [this](Entity entity, float x, float y, float z) {
-        // 设置速度
         if (m_PhysicsSystem && entity.HasComponent<RigidbodyComponent>()) {
-            // 需要 PhysicsSystem 提供设置速度的接口
-            // 暂时留空，等待 PhysicsSystem 扩展
-            ZGINE_UNUSED(x); ZGINE_UNUSED(y); ZGINE_UNUSED(z);
+            m_PhysicsSystem->SetLinearVelocity(entity, Math::Vector3(x, y, z));
         }
     };
 }

@@ -103,6 +103,19 @@ namespace {
         }
     };
 
+    BodyID ToBodyID(const RuntimePhysicsBody& runtimeBody) {
+        const uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(runtimeBody.Get()));
+        return BodyID(id);
+    }
+
+    Vec3 ToJoltVector(const Math::Vector3& vector) {
+        return Vec3(vector.x, vector.y, vector.z);
+    }
+
+    Math::Vector3 FromJoltVector(const Vec3& vector) {
+        return Math::Vector3(vector.GetX(), vector.GetY(), vector.GetZ());
+    }
+
     BPLayerInterfaceImpl s_BroadPhaseLayerInterface;
     ObjectVsBroadPhaseLayerFilterImpl s_ObjectVsBroadPhaseLayerFilter;
     ObjectLayerPairFilterImpl s_ObjectLayerPairFilter;
@@ -263,7 +276,10 @@ void PhysicsSystem::FixedUpdate(World* World, float fixedDeltaTime) {
 
 
 void PhysicsSystem::CreateBody(Entity entity) {
-    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+    if (!m_Initialized || !m_Impl->BodyInterface ||
+        !entity.HasComponent<RigidbodyComponent>() ||
+        !entity.HasComponent<TransformComponent>() ||
+        !entity.HasComponent<BoxColliderComponent>()) {
         return;
     }
 
@@ -299,9 +315,19 @@ void PhysicsSystem::CreateBody(Entity entity) {
 
     ObjectLayer layer = (motionType == EMotionType::Static) ? LAYER_NON_MOVING : LAYER_MOVING;
     BodyCreationSettings bodySettings(shape, position, rotation, motionType, layer);
-    bodySettings.mMassPropertiesOverride.mMass = rigidBody.Mass;
+    bodySettings.mOverrideMassProperties = EOverrideMassProperties::CalculateInertia;
+    bodySettings.mMassPropertiesOverride.mMass = std::max(rigidBody.Mass, 0.001f);
     bodySettings.mFriction = rigidBody.Friction;
     bodySettings.mRestitution = rigidBody.Restitution;
+    bodySettings.mLinearDamping = std::max(rigidBody.LinearDrag, 0.0f);
+    bodySettings.mAngularDamping = std::max(rigidBody.AngularDrag, 0.0f);
+    bodySettings.mGravityFactor = rigidBody.GravityScale;
+    if (rigidBody.FixedRotation) {
+        bodySettings.mAllowedDOFs =
+            EAllowedDOFs::TranslationX |
+            EAllowedDOFs::TranslationY |
+            EAllowedDOFs::TranslationZ;
+    }
 
     // Create body
     Body* body = m_Impl->BodyInterface->CreateBody(bodySettings);
@@ -322,12 +348,71 @@ void PhysicsSystem::DestroyBody(Entity entity) {
 
     auto& rigidBody = entity.GetComponent<RigidbodyComponent>();
     if (rigidBody.RuntimeBody.IsValid()) {
-        uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(rigidBody.RuntimeBody.Get()));
-        BodyID bodyID(id);
+        const BodyID bodyID = ToBodyID(rigidBody.RuntimeBody);
         m_Impl->BodyInterface->RemoveBody(bodyID);
         m_Impl->BodyInterface->DestroyBody(bodyID);
         rigidBody.RuntimeBody.Reset();
     }
+}
+
+void PhysicsSystem::ApplyForce(Entity entity, const Math::Vector3& force) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+        return;
+    }
+
+    auto& rigidBody = entity.GetComponent<RigidbodyComponent>();
+    if (rigidBody.Type != RigidbodyType::Dynamic) {
+        return;
+    }
+
+    if (!rigidBody.RuntimeBody.IsValid()) {
+        CreateBody(entity);
+    }
+
+    if (!rigidBody.RuntimeBody.IsValid()) {
+        return;
+    }
+
+    m_Impl->BodyInterface->AddForce(
+        ToBodyID(rigidBody.RuntimeBody),
+        ToJoltVector(force),
+        EActivation::Activate);
+}
+
+void PhysicsSystem::SetLinearVelocity(Entity entity, const Math::Vector3& velocity) {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+        return;
+    }
+
+    auto& rigidBody = entity.GetComponent<RigidbodyComponent>();
+    if (rigidBody.Type == RigidbodyType::Static) {
+        return;
+    }
+
+    if (!rigidBody.RuntimeBody.IsValid()) {
+        CreateBody(entity);
+    }
+
+    if (!rigidBody.RuntimeBody.IsValid()) {
+        return;
+    }
+
+    m_Impl->BodyInterface->SetLinearVelocity(
+        ToBodyID(rigidBody.RuntimeBody),
+        ToJoltVector(velocity));
+}
+
+Math::Vector3 PhysicsSystem::GetLinearVelocity(Entity entity) const {
+    if (!m_Initialized || !m_Impl->BodyInterface || !entity.HasComponent<RigidbodyComponent>()) {
+        return Math::Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    const auto& rigidBody = entity.GetComponent<RigidbodyComponent>();
+    if (!rigidBody.RuntimeBody.IsValid() || rigidBody.Type == RigidbodyType::Static) {
+        return Math::Vector3(0.0f, 0.0f, 0.0f);
+    }
+
+    return FromJoltVector(m_Impl->BodyInterface->GetLinearVelocity(ToBodyID(rigidBody.RuntimeBody)));
 }
 
 void PhysicsSystem::SyncPhysicsToECS(World* World) {
@@ -344,8 +429,7 @@ void PhysicsSystem::SyncPhysicsToECS(World* World) {
         auto& transform = registry.get<TransformComponent>(entity);
 
         if (rigidBody.RuntimeBody.IsValid() && rigidBody.Type == RigidbodyType::Dynamic) {
-            uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(rigidBody.RuntimeBody.Get()));
-            BodyID bodyID(id);
+            const BodyID bodyID = ToBodyID(rigidBody.RuntimeBody);
 
             BodyLockRead lock(m_Impl->PhysicsSystem->GetBodyLockInterface(), bodyID);
             if (lock.Succeeded()) {
@@ -388,8 +472,7 @@ void PhysicsSystem::UpdateBodyTransform(Entity entity) {
         return;
     }
 
-    uint32 id = static_cast<uint32>(reinterpret_cast<uintptr_t>(rigidBody.RuntimeBody.Get()));
-    BodyID bodyID(id);
+    const BodyID bodyID = ToBodyID(rigidBody.RuntimeBody);
 
     Vec3 position(transform.Translation.x, transform.Translation.y, transform.Translation.z);
     // Convert Euler angles (degrees) to Jolt Quat

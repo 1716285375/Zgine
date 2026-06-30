@@ -188,20 +188,26 @@ Remaining work:
 
 ### 6. Script API advertises physics functions that are no-ops
 
-Evidence:
+Status: fixed for the current force/velocity surface. `PhysicsSystem` now owns `ApplyForce`, `SetLinearVelocity`, and `GetLinearVelocity`, and Lua `applyForce` / `setVelocity` delegate to those runtime body APIs.
+
+Original evidence:
 
 - `src/Scripting/ScriptSystem.cpp:205` binds `applyForce`.
 - `src/Scripting/ScriptSystem.cpp:214` binds `setVelocity`.
 - `src/Scripting/ScriptSystem.cpp:209` and `218` state the implementation is temporarily empty.
 
-Impact:
+Resolved implementation:
 
-- Lua scripts can call physics APIs that silently do nothing.
-- Gameplay behavior will be misleading during feature work.
+- `include/Zgine/Physics/PhysicsSystem.h` exposes runtime force and linear velocity controls.
+- `src/Scripting/ScriptSystem.cpp` delegates Lua `applyForce` / `setVelocity` to `PhysicsSystem`.
 
-Recommended fix:
+Resolved impact:
 
-- Either implement force/velocity methods on `PhysicsSystem`, or remove/hide these Lua bindings until supported.
+- Lua scripts no longer call silently empty physics bindings for force and velocity.
+- `ScriptSystemTest.PhysicsBindingsDriveRuntimeBodies` verifies the binding path against a real Jolt body.
+
+Remaining work:
+
 - Add a script binding test for every exported gameplay API.
 
 ### 7. Lua script instances share one global namespace

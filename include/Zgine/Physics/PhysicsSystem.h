@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/World/Systems/ISystem.h>
 #include <memory>
 
@@ -27,6 +28,11 @@ public:
     // 创建物理体
     void CreateBody(class Entity entity);
     void DestroyBody(class Entity entity);
+
+    // Runtime body controls used by gameplay systems and Lua bindings.
+    void ApplyForce(class Entity entity, const Math::Vector3& force);
+    void SetLinearVelocity(class Entity entity, const Math::Vector3& velocity);
+    Math::Vector3 GetLinearVelocity(class Entity entity) const;
 
     // 同步物理世界和 ECS 变换
     void SyncPhysicsToECS(World* World);

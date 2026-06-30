@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Platform/IO/VFS.h>
 #include <Zgine/Scripting/ScriptSystem.h>
 #include <Zgine/World/Components/Components.h>
@@ -111,4 +112,45 @@ end
     EXPECT_FALSE(second.GetComponent<Zgine::ScriptComponent>().IsInitialized);
     EXPECT_FLOAT_EQ(first.GetComponent<Zgine::TransformComponent>().Translation.x, -1.0f);
     EXPECT_FLOAT_EQ(second.GetComponent<Zgine::TransformComponent>().Translation.x, -10.0f);
+}
+
+TEST_F(ScriptSystemTest, PhysicsBindingsDriveRuntimeBodies) {
+    WriteScript("physics.lua", R"(
+function OnStart(entity)
+    setVelocity(entity, 2.0, 3.0, 4.0)
+    applyForce(entity, 60.0, 0.0, 0.0)
+end
+)");
+
+    Zgine::World world;
+    Zgine::Entity entity = world.CreateEntity("PhysicsBody");
+    entity.AddComponent<Zgine::RigidbodyComponent>();
+    entity.AddComponent<Zgine::BoxColliderComponent>();
+    entity.AddComponent<Zgine::ScriptComponent>("physics.lua");
+
+    Zgine::PhysicsSystem physics;
+    Zgine::ScriptSystem scripts;
+    physics.Initialize();
+    scripts.Initialize();
+    scripts.SetPhysicsSystem(&physics);
+
+    physics.OnSceneStart(&world);
+    scripts.OnSceneStart(&world);
+
+    ASSERT_TRUE(entity.GetComponent<Zgine::ScriptComponent>().IsInitialized);
+    ASSERT_TRUE(entity.GetComponent<Zgine::RigidbodyComponent>().RuntimeBody.IsValid());
+
+    Zgine::Math::Vector3 velocity = physics.GetLinearVelocity(entity);
+    EXPECT_FLOAT_EQ(velocity.x, 2.0f);
+    EXPECT_FLOAT_EQ(velocity.y, 3.0f);
+    EXPECT_FLOAT_EQ(velocity.z, 4.0f);
+
+    physics.Step(1.0f / 60.0f);
+    velocity = physics.GetLinearVelocity(entity);
+    EXPECT_GT(velocity.x, 2.0f);
+
+    scripts.OnSceneStop();
+    physics.OnSceneStop();
+    scripts.Shutdown();
+    physics.Shutdown();
 }
