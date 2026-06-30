@@ -40,6 +40,7 @@ bool SceneRuntime::Start(std::unique_ptr<World> runtimeWorld) {
     }
 
     m_World = std::move(runtimeWorld);
+    m_World->GetSystemManager().InitializeAll();
     m_World->GetSystemManager().StartScene(m_World.get());
     m_Running = true;
     return true;
@@ -51,9 +52,7 @@ void SceneRuntime::Stop() {
         return;
     }
 
-    if (m_Running) {
-        m_World->GetSystemManager().StopScene();
-    }
+    m_World->GetSystemManager().ShutdownAll();
 
     m_World.reset();
     m_Running = false;

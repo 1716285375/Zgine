@@ -9,9 +9,10 @@ void SystemManager::InitializeAll() {
 
     auto allSystems = GetAllSystems();
     for (ISystem* system : allSystems) {
-        if (system && system->IsEnabled()) {
+        if (system && system->IsEnabled() && !m_InitializedSystems.contains(system)) {
             ZGINE_CORE_INFO("Initializing system: {}", system->GetName());
             system->Initialize();
+            m_InitializedSystems.insert(system);
         }
     }
 }
@@ -55,6 +56,7 @@ void SystemManager::StartScene(World* World) {
         if (system && system->IsEnabled()) {
             ZGINE_CORE_INFO("Starting scene for system: {}", system->GetName());
             system->OnSceneStart(World);
+            m_SceneStartedSystems.insert(system);
         }
     }
 }
@@ -67,13 +69,10 @@ void SystemManager::StopScene() {
 
     auto allSystems = GetAllSystems();
     for (auto it = allSystems.rbegin(); it != allSystems.rend(); ++it) {
-        ISystem* system = *it;
-        if (system) {
-            ZGINE_CORE_INFO("Stopping scene for system: {}", system->GetName());
-            system->OnSceneStop();
-        }
+        StopSystemScene(*it);
     }
 
+    m_SceneStartedSystems.clear();
     m_ActiveScene = nullptr;
     m_SceneRunning = false;
 }
@@ -97,21 +96,20 @@ void SystemManager::ShutdownAll() {
     // Shutdown in reverse order
     auto allSystems = GetAllSystems();
     for (auto it = allSystems.rbegin(); it != allSystems.rend(); ++it) {
-        ISystem* system = *it;
-        if (system) {
-            ZGINE_CORE_INFO("Shutting down system: {}", system->GetName());
-            system->Shutdown();
-        }
+        ShutdownSystem(*it);
     }
+
+    m_InitializedSystems.clear();
 }
 
 void SystemManager::Clear() {
-    StopScene();
     ShutdownAll();
     m_Systems.clear();
     m_ExternalSystems.clear();
     m_SystemMap.clear();
     m_RegistrationOrder.clear();
+    m_InitializedSystems.clear();
+    m_SceneStartedSystems.clear();
     m_NextRegistrationOrder = 0;
     m_Sorted = false;
     m_ActiveScene = nullptr;
@@ -174,6 +172,26 @@ std::vector<ISystem*> SystemManager::GetAllSystems() {
         });
 
     return allSystems;
+}
+
+void SystemManager::StopSystemScene(ISystem* system) {
+    if (!system || !m_SceneStartedSystems.contains(system)) {
+        return;
+    }
+
+    ZGINE_CORE_INFO("Stopping scene for system: {}", system->GetName());
+    system->OnSceneStop();
+    m_SceneStartedSystems.erase(system);
+}
+
+void SystemManager::ShutdownSystem(ISystem* system) {
+    if (!system || !m_InitializedSystems.contains(system)) {
+        return;
+    }
+
+    ZGINE_CORE_INFO("Shutting down system: {}", system->GetName());
+    system->Shutdown();
+    m_InitializedSystems.erase(system);
 }
 
 } // namespace Zgine

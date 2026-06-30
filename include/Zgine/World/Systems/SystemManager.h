@@ -5,8 +5,10 @@
 #include <memory>
 #include <vector>
 #include <algorithm>
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
+#include <unordered_set>
 
 namespace Zgine {
 
@@ -58,6 +60,10 @@ public:
     T* RegisterExternalSystem(T* system) {
         static_assert(std::is_base_of<ISystem, T>::value, "T must inherit from ISystem");
 
+        if (!system) {
+            return nullptr;
+        }
+
         m_ExternalSystems.push_back(system);
         m_SystemMap[std::type_index(typeid(T))] = system;
         m_RegistrationOrder[system] = m_NextRegistrationOrder++;
@@ -101,14 +107,19 @@ public:
         // Remove from map
         m_SystemMap.erase(typeIndex);
 
-        // Remove registration order entries before removing system storage
+        // Stop scene-bound state and shutdown initialized systems before
+        // removing storage or releasing an external registration.
         for (const auto& sys : m_Systems) {
             if (std::type_index(typeid(*sys)) == typeIndex) {
+                StopSystemScene(sys.get());
+                ShutdownSystem(sys.get());
                 m_RegistrationOrder.erase(sys.get());
             }
         }
         for (ISystem* sys : m_ExternalSystems) {
             if (std::type_index(typeid(*sys)) == typeIndex) {
+                StopSystemScene(sys);
+                ShutdownSystem(sys);
                 m_RegistrationOrder.erase(sys);
             }
         }
@@ -198,6 +209,11 @@ private:
     std::unordered_map<ISystem*, size_t> m_RegistrationOrder;
     size_t m_NextRegistrationOrder = 0;
 
+    // Systems that have actually received Initialize/OnSceneStart. These sets
+    // keep Shutdown/OnSceneStop symmetric when systems are disabled or removed.
+    std::unordered_set<ISystem*> m_InitializedSystems;
+    std::unordered_set<ISystem*> m_SceneStartedSystems;
+
     // Whether systems are sorted by priority
     bool m_Sorted = false;
 
@@ -214,6 +230,9 @@ private:
      * @brief Get all systems in a single vector for iteration
      */
     std::vector<ISystem*> GetAllSystems();
+
+    void StopSystemScene(ISystem* system);
+    void ShutdownSystem(ISystem* system);
 };
 
 } // namespace Zgine

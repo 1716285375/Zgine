@@ -147,7 +147,7 @@ Recommended fix:
 
 ### 4. SystemManager does not globally sort owned and external systems
 
-Status: fixed in the architecture cleanup. The final execution list is now globally sorted by priority, with registration order as the tie-breaker.
+Status: fixed in the architecture cleanup. The final execution list is now globally sorted by priority, with registration order as the tie-breaker. Lifecycle symmetry is now tracked per system: only systems that actually receive `Initialize` are shut down, and only systems that actually receive `OnSceneStart` are stopped.
 
 Evidence:
 
@@ -296,7 +296,7 @@ Goal: make core engine boundaries predictable before adding features.
 
 Tasks:
 
-- Extend `SystemManager` tests for enable/disable behavior and shutdown reverse order.
+- Extend `SystemManager` tests for enable/disable behavior and shutdown reverse order. Done.
 - Move physics/audio/script lifecycle from sample code into `World` or a scene runtime coordinator.
 - Define component add/remove hooks for runtime resources, especially physics bodies and audio sources.
 - Evolve `AssetManager` async loading toward background import plus main-thread cache/resource commit for large assets.

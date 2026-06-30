@@ -109,7 +109,7 @@ TEST(SceneRuntimeTest, StartUpdateAndStopUseSceneLifecycle) {
     EXPECT_TRUE(runtime.Start(std::move(runtimeWorld)));
     EXPECT_TRUE(runtime.IsRunning());
     EXPECT_NE(runtime.GetWorld(), nullptr);
-    EXPECT_EQ(counters.Initialized, 0);
+    EXPECT_EQ(counters.Initialized, 1);
     EXPECT_EQ(counters.SceneStarted, 1);
 
     runtime.Update(0.016f);
@@ -124,10 +124,11 @@ TEST(SceneRuntimeTest, StartUpdateAndStopUseSceneLifecycle) {
     EXPECT_FALSE(runtime.IsRunning());
     EXPECT_EQ(runtime.GetWorld(), nullptr);
     EXPECT_EQ(counters.SceneStopped, 1);
-    EXPECT_EQ(counters.Shutdown, 0);
+    EXPECT_EQ(counters.Shutdown, 1);
 
     runtime.Stop();
     EXPECT_EQ(counters.SceneStopped, 1);
+    EXPECT_EQ(counters.Shutdown, 1);
 }
 
 TEST(SceneRuntimeTest, StartRejectsNullWorldWithoutChangingState) {
