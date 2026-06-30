@@ -142,6 +142,11 @@ htmlcov/
 __pycache__/
 *.pyc
 
+# Local tool artifacts
+.claude/
+.codegraph/
+repomix-output.xml
+
 # Backup files
 *.bak
 *.orig
