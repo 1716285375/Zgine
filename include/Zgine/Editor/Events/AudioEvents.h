@@ -21,7 +21,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "AudioActionEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity)
+           << ", Entity:" << m_Entity.GetHandle().GetValue()
            << ", Action:" << static_cast<int>(m_Action) << "]";
         return ss.str();
     }

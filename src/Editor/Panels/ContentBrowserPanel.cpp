@@ -1,10 +1,20 @@
 #include <Zgine/Editor/Panels/ContentBrowserPanel.h>
-#include <Zgine/Renderer/RHI/Texture.h>
+#include <Zgine/Editor/Commands/EditorCommandHistory.h>
+#include <Zgine/Editor/Commands/PrefabCommands.h>
+#include <Zgine/Editor/Core/AssetSelectionContext.h>
+#include <Zgine/Editor/Core/EditorContext.h>
+#include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Core/Log/Log.h>
+#include <Zgine/Renderer/RHI/Texture.h>
+#include <Zgine/World/Components/Components.h>
+#include <Zgine/World/Core/World.h>
+
 #include <imgui.h>
+
 #include <algorithm>
 #include <cctype>
 #include <cstring>
+#include <system_error>
 
 namespace Zgine
 {
@@ -27,10 +37,12 @@ namespace Zgine
     {
         m_AssetsRoot = root;
 		m_AssetsCurrentDir = root;
+        GetContext().GetAssetSelectionContext().Clear();
+        RefreshAssetDatabase();
 	}
 
 	void ContentBrowserPanel::OnAttach() {
-		// Initialize file watchers if needed
+        RefreshAssetDatabase();
 	}
 
 	void ContentBrowserPanel::OnDetach() {
@@ -40,16 +52,24 @@ namespace Zgine
 
 	void ContentBrowserPanel::OnUpdate(float deltaTime) {
 		ZGINE_UNUSED(deltaTime);
-		// Content browser doesn't need per-frame updates
 	}
 
     void ContentBrowserPanel::OnGuiRender()
     {
         BeginPanel();
 
+        if (!m_AssetDatabase.IsScanned())
+        {
+            RefreshAssetDatabase();
+        }
+
         if (!std::filesystem::exists(m_AssetsRoot))
         {
             ImGui::Text("Assets directory not found.");
+            if (ImGui::Button("Refresh"))
+            {
+                RefreshAssetDatabase();
+            }
             EndPanel();
             return;
         }
@@ -60,6 +80,11 @@ namespace Zgine
         }
 
         ImGui::TextUnformatted("Content Browser");
+        ImGui::SameLine();
+        if (ImGui::Button("Refresh"))
+        {
+            RefreshAssetDatabase();
+        }
         ImGui::SameLine();
         if (m_AssetsCurrentDir != m_AssetsRoot)
         {
@@ -113,6 +138,7 @@ namespace Zgine
                     {
                         ZGINE_CORE_INFO("Imported asset: {}", destination.string());
                         m_ImportPathInput.clear();
+                        RefreshAssetDatabase();
                     }
                 }
                 else
@@ -120,6 +146,11 @@ namespace Zgine
                     ZGINE_CORE_WARN("Import path not found: {}", m_ImportPathInput);
                 }
             }
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Create Prefab"))
+        {
+            CreatePrefabFromPrimarySelection();
         }
 
         ImGui::Separator();
@@ -141,15 +172,11 @@ namespace Zgine
         }
         ImGui::Columns(columnCount, nullptr, false);
 
-        std::error_code ec;
         std::string searchLower = ToLower(m_AssetSearch);
-        for (const auto &entry : std::filesystem::directory_iterator(m_AssetsCurrentDir, ec))
+        const auto records = GetCurrentDirectoryRecords();
+        for (const AssetRecord* record : records)
         {
-            if (ec)
-            {
-                break;
-            }
-            const auto &path = entry.path();
+            const auto &path = record->SourcePath;
             std::string name = path.filename().string();
             if (!searchLower.empty())
             {
@@ -161,9 +188,9 @@ namespace Zgine
             }
 
             ImGui::PushID(name.c_str());
-            bool isDir = entry.is_directory();
+            bool isDir = record->IsDirectory;
             std::shared_ptr<Texture> thumbnail;
-            if (!isDir && IsImageFile(path))
+            if (!isDir && record->Type == AssetType::Texture && IsImageFile(path))
             {
                 const std::string key = path.string();
                 auto it = m_ThumbnailCache.find(key);
@@ -188,7 +215,13 @@ namespace Zgine
             }
             else
             {
-                ImGui::Button(isDir ? "[DIR]" : "[FILE]", thumbSize);
+                ImGui::Button(GetAssetButtonLabel(record->Type, isDir), thumbSize);
+            }
+
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
+            {
+                GetContext().GetAssetSelectionContext().Select(*record);
+                GetContext().GetSelectionContext().Clear();
             }
 
             if (ImGui::BeginDragDropSource())
@@ -212,17 +245,21 @@ namespace Zgine
         }
 
         ImGui::Columns(1);
+        RenderSelectedAssetDetails();
         ImGui::EndChild();
         EndPanel();
     }
 
     void ContentBrowserPanel::RenderAssetTreeNode(const std::filesystem::path &path)
     {
-        std::error_code ec;
-        bool hasChildren = std::filesystem::is_directory(path, ec);
-        if (ec)
+        bool hasChildren = false;
+        for (const AssetRecord& record : m_AssetDatabase.GetRecords())
         {
-            return;
+            if (record.IsDirectory && record.SourcePath.parent_path() == path)
+            {
+                hasChildren = true;
+                break;
+            }
         }
 
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -244,33 +281,219 @@ namespace Zgine
         bool opened = ImGui::TreeNodeEx(label.c_str(), flags);
         if (ImGui::IsItemClicked())
         {
-            if (hasChildren)
-            {
-                m_AssetsCurrentDir = path;
-            }
+            m_AssetsCurrentDir = path;
         }
 
         if (opened && hasChildren)
         {
-            for (const auto &entry : std::filesystem::directory_iterator(path, ec))
+            for (const AssetRecord& record : m_AssetDatabase.GetRecords())
             {
-                if (ec)
+                if (record.IsDirectory && record.SourcePath.parent_path() == path)
                 {
-                    break;
-                }
-                if (entry.is_directory())
-                {
-                    RenderAssetTreeNode(entry.path());
+                    RenderAssetTreeNode(record.SourcePath);
                 }
             }
             ImGui::TreePop();
         }
     }
 
+    void ContentBrowserPanel::RefreshAssetDatabase()
+    {
+        const std::filesystem::path previousRoot = m_AssetsRoot;
+        const std::filesystem::path previousCurrentDir = m_AssetsCurrentDir;
+        std::error_code relativeEc;
+        const std::filesystem::path previousCurrentRelative =
+            std::filesystem::relative(previousCurrentDir, previousRoot, relativeEc);
+
+        AssetDatabaseConfig config;
+        config.AssetsRoot = m_AssetsRoot;
+        config.IncludeDirectories = true;
+        config.IncludeUnknownFiles = true;
+        m_AssetDatabase.Scan(config);
+
+        if (m_AssetDatabase.IsScanned())
+        {
+            m_AssetsRoot = m_AssetDatabase.GetAssetsRoot();
+
+            if (!relativeEc && previousCurrentRelative != ".")
+            {
+                m_AssetsCurrentDir = (m_AssetsRoot / previousCurrentRelative).lexically_normal();
+            }
+            else
+            {
+                m_AssetsCurrentDir = m_AssetsRoot;
+            }
+
+            std::error_code existsEc;
+            if (!std::filesystem::exists(m_AssetsCurrentDir, existsEc) ||
+                !std::filesystem::is_directory(m_AssetsCurrentDir, existsEc))
+            {
+                m_AssetsCurrentDir = m_AssetsRoot;
+            }
+        }
+
+        m_ThumbnailCache.clear();
+    }
+
+    void ContentBrowserPanel::RenderSelectedAssetDetails()
+    {
+        const AssetSelectionContext& assetSelectionContext = GetContext().GetAssetSelectionContext();
+        if (!assetSelectionContext.HasSelection())
+        {
+            return;
+        }
+
+        const AssetSelection& selected = assetSelectionContext.GetSelection();
+        if (!selected.IsValid())
+        {
+            return;
+        }
+
+        ImGui::Separator();
+        ImGui::TextUnformatted("Selected Asset");
+        ImGui::Text("Name: %s", selected.SourcePath.filename().string().c_str());
+        ImGui::Text("Type: %s", AssetTypeToString(selected.Type));
+        ImGui::Text("Relative: %s", selected.RelativePath.generic_string().c_str());
+        ImGui::Text("Source: %s", selected.SourcePath.string().c_str());
+        if (selected.Handle.IsValid())
+        {
+            ImGui::Text("Handle: %s", selected.Handle.ToString().c_str());
+        }
+        else
+        {
+            ImGui::TextUnformatted("Handle: <none>");
+        }
+
+        if (selected.Type == AssetType::Prefab && !selected.IsDirectory)
+        {
+            if (ImGui::Button("Instantiate Prefab"))
+            {
+                InstantiateSelectedPrefab();
+            }
+        }
+
+        if (GetContext().GetSelectionContext().HasSelection())
+        {
+            if (ImGui::Button("Create Prefab From Entity"))
+            {
+                CreatePrefabFromPrimarySelection();
+            }
+        }
+    }
+
+    void ContentBrowserPanel::CreatePrefabFromPrimarySelection()
+    {
+        World* world = GetContext().GetSceneContext().GetActiveScene();
+        Entity sourceRoot = GetContext().GetSelectionContext().GetPrimary();
+        if (!world || !sourceRoot || !sourceRoot.IsValid()) {
+            return;
+        }
+
+        std::string baseName = "Prefab";
+        if (sourceRoot.HasComponent<TagComponent>()) {
+            baseName = sourceRoot.GetComponent<TagComponent>().Tag;
+        }
+
+        const std::filesystem::path targetPath =
+            m_AssetsCurrentDir / (SanitizeAssetFilename(baseName) + ".prefab");
+        auto command = std::make_unique<CreatePrefabFromEntityCommand>(sourceRoot, targetPath);
+        if (GetContext().GetCommandHistory().Execute(std::move(command))) {
+            RefreshAssetDatabase();
+        }
+    }
+
+    void ContentBrowserPanel::InstantiateSelectedPrefab()
+    {
+        World* world = GetContext().GetSceneContext().GetActiveScene();
+        const AssetSelection& selected = GetContext().GetAssetSelectionContext().GetSelection();
+        if (!world || selected.Type != AssetType::Prefab || selected.IsDirectory || selected.SourcePath.empty()) {
+            return;
+        }
+
+        auto command = std::make_unique<InstantiatePrefabCommand>(world, selected.SourcePath);
+        InstantiatePrefabCommand* commandPtr = command.get();
+        if (GetContext().GetCommandHistory().Execute(std::move(command))) {
+            Entity root = commandPtr->GetInstantiatedRoot();
+            if (root) {
+                GetContext().GetSelectionContext().Select(root);
+                GetContext().GetAssetSelectionContext().Clear();
+            }
+        }
+    }
+
+    std::vector<const AssetRecord*> ContentBrowserPanel::GetCurrentDirectoryRecords() const
+    {
+        std::vector<const AssetRecord*> records;
+        const std::filesystem::path currentRelativeDirectory = GetCurrentRelativeDirectory();
+
+        for (const AssetRecord& record : m_AssetDatabase.GetRecords())
+        {
+            if (record.RelativePath.parent_path() == currentRelativeDirectory)
+            {
+                records.push_back(&record);
+            }
+        }
+
+        return records;
+    }
+
+    std::filesystem::path ContentBrowserPanel::GetCurrentRelativeDirectory() const
+    {
+        std::error_code ec;
+        std::filesystem::path relative = std::filesystem::relative(m_AssetsCurrentDir, m_AssetsRoot, ec);
+        if (ec || relative == ".")
+        {
+            return {};
+        }
+        return relative.lexically_normal();
+    }
+
     bool ContentBrowserPanel::IsImageFile(const std::filesystem::path &path)
     {
         std::string ext = ToLower(path.extension().string());
         return ext == ".png" || ext == ".jpg" || ext == ".jpeg" || ext == ".tga" || ext == ".bmp";
+    }
+
+    const char* ContentBrowserPanel::GetAssetButtonLabel(AssetType type, bool isDirectory)
+    {
+        if (isDirectory)
+        {
+            return "[DIR]";
+        }
+
+        switch (type)
+        {
+            case AssetType::Texture: return "[TEX]";
+            case AssetType::Mesh: return "[MESH]";
+            case AssetType::Audio: return "[AUD]";
+            case AssetType::Shader: return "[SHD]";
+            case AssetType::World: return "[SCN]";
+            case AssetType::Material: return "[MAT]";
+            case AssetType::Prefab: return "[PFB]";
+            case AssetType::Script: return "[LUA]";
+            case AssetType::Folder: return "[DIR]";
+            case AssetType::Unknown:
+            default: return "[FILE]";
+        }
+    }
+
+    std::string ContentBrowserPanel::SanitizeAssetFilename(std::string value)
+    {
+        if (value.empty()) {
+            return "Prefab";
+        }
+
+        for (char& ch : value) {
+            const unsigned char uch = static_cast<unsigned char>(ch);
+            if (!std::isalnum(uch) && ch != '-' && ch != '_') {
+                ch = '_';
+            }
+        }
+
+        if (value == "." || value == "..") {
+            return "Prefab";
+        }
+        return value;
     }
 
 }

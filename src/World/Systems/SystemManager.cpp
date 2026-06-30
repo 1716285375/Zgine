@@ -29,6 +29,55 @@ void SystemManager::UpdateAll(World* World, float deltaTime) {
     }
 }
 
+void SystemManager::StartScene(World* World) {
+    if (!World) {
+        ZGINE_CORE_WARN("SystemManager::StartScene ignored null World.");
+        return;
+    }
+
+    if (m_SceneRunning && m_ActiveScene == World) {
+        return;
+    }
+
+    if (m_SceneRunning) {
+        StopScene();
+    }
+
+    if (!m_Sorted) {
+        SortSystemsByPriority();
+    }
+
+    m_ActiveScene = World;
+    m_SceneRunning = true;
+
+    auto allSystems = GetAllSystems();
+    for (ISystem* system : allSystems) {
+        if (system && system->IsEnabled()) {
+            ZGINE_CORE_INFO("Starting scene for system: {}", system->GetName());
+            system->OnSceneStart(World);
+        }
+    }
+}
+
+void SystemManager::StopScene() {
+    if (!m_SceneRunning) {
+        m_ActiveScene = nullptr;
+        return;
+    }
+
+    auto allSystems = GetAllSystems();
+    for (auto it = allSystems.rbegin(); it != allSystems.rend(); ++it) {
+        ISystem* system = *it;
+        if (system) {
+            ZGINE_CORE_INFO("Stopping scene for system: {}", system->GetName());
+            system->OnSceneStop();
+        }
+    }
+
+    m_ActiveScene = nullptr;
+    m_SceneRunning = false;
+}
+
 void SystemManager::FixedUpdateAll(World* World, float fixedDeltaTime) {
     if (!m_Sorted) {
         SortSystemsByPriority();
@@ -43,6 +92,8 @@ void SystemManager::FixedUpdateAll(World* World, float fixedDeltaTime) {
 }
 
 void SystemManager::ShutdownAll() {
+    StopScene();
+
     // Shutdown in reverse order
     auto allSystems = GetAllSystems();
     for (auto it = allSystems.rbegin(); it != allSystems.rend(); ++it) {
@@ -55,6 +106,7 @@ void SystemManager::ShutdownAll() {
 }
 
 void SystemManager::Clear() {
+    StopScene();
     ShutdownAll();
     m_Systems.clear();
     m_ExternalSystems.clear();
@@ -62,6 +114,8 @@ void SystemManager::Clear() {
     m_RegistrationOrder.clear();
     m_NextRegistrationOrder = 0;
     m_Sorted = false;
+    m_ActiveScene = nullptr;
+    m_SceneRunning = false;
 }
 
 void SystemManager::SortSystemsByPriority() {

@@ -75,12 +75,7 @@ void SceneViewModel::Update() {
 }
 
 std::vector<Entity> SceneViewModel::GetAllEntities() const {
-    std::vector<Entity> result;
-    auto view = m_World->GetRegistry().view<entt::entity>();
-    for (auto entity : view) {
-        result.emplace_back(entity, m_World);
-    }
-    return result;
+    return m_World ? m_World->GetAllEntities() : std::vector<Entity>{};
 }
 
 void SceneViewModel::RefreshFromModel() {

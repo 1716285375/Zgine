@@ -4,6 +4,7 @@
 #include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/Math.h>
+#include <World/Core/WorldRegistryAccess.h>
 
 #include <Jolt/Jolt.h>
 #include <Jolt/RegisterTypes.h>
@@ -201,10 +202,10 @@ void PhysicsSystem::OnSceneStart(World* World) {
 
     // 遍历所有实体，创建物理体
     if (World) {
-        auto& registry = World->GetRegistry();
+        auto& registry = Internal::GetRegistry(*World);
         auto view = registry.view<RigidbodyComponent, TransformComponent, BoxColliderComponent>();
         for (auto entity : view) {
-            CreateBody(Entity(entity, World));
+            CreateBody(Entity(Internal::FromEnTT(entity), World));
         }
     }
 
@@ -217,10 +218,10 @@ void PhysicsSystem::OnSceneStop() {
     }
 
     // 移除所有物理体
-    auto& registry = m_World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*m_World);
     auto view = registry.view<RigidbodyComponent>();
     for (auto entity : view) {
-        DestroyBody(Entity(entity, m_World));
+        DestroyBody(Entity(Internal::FromEnTT(entity), m_World));
     }
 
     m_World = nullptr;
@@ -335,7 +336,7 @@ void PhysicsSystem::SyncPhysicsToECS(World* World) {
     }
 
     // 遍历所有有 RigidBodyComponent 的实体
-    auto& registry = World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*World);
     auto view = registry.view<RigidbodyComponent, TransformComponent>();
 
     for (auto entity : view) {

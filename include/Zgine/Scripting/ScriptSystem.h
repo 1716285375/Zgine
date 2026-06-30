@@ -21,9 +21,8 @@ namespace Zgine {
         const char* GetName() const override { return "ScriptSystem"; }
         int GetPriority() const override { return 30; }  // Scripts run after physics and audio
 
-        // Legacy interface (kept for compatibility)
-        void OnSceneStart(World* World);
-        void OnSceneStop();
+        void OnSceneStart(World* World) override;
+        void OnSceneStop() override;
 
         void SetPhysicsSystem(PhysicsSystem* physicsSystem);
         void SetAudioSystem(AudioSystem* audioSystem);

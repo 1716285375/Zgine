@@ -333,6 +333,7 @@ set(_zgine_private_deps
     zlibstatic  # assimp dependency
     Jolt
     imgui
+    imguizmo
     ImGuizmo
     miniaudio
     physfs-static  # PhysicsFS

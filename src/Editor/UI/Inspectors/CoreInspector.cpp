@@ -1,11 +1,11 @@
 #include <Zgine/Editor/UI/Inspectors/CoreInspector.h>
-#include <Zgine/Editor/Core/EditorContext.h>
-#include <Zgine/Editor/Core/EditorEventBus.h>
-#include <Zgine/Editor/Events/TransformEvents.h>
+#include <Zgine/Editor/Commands/EditorCommandHistory.h>
+#include <Zgine/Editor/Commands/TransformCommands.h>
 #include <Zgine/Gui/Backend/ImGui/ImGuiWidgets.h>
 #include <Zgine/World/Components/Components.h>
 #include <imgui.h>
 #include <cstring>
+#include <memory>
 
 namespace Zgine {
 namespace UI {
@@ -22,18 +22,36 @@ void CoreInspector::DrawTagProperties(Entity entity) {
     }
 }
 
-void CoreInspector::DrawTransformProperties(Entity entity) {
+void CoreInspector::DrawTransformProperties(Entity entity, EditorCommandHistory* commandHistory) {
     if (!ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) return;
 
     auto& transform = entity.GetComponent<TransformComponent>();
+    Math::Vector3 translation = transform.Translation;
+    Math::Vector3 rotation = transform.Rotation;
+    Math::Vector3 scale = transform.Scale;
 
     bool changed = false;
-    changed |= UI::DrawVec3Control("Translation", transform.Translation, 0.1f);
-    changed |= UI::DrawVec3Control("Rotation", transform.Rotation, 1.0f);
-    changed |= UI::DrawVec3Control("Scale", transform.Scale, 0.1f);
+    changed |= UI::DrawVec3Control("Translation", translation, 0.1f);
+    changed |= UI::DrawVec3Control("Rotation", rotation, 1.0f);
+    changed |= UI::DrawVec3Control("Scale", scale, 0.1f);
 
-    // Note: Event publishing removed - should be done by command pattern
-    // If needed, caller can publish events
+    if (!changed) {
+        return;
+    }
+
+    if (commandHistory) {
+        commandHistory->Execute(std::make_unique<TransformEntityCommand>(
+            entity,
+            translation,
+            rotation,
+            scale
+        ));
+        return;
+    }
+
+    transform.Translation = translation;
+    transform.Rotation = rotation;
+    transform.Scale = scale;
 }
 
 void CoreInspector::DrawRelationshipProperties(Entity entity) {
@@ -46,7 +64,7 @@ void CoreInspector::DrawRelationshipProperties(Entity entity) {
 
     auto& rel = entity.GetComponent<RelationshipComponent>();
 
-    ImGui::Text("Parent: %s", rel.Parent != entt::null ? "Has Parent" : "Root");
+    ImGui::Text("Parent: %s", rel.Parent ? "Has Parent" : "Root");
     ImGui::Text("Children: %zu", rel.Children.size());
 }
 

@@ -147,6 +147,17 @@ public:
     void UpdateAll(World* World, float deltaTime);
 
     /**
+     * @brief Start a runtime scene for all registered systems
+     * @param World Runtime World used by scene-bound systems
+     */
+    void StartScene(World* World);
+
+    /**
+     * @brief Stop the active runtime scene for all registered systems
+     */
+    void StopScene();
+
+    /**
      * @brief Fixed update for all enabled systems
      * @param World World to update
      * @param fixedDeltaTime Fixed time step
@@ -170,6 +181,9 @@ public:
         return m_Systems.size() + m_ExternalSystems.size();
     }
 
+    [[nodiscard]] bool IsSceneRunning() const noexcept { return m_SceneRunning; }
+    [[nodiscard]] World* GetActiveScene() const noexcept { return m_ActiveScene; }
+
 private:
     // Systems owned by manager
     std::vector<std::unique_ptr<ISystem>> m_Systems;
@@ -186,6 +200,9 @@ private:
 
     // Whether systems are sorted by priority
     bool m_Sorted = false;
+
+    World* m_ActiveScene = nullptr;
+    bool m_SceneRunning = false;
 
     /**
      * @brief Sort systems by priority (lower values first)

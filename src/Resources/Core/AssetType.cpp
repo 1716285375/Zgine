@@ -23,24 +23,30 @@ namespace {
 
 const char* AssetTypeToString(AssetType type) {
     switch (type) {
+        case AssetType::Folder: return "Folder";
         case AssetType::Texture: return "Texture";
         case AssetType::Mesh: return "Mesh";
         case AssetType::Audio: return "Audio";
         case AssetType::Shader: return "Shader";
         case AssetType::World: return "World";
         case AssetType::Material: return "Material";
+        case AssetType::Prefab: return "Prefab";
+        case AssetType::Script: return "Script";
         default: return "Unknown";
     }
 }
 
 AssetType AssetTypeFromString(const std::string& value) {
     std::string lower = ToLower(value);
+    if (lower == "folder" || lower == "directory") return AssetType::Folder;
     if (lower == "texture") return AssetType::Texture;
     if (lower == "mesh") return AssetType::Mesh;
     if (lower == "audio") return AssetType::Audio;
     if (lower == "shader") return AssetType::Shader;
-    if (lower == "World") return AssetType::World;
+    if (lower == "world" || lower == "scene") return AssetType::World;
     if (lower == "material") return AssetType::Material;
+    if (lower == "prefab") return AssetType::Prefab;
+    if (lower == "script") return AssetType::Script;
     return AssetType::Unknown;
 }
 
@@ -51,20 +57,28 @@ AssetType AssetTypeFromPath(const std::filesystem::path& path) {
         return AssetType::Texture;
     }
     if (ext == ".obj" || ext == ".fbx" || ext == ".gltf" || ext == ".glb" ||
-        ext == ".blend") {
+        ext == ".blend" || ext == ".dae" || ext == ".3ds") {
         return AssetType::Mesh;
     }
     if (ext == ".wav" || ext == ".mp3" || ext == ".ogg" || ext == ".flac") {
         return AssetType::Audio;
     }
-    if (ext == ".vert" || ext == ".frag" || ext == ".glsl") {
+    if (ext == ".vert" || ext == ".frag" || ext == ".glsl" || ext == ".comp" ||
+        ext == ".geom" || ext == ".spv" || ext == ".hlsl") {
         return AssetType::Shader;
     }
-    if (ext == ".json" && PathContainsFolder(path, "scenes")) {
+    if ((ext == ".json" && PathContainsFolder(path, "scenes")) ||
+        ext == ".zgscene" || ext == ".scene" || ext == ".world") {
         return AssetType::World;
     }
-    if (ext == ".mat") {
+    if (ext == ".mat" || ext == ".material") {
         return AssetType::Material;
+    }
+    if (ext == ".prefab" || ext == ".zgprefab") {
+        return AssetType::Prefab;
+    }
+    if (ext == ".lua") {
+        return AssetType::Script;
     }
     return AssetType::Unknown;
 }

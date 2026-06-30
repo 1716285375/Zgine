@@ -13,17 +13,7 @@ void EntityTree::Render() {
         return;
     }
 
-    // Render root entities
-    auto& registry = m_World->GetRegistry();
-    auto view = registry.view<TagComponent, RelationshipComponent>();
-
-    for (auto entity : view) {
-        auto& rel = registry.get<RelationshipComponent>(entity);
-
-        // Only render root entities (no parent)
-        if (rel.Parent != entt::null) continue;
-
-        Entity e(entity, m_World);
+    for (Entity e : m_World->GetRootEntities()) {
         if (!PassFilter(e)) continue;
 
         DrawEntityNode(e);
@@ -63,8 +53,9 @@ bool EntityTree::PassFilter(Entity entity) const {
 void EntityTree::DrawEntityNode(Entity entity) {
     if (!entity || !m_World) return;
 
-    auto& registry = m_World->GetRegistry();
-    auto* rel = registry.try_get<RelationshipComponent>(static_cast<entt::entity>(entity));
+    const RelationshipComponent* rel = entity.HasComponent<RelationshipComponent>()
+        ? &entity.GetComponent<RelationshipComponent>()
+        : nullptr;
 
     const bool hasChildren = rel && !rel->Children.empty();
 
@@ -83,7 +74,7 @@ void EntityTree::DrawEntityNode(Entity entity) {
     // Render tree node
     std::string label = GetEntityLabel(entity);
     bool opened = ImGui::TreeNodeEx(
-        reinterpret_cast<void*>(static_cast<uintptr_t>(static_cast<entt::entity>(entity))),
+        reinterpret_cast<void*>(static_cast<uintptr_t>(entity.GetHandle().GetValue())),
         flags, "%s", label.c_str()
     );
 
@@ -106,8 +97,8 @@ void EntityTree::DrawEntityNode(Entity entity) {
 
     // Drag & drop source
     if (m_DragDropEnabled && ImGui::BeginDragDropSource()) {
-        entt::entity payload = static_cast<entt::entity>(entity);
-        ImGui::SetDragDropPayload("ZGINE_ENTITY", &payload, sizeof(entt::entity));
+        uint32_t payload = entity.GetHandle().GetValue();
+        ImGui::SetDragDropPayload("ZGINE_ENTITY", &payload, sizeof(uint32_t));
         ImGui::TextUnformatted(label.c_str());
         ImGui::EndDragDropSource();
     }
@@ -115,13 +106,14 @@ void EntityTree::DrawEntityNode(Entity entity) {
     // Drag & drop target
     if (m_DragDropEnabled && ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ZGINE_ENTITY")) {
-            entt::entity dropped = *static_cast<const entt::entity*>(payload->Data);
-            if (dropped != static_cast<entt::entity>(entity)) {
+            uint32_t dropped = *static_cast<const uint32_t*>(payload->Data);
+            Entity droppedEntity(EntityHandle::FromValue(dropped), m_World);
+            if (droppedEntity != entity) {
                 if (OnEntityDragDrop) {
-                    OnEntityDragDrop(Entity(dropped, m_World), entity);
+                    OnEntityDragDrop(droppedEntity, entity);
                 } else {
                     // Default behavior: set parent
-                    m_World->SetParent(Entity(dropped, m_World), entity);
+                    m_World->SetParent(droppedEntity, entity);
                 }
             }
         }
@@ -143,8 +135,8 @@ void EntityTree::DrawEntityNode(Entity entity) {
     // Render children
     if (opened && hasChildren) {
         for (auto child : rel->Children) {
-            if (!registry.valid(child)) continue;
             Entity childEntity(child, m_World);
+            if (!m_World->IsEntityValid(childEntity)) continue;
             if (!PassFilter(childEntity)) continue;
             DrawEntityNode(childEntity);
         }

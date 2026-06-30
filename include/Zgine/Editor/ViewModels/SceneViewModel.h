@@ -107,9 +107,14 @@ public:
     template<typename... Components>
     std::vector<Entity> GetEntitiesWithComponents() const {
         std::vector<Entity> result;
-        auto view = m_World->GetEntitiesWith<Components...>();
-        for (auto entity : view) {
-            result.emplace_back(entity, m_World);
+        if (!m_World) {
+            return result;
+        }
+
+        for (auto entity : m_World->GetAllEntities()) {
+            if ((entity.HasComponent<Components>() && ...)) {
+                result.push_back(entity);
+            }
         }
         return result;
     }

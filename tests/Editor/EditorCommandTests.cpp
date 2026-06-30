@@ -2,11 +2,41 @@
 #include <Zgine/Editor/Commands/IEditorCommand.h>
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/Editor/Commands/EntityCommands.h>
+#include <Zgine/Editor/Commands/PrefabCommands.h>
 #include <Zgine/Editor/Commands/TransformCommands.h>
+#include <Zgine/Resources/Prefab/PrefabSerializer.h>
 #include <Zgine/World/Core/World.h>
 #include <Zgine/World/Components/Components.h>
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <sstream>
+
 using namespace Zgine;
+
+namespace {
+
+std::filesystem::path MakeTempEditorCommandPath(const std::string& filename) {
+    const auto uniqueId = std::chrono::steady_clock::now().time_since_epoch().count();
+    return std::filesystem::temp_directory_path() /
+        ("ZgineEditorCommandTest_" + std::to_string(uniqueId)) /
+        filename;
+}
+
+std::string ReadTextForTest(const std::filesystem::path& path) {
+    std::ifstream in(path, std::ios::binary);
+    std::ostringstream buffer;
+    buffer << in.rdbuf();
+    return buffer.str();
+}
+
+void RemoveTempPath(const std::filesystem::path& path) {
+    std::error_code ec;
+    std::filesystem::remove_all(path.parent_path(), ec);
+}
+
+} // namespace
 
 // ============================================================================
 // Mock Command for Testing
@@ -286,6 +316,92 @@ TEST_F(EntityCommandsTest, DeleteEntityCommandUndo) {
 
     // Should restore entity
     EXPECT_EQ(m_World->GetEntityCount(), countAfterCreate);
+}
+
+// ============================================================================
+// PrefabCommands Tests
+// ============================================================================
+
+TEST_F(EntityCommandsTest, CreatePrefabFromEntityCommandWritesAndUndoRemovesFile) {
+    Entity root = m_World->CreateEntity("Player");
+    Entity child = m_World->CreateEntity("Weapon", root);
+    root.GetComponent<TransformComponent>().Translation = {1.0f, 2.0f, 3.0f};
+    child.GetComponent<TransformComponent>().Translation = {4.0f, 5.0f, 6.0f};
+
+    const std::filesystem::path prefabPath = MakeTempEditorCommandPath("Player.prefab");
+    auto cmd = std::make_unique<CreatePrefabFromEntityCommand>(root, prefabPath);
+
+    ASSERT_TRUE(m_History->Execute(std::move(cmd)));
+    EXPECT_TRUE(std::filesystem::exists(prefabPath));
+
+    auto prefab = PrefabSerializer::LoadFromFile(prefabPath);
+    ASSERT_TRUE(prefab.has_value());
+    EXPECT_EQ(prefab->Name, "Player");
+    EXPECT_EQ(prefab->Entities.size(), 2u);
+
+    EXPECT_TRUE(m_History->Undo());
+    EXPECT_FALSE(std::filesystem::exists(prefabPath));
+
+    EXPECT_TRUE(m_History->Redo());
+    EXPECT_TRUE(std::filesystem::exists(prefabPath));
+
+    RemoveTempPath(prefabPath);
+}
+
+TEST_F(EntityCommandsTest, CreatePrefabFromEntityCommandUndoRestoresExistingFile) {
+    Entity root = m_World->CreateEntity("Player");
+    const std::filesystem::path prefabPath = MakeTempEditorCommandPath("Existing.prefab");
+    std::filesystem::create_directories(prefabPath.parent_path());
+    {
+        std::ofstream out(prefabPath, std::ios::binary | std::ios::trunc);
+        out << "previous file contents";
+    }
+
+    auto cmd = std::make_unique<CreatePrefabFromEntityCommand>(root, prefabPath);
+    ASSERT_TRUE(m_History->Execute(std::move(cmd)));
+    EXPECT_NE(ReadTextForTest(prefabPath), "previous file contents");
+
+    EXPECT_TRUE(m_History->Undo());
+    EXPECT_EQ(ReadTextForTest(prefabPath), "previous file contents");
+
+    RemoveTempPath(prefabPath);
+}
+
+TEST_F(EntityCommandsTest, InstantiatePrefabCommandCreatesUndoableHierarchy) {
+    Entity root = m_World->CreateEntity("Player");
+    Entity child = m_World->CreateEntity("Weapon", root);
+    root.GetComponent<TransformComponent>().Translation = {1.0f, 2.0f, 3.0f};
+    child.GetComponent<TransformComponent>().Translation = {4.0f, 5.0f, 6.0f};
+
+    auto prefab = PrefabSerializer::CreateFromEntityHierarchy(root);
+    ASSERT_TRUE(prefab.has_value());
+
+    const std::filesystem::path prefabPath = MakeTempEditorCommandPath("Player.prefab");
+    ASSERT_TRUE(PrefabSerializer::SaveToFile(*prefab, prefabPath));
+
+    m_World->DestroyEntity(root);
+    ASSERT_EQ(m_World->GetEntityCount(), 0u);
+
+    auto cmd = std::make_unique<InstantiatePrefabCommand>(m_World, prefabPath);
+    InstantiatePrefabCommand* cmdPtr = cmd.get();
+    ASSERT_TRUE(m_History->Execute(std::move(cmd)));
+
+    Entity instanceRoot = cmdPtr->GetInstantiatedRoot();
+    ASSERT_TRUE(instanceRoot);
+    EXPECT_EQ(m_World->GetEntityCount(), 2u);
+    EXPECT_EQ(instanceRoot.GetComponent<TagComponent>().Tag, "Player");
+    EXPECT_EQ(m_World->GetChildren(instanceRoot).size(), 1u);
+
+    EXPECT_TRUE(m_History->Undo());
+    EXPECT_EQ(m_World->GetEntityCount(), 0u);
+
+    EXPECT_TRUE(m_History->Redo());
+    Entity redoneRoot = cmdPtr->GetInstantiatedRoot();
+    ASSERT_TRUE(redoneRoot);
+    EXPECT_EQ(m_World->GetEntityCount(), 2u);
+    EXPECT_EQ(redoneRoot.GetComponent<TagComponent>().Tag, "Player");
+
+    RemoveTempPath(prefabPath);
 }
 
 // ============================================================================

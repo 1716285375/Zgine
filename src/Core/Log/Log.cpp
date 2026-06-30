@@ -7,9 +7,37 @@
 
 namespace Zgine {
 
+namespace {
+
+std::shared_ptr<spdlog::logger> CreateFallbackLogger(const char* name) {
+    auto sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+    sink->set_level(spdlog::level::warn);
+    sink->set_pattern("%^[%T] %n: %v%$");
+
+    auto logger = std::make_shared<spdlog::logger>(name, std::move(sink));
+    logger->set_level(spdlog::level::warn);
+    return logger;
+}
+
+} // namespace
+
 std::shared_ptr<spdlog::logger> Log::s_CoreLogger;
 std::shared_ptr<spdlog::logger> Log::s_ClientLogger;
 bool Log::s_Initialized = false;
+
+std::shared_ptr<spdlog::logger>& Log::GetCoreLogger() {
+    if (!s_CoreLogger) {
+        s_CoreLogger = CreateFallbackLogger("ZGINE");
+    }
+    return s_CoreLogger;
+}
+
+std::shared_ptr<spdlog::logger>& Log::GetClientLogger() {
+    if (!s_ClientLogger) {
+        s_ClientLogger = CreateFallbackLogger("APP");
+    }
+    return s_ClientLogger;
+}
 
 void Log::Init(const LogConfig& config) {
     if (s_Initialized) {

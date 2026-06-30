@@ -33,7 +33,7 @@ protected:
 
 TEST_F(EditorEventBusTest, ImmediateEventDispatch) {
     bool eventReceived = false;
-    Entity testEntity(static_cast<entt::entity>(42), nullptr);
+    Entity testEntity(EntityHandle::FromValue(42), nullptr);
 
     m_EventBus->Subscribe<EntitySelectedEvent>([&](EntitySelectedEvent& e) {
         eventReceived = true;
@@ -53,9 +53,9 @@ TEST_F(EditorEventBusTest, QueuedEventDispatch) {
     });
 
     // Publish to queue
-    Entity e1(static_cast<entt::entity>(1), nullptr);
-    Entity e2(static_cast<entt::entity>(2), nullptr);
-    Entity e3(static_cast<entt::entity>(3), nullptr);
+    Entity e1(EntityHandle::FromValue(1), nullptr);
+    Entity e2(EntityHandle::FromValue(2), nullptr);
+    Entity e3(EntityHandle::FromValue(3), nullptr);
 
     m_EventBus->Publish(EntityCreatedEvent(e1, PrimitiveType::Cube));
     m_EventBus->Publish(EntityCreatedEvent(e2, PrimitiveType::Sphere));
@@ -86,7 +86,7 @@ TEST_F(EditorEventBusTest, MultipleSubscribers) {
         subscriber3Count++;
     });
 
-    Entity entity(static_cast<entt::entity>(100), nullptr);
+    Entity entity(EntityHandle::FromValue(100), nullptr);
     EntityDeletedEvent event(entity);
     m_EventBus->PublishImmediate(event);
 
@@ -103,7 +103,7 @@ TEST_F(EditorEventBusTest, Unsubscribe) {
             callCount++;
         });
 
-    Entity entity(static_cast<entt::entity>(10), nullptr);
+    Entity entity(EntityHandle::FromValue(10), nullptr);
     TransformChangedEvent event(entity);
 
     m_EventBus->PublishImmediate(event);
@@ -122,7 +122,7 @@ TEST_F(EditorEventBusTest, Unsubscribe) {
 // ============================================================================
 
 TEST_F(EditorEventBusTest, EntitySelectedEvent) {
-    Entity selected(static_cast<entt::entity>(999), nullptr);
+    Entity selected(EntityHandle::FromValue(999), nullptr);
     bool received = false;
 
     m_EventBus->Subscribe<EntitySelectedEvent>([&](EntitySelectedEvent& e) {
@@ -139,7 +139,7 @@ TEST_F(EditorEventBusTest, EntitySelectedEvent) {
 }
 
 TEST_F(EditorEventBusTest, TransformChangedEvent) {
-    Entity entity(static_cast<entt::entity>(50), nullptr);
+    Entity entity(EntityHandle::FromValue(50), nullptr);
     bool received = false;
 
     m_EventBus->Subscribe<TransformChangedEvent>([&](TransformChangedEvent& e) {
@@ -206,7 +206,7 @@ TEST_F(EditorEventBusTest, ThreadSafePublish) {
     for (int i = 0; i < numThreads; ++i) {
         threads.emplace_back([&, i]() {
             for (int j = 0; j < eventsPerThread; ++j) {
-                Entity entity(static_cast<entt::entity>(i * eventsPerThread + j), nullptr);
+                Entity entity(EntityHandle::FromValue(i * eventsPerThread + j), nullptr);
                 m_EventBus->Publish(EntityCreatedEvent(entity, PrimitiveType::Cube));
             }
         });
@@ -230,12 +230,12 @@ TEST_F(EditorEventBusTest, EventQueueOrder) {
     std::vector<int> receivedOrder;
 
     m_EventBus->Subscribe<EntityCreatedEvent>([&](EntityCreatedEvent& e) {
-        receivedOrder.push_back(static_cast<int>(static_cast<entt::entity>(e.GetEntity())));
+        receivedOrder.push_back(static_cast<int>(e.GetEntity().GetHandle().GetValue()));
     });
 
     // Publish in order
     for (int i = 0; i < 10; ++i) {
-        Entity entity(static_cast<entt::entity>(i), nullptr);
+        Entity entity(EntityHandle::FromValue(i), nullptr);
         m_EventBus->Publish(EntityCreatedEvent(entity, PrimitiveType::Cube));
     }
 
@@ -256,7 +256,7 @@ TEST_F(EditorEventBusTest, ClearQueue) {
 
     // Add events to queue
     for (int i = 0; i < 5; ++i) {
-        Entity entity(static_cast<entt::entity>(i), nullptr);
+        Entity entity(EntityHandle::FromValue(i), nullptr);
         m_EventBus->Publish(EntityDeletedEvent(entity));
     }
 
@@ -290,7 +290,7 @@ TEST_F(EditorEventBusTest, MultipleEventTypes) {
     });
 
     // Publish different event types
-    Entity entity(static_cast<entt::entity>(1), nullptr);
+    Entity entity(EntityHandle::FromValue(1), nullptr);
     World World;
 
     EntitySelectedEvent e1(entity);
@@ -323,7 +323,7 @@ TEST_F(EditorEventBusTest, PerformanceTest) {
 
     // Queue many events
     for (int i = 0; i < numEvents; ++i) {
-        Entity entity(static_cast<entt::entity>(i), nullptr);
+        Entity entity(EntityHandle::FromValue(i), nullptr);
         m_EventBus->Publish(EntityCreatedEvent(entity, PrimitiveType::Cube));
     }
 

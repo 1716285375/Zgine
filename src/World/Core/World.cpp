@@ -1,8 +1,13 @@
 #include <Zgine/World/Core/World.h>
 #include <Zgine/World/Core/Entity.h>
 #include <Zgine/World/Core/EntityManager.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
+#include "WorldRegistryAccess.h"
 #include <algorithm>
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 namespace Zgine {
 
@@ -25,20 +30,24 @@ namespace {
         }
     }
 
-    bool IsDescendant(World* world, entt::entity child, entt::entity possibleParent) {
-        if (!world || possibleParent == entt::null) {
+    bool IsDescendant(const World* world, EntityHandle child, EntityHandle possibleParent) {
+        if (!world || !possibleParent) {
             return false;
         }
-        if (!world->IsEntityValid(Entity(child, const_cast<World*>(world))) ||
-            !world->IsEntityValid(Entity(possibleParent, const_cast<World*>(world)))) {
+
+        World* mutableWorld = const_cast<World*>(world);
+        if (!world->IsEntityValid(Entity(child, mutableWorld)) ||
+            !world->IsEntityValid(Entity(possibleParent, mutableWorld))) {
             return false;
         }
-        auto& registry = world->GetRegistry();
-        auto* rel = registry.try_get<RelationshipComponent>(possibleParent);
+
+        const auto& registry = Internal::GetRegistry(*world);
+        auto* rel = registry.try_get<RelationshipComponent>(Internal::ToEnTT(possibleParent));
         if (!rel) {
             return false;
         }
-        for (auto descendant : rel->Children) {
+
+        for (const auto& descendant : rel->Children) {
             if (descendant == child) {
                 return true;
             }
@@ -48,14 +57,93 @@ namespace {
         }
         return false;
     }
+
+    void ResetRuntimeOnlyComponentState(Entity entity) {
+        if (entity.HasComponent<CameraComponent>()) {
+            auto& camera = entity.GetComponent<CameraComponent>();
+            if (camera.Camera) {
+                camera.Camera = std::make_shared<Camera>(*camera.Camera);
+            }
+        }
+        if (entity.HasComponent<RigidbodyComponent>()) {
+            entity.GetComponent<RigidbodyComponent>().RuntimeBody.Reset();
+        }
+        if (entity.HasComponent<AudioSourceComponent>()) {
+            auto& audio = entity.GetComponent<AudioSourceComponent>();
+            audio.RuntimeSourcePtr = nullptr;
+            audio.IsPlaying = false;
+        }
+        if (entity.HasComponent<ScriptComponent>()) {
+            entity.GetComponent<ScriptComponent>().IsInitialized = false;
+        }
+        if (entity.HasComponent<PBRMaterialComponent>()) {
+            auto& material = entity.GetComponent<PBRMaterialComponent>();
+            material.AlbedoTexture.reset();
+            material.NormalTexture.reset();
+            material.MetallicTexture.reset();
+            material.RoughnessTexture.reset();
+            material.AOTexture.reset();
+        }
+    }
+
+    void CopyCloneComponents(Entity dst, Entity src) {
+        CopyComponentIfExists<IDComponent>(dst, src);
+        CopyComponentIfExists<TagComponent>(dst, src);
+        CopyComponentIfExists<TransformComponent>(dst, src);
+        CopyComponentIfExists<CameraComponent>(dst, src);
+        CopyComponentIfExists<PrimitiveComponent>(dst, src);
+        CopyComponentIfExists<SpriteRendererComponent>(dst, src);
+        CopyComponentIfExists<ColorComponent>(dst, src);
+        CopyComponentIfExists<MeshComponent>(dst, src);
+        CopyComponentIfExists<RigidbodyComponent>(dst, src);
+        CopyComponentIfExists<BoxColliderComponent>(dst, src);
+        CopyComponentIfExists<CircleColliderComponent>(dst, src);
+        CopyComponentIfExists<AudioSourceComponent>(dst, src);
+        CopyComponentIfExists<AudioListenerComponent>(dst, src);
+        CopyComponentIfExists<ScriptComponent>(dst, src);
+        CopyComponentIfExists<PBRMaterialComponent>(dst, src);
+        CopyComponentIfExists<DirectionalLightComponent>(dst, src);
+        CopyComponentIfExists<PointLightComponent>(dst, src);
+        CopyComponentIfExists<SpotLightComponent>(dst, src);
+
+        ResetRuntimeOnlyComponentState(dst);
+    }
+
+    Entity CloneEntityHierarchy(Entity src, World& dstWorld, Entity dstParent = Entity()) {
+        if (!src) {
+            return Entity();
+        }
+
+        const std::string name = src.HasComponent<TagComponent>()
+            ? src.GetComponent<TagComponent>().Tag
+            : std::string("Entity");
+        Entity dst = dstWorld.CreateEntity(name);
+        CopyCloneComponents(dst, src);
+
+        if (dstParent) {
+            dstWorld.SetParent(dst, dstParent);
+        }
+
+        if (src.HasComponent<RelationshipComponent>()) {
+            const auto& rel = src.GetComponent<RelationshipComponent>();
+            for (const auto& child : rel.Children) {
+                CloneEntityHierarchy(Entity(child, src.GetWorld()), dstWorld, dst);
+            }
+        }
+
+        return dst;
+    }
 }
 
 World::World()
-    : m_EntityManager(std::make_unique<EntityManager>(m_Registry))
+    : m_Storage(std::make_unique<Storage>())
+    , m_EntityManager(std::make_unique<EntityManager>(*this))
 {
 }
 
 World::~World() {
+    // Release ECS objects while World services are still alive and the order is explicit.
+    Clear();
 }
 
 Entity World::CreateEntity(const std::string& name) {
@@ -84,6 +172,44 @@ void World::Clear() {
     m_EntityManager->Clear();
 }
 
+std::vector<Entity> World::GetAllEntities() const {
+    std::vector<Entity> result;
+    const auto& registry = Internal::GetRegistry(*this);
+    result.reserve(GetEntityCount());
+    auto view = registry.view<IDComponent>();
+    for (auto entity : view) {
+        result.emplace_back(Internal::FromEnTT(entity), const_cast<World*>(this));
+    }
+    return result;
+}
+
+std::vector<Entity> World::GetRootEntities() const {
+    std::vector<Entity> result;
+    const auto& registry = Internal::GetRegistry(*this);
+    auto view = registry.view<TagComponent, RelationshipComponent>();
+    for (auto entity : view) {
+        const auto& rel = view.get<RelationshipComponent>(entity);
+        if (!rel.Parent) {
+            result.emplace_back(Internal::FromEnTT(entity), const_cast<World*>(this));
+        }
+    }
+    return result;
+}
+
+std::vector<Entity> World::GetChildren(Entity entity) const {
+    std::vector<Entity> result;
+    if (!entity || !entity.HasComponent<RelationshipComponent>()) {
+        return result;
+    }
+
+    const auto& rel = entity.GetComponent<RelationshipComponent>();
+    result.reserve(rel.Children.size());
+    for (const auto& child : rel.Children) {
+        result.emplace_back(child, const_cast<World*>(this));
+    }
+    return result;
+}
+
 size_t World::GetEntityCount() const {
     return m_EntityManager->GetEntityCount();
 }
@@ -92,7 +218,7 @@ bool World::IsEntityValid(Entity entity) const {
     if (!entity) {
         return false;
     }
-    return m_Registry.valid(static_cast<entt::entity>(entity));
+    return Internal::GetRegistry(*this).valid(Internal::ToEnTT(entity.GetHandle()));
 }
 
 void World::SetParent(Entity child, Entity parent) {
@@ -103,35 +229,40 @@ void World::SetParent(Entity child, Entity parent) {
     if (!IsEntityValid(child)) {
         return;
     }
-    auto& registry = m_Registry;
 
-    if (parent && IsDescendant(this, static_cast<entt::entity>(parent), static_cast<entt::entity>(child))) {
+    auto& registry = Internal::GetRegistry(*this);
+    EntityHandle childHandle = child.GetHandle();
+    EntityHandle parentHandle = parent ? parent.GetHandle() : EntityHandle();
+    entt::entity childEntity = Internal::ToEnTT(childHandle);
+    entt::entity parentEntity = Internal::ToEnTT(parentHandle);
+
+    if (parent && IsDescendant(this, parentHandle, childHandle)) {
         ZGINE_CORE_WARN("World::SetParent failed: cannot parent entity to its descendant.");
         return;
     }
 
-    if (!registry.all_of<RelationshipComponent>(child)) {
-        registry.emplace<RelationshipComponent>(child);
+    if (!registry.all_of<RelationshipComponent>(childEntity)) {
+        registry.emplace<RelationshipComponent>(childEntity);
     }
-    auto& childRel = registry.get<RelationshipComponent>(child);
-    if (childRel.Parent != entt::null && IsEntityValid(Entity(childRel.Parent, this))) {
-        auto& oldParentRel = registry.get<RelationshipComponent>(childRel.Parent);
+    auto& childRel = registry.get<RelationshipComponent>(childEntity);
+    if (childRel.Parent && IsEntityValid(Entity(childRel.Parent, this))) {
+        auto& oldParentRel = registry.get<RelationshipComponent>(Internal::ToEnTT(childRel.Parent));
         oldParentRel.Children.erase(
-            std::remove(oldParentRel.Children.begin(), oldParentRel.Children.end(), static_cast<entt::entity>(child)),
+            std::remove(oldParentRel.Children.begin(), oldParentRel.Children.end(), childHandle),
             oldParentRel.Children.end());
     }
 
     if (parent) {
-        if (!registry.all_of<RelationshipComponent>(parent)) {
-            registry.emplace<RelationshipComponent>(parent);
+        if (!registry.all_of<RelationshipComponent>(parentEntity)) {
+            registry.emplace<RelationshipComponent>(parentEntity);
         }
-        auto& parentRel = registry.get<RelationshipComponent>(parent);
-        if (std::find(parentRel.Children.begin(), parentRel.Children.end(), static_cast<entt::entity>(child)) == parentRel.Children.end()) {
-            parentRel.Children.push_back(static_cast<entt::entity>(child));
+        auto& parentRel = registry.get<RelationshipComponent>(parentEntity);
+        if (std::find(parentRel.Children.begin(), parentRel.Children.end(), childHandle) == parentRel.Children.end()) {
+            parentRel.Children.push_back(childHandle);
         }
-        childRel.Parent = static_cast<entt::entity>(parent);
+        childRel.Parent = parentHandle;
     } else {
-        childRel.Parent = entt::null;
+        childRel.Parent = EntityHandle();
     }
 }
 
@@ -187,10 +318,10 @@ Entity World::DuplicateEntity(Entity source) {
 
     if (source.HasComponent<RelationshipComponent>()) {
         auto& rel = source.GetComponent<RelationshipComponent>();
-        if (rel.Parent != entt::null) {
+        if (rel.Parent) {
             SetParent(copy, Entity(rel.Parent, this));
         }
-        for (auto child : rel.Children) {
+        for (const auto& child : rel.Children) {
             Entity childEntity(child, this);
             Entity childCopy = DuplicateEntity(childEntity);
             SetParent(childCopy, copy);
@@ -198,6 +329,14 @@ Entity World::DuplicateEntity(Entity source) {
     }
 
     return copy;
+}
+
+std::unique_ptr<World> World::CloneForRuntime() const {
+    auto clone = std::make_unique<World>();
+    for (Entity root : GetRootEntities()) {
+        CloneEntityHierarchy(root, *clone);
+    }
+    return clone;
 }
 
 void World::OnUpdate(float deltaTime) {
@@ -209,6 +348,65 @@ void World::OnRender() {
     // This method is kept for explicit render calls if needed
 }
 
-
+template<typename T>
+T& World::AddComponentFromValue(EntityHandle handle, T&& component) {
+    auto& registry = Internal::GetRegistry(*this);
+    entt::entity entity = Internal::ToEnTT(handle);
+    if constexpr (std::is_empty_v<T>) {
+        registry.emplace<T>(entity);
+        return registry.get<T>(entity);
+    } else {
+        return registry.emplace<T>(entity, std::move(component));
+    }
 }
 
+template<typename T>
+T& World::GetComponent(EntityHandle handle) {
+    return Internal::GetRegistry(*this).get<T>(Internal::ToEnTT(handle));
+}
+
+template<typename T>
+const T& World::GetComponent(EntityHandle handle) const {
+    return Internal::GetRegistry(*this).get<T>(Internal::ToEnTT(handle));
+}
+
+template<typename T>
+bool World::HasComponent(EntityHandle handle) const {
+    return Internal::GetRegistry(*this).all_of<T>(Internal::ToEnTT(handle));
+}
+
+template<typename T>
+void World::RemoveComponent(EntityHandle handle) {
+    Internal::GetRegistry(*this).remove<T>(Internal::ToEnTT(handle));
+}
+
+#define ZGINE_INSTANTIATE_COMPONENT_ACCESS(ComponentType) \
+    template ComponentType& World::AddComponentFromValue<ComponentType>(EntityHandle, ComponentType&&); \
+    template ComponentType& World::GetComponent<ComponentType>(EntityHandle); \
+    template const ComponentType& World::GetComponent<ComponentType>(EntityHandle) const; \
+    template bool World::HasComponent<ComponentType>(EntityHandle) const; \
+    template void World::RemoveComponent<ComponentType>(EntityHandle)
+
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(IDComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(TagComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(TransformComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(RelationshipComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(CameraComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(PrimitiveComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(SpriteRendererComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(ColorComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(MeshComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(PBRMaterialComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(DirectionalLightComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(PointLightComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(SpotLightComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(RigidbodyComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(BoxColliderComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(CircleColliderComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(AudioSourceComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(AudioListenerComponent);
+ZGINE_INSTANTIATE_COMPONENT_ACCESS(ScriptComponent);
+
+#undef ZGINE_INSTANTIATE_COMPONENT_ACCESS
+
+}

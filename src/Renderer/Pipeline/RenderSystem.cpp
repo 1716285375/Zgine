@@ -1,6 +1,7 @@
 #include <Zgine/Renderer/Pipeline/RenderSystem.h>
 #include <Zgine/Renderer/Pipeline/TextureDefaults.h>
 #include <Zgine/World/Core/World.h>
+#include <Zgine/World/Components/Components.h>
 #include <Zgine/World/Camera/Camera.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/World/Core/Entity.h>
@@ -15,6 +16,7 @@
 #include <Zgine/Core/Math/Math.h>
 #include <Zgine/Core/Math/Matrix3.h>
 #include <Zgine/Core/Math/Matrix4.h>
+#include <World/Core/WorldRegistryAccess.h>
 #include <cmath>
 #include <algorithm>
 #include <exception>
@@ -210,7 +212,8 @@ void RenderSystem::RenderShadowPass(World* world) {
     m_DepthShader->Bind();
     m_DepthShader->SetUniformMat4f("u_LightSpaceMatrix", m_LightSpaceMatrix);
 
-    auto view = world->GetRegistry().view<TransformComponent, PrimitiveComponent>();
+    auto& registry = Internal::GetRegistry(*world);
+    auto view = registry.view<TransformComponent, PrimitiveComponent>();
     for (auto entity : view) {
         auto [transform, primitive] = view.get<TransformComponent, PrimitiveComponent>(entity);
         PrimitiveMesh mesh = PrimitiveMeshFactory::GetMesh(primitive.Type);
@@ -268,7 +271,8 @@ void RenderSystem::RenderScene(World* world, Camera* camera) {
     }
 
     // Render entities
-    auto view = world->GetRegistry().view<TransformComponent, PrimitiveComponent>();
+    auto& registry = Internal::GetRegistry(*world);
+    auto view = registry.view<TransformComponent, PrimitiveComponent>();
     for (auto entity : view) {
         auto [transform, primitive] = view.get<TransformComponent, PrimitiveComponent>(entity);
         PrimitiveMesh mesh = PrimitiveMeshFactory::GetMesh(primitive.Type);
@@ -292,7 +296,8 @@ void RenderSystem::RenderScene(World* world, Camera* camera) {
 
 void RenderSystem::CollectLights(World& world, LightingData& lightData) {
     // Directional light (use first found)
-    auto dirView = world.GetRegistry().view<DirectionalLightComponent>();
+    auto& registry = Internal::GetRegistry(world);
+    auto dirView = registry.view<DirectionalLightComponent>();
     if (!dirView.empty()) {
         auto entity = dirView.front();
         auto& light = dirView.get<DirectionalLightComponent>(entity);
@@ -307,14 +312,14 @@ void RenderSystem::CollectLights(World& world, LightingData& lightData) {
 
     // Point lights
     lightData.numPointLights = 0;
-    auto pointView = world.GetRegistry().view<PointLightComponent>();
+    auto pointView = registry.view<PointLightComponent>();
     for (auto entity : pointView) {
         if (lightData.numPointLights >= 8) break;
         auto& pl = pointView.get<PointLightComponent>(entity);
         auto& data = lightData.points[lightData.numPointLights];
 
-        if (world.GetRegistry().all_of<TransformComponent>(entity)) {
-            data.position = world.GetRegistry().get<TransformComponent>(entity).Translation;
+        if (registry.all_of<TransformComponent>(entity)) {
+            data.position = registry.get<TransformComponent>(entity).Translation;
         } else {
             data.position = pl.Position;
         }
@@ -328,14 +333,14 @@ void RenderSystem::CollectLights(World& world, LightingData& lightData) {
 
     // Spot lights
     lightData.numSpotLights = 0;
-    auto spotView = world.GetRegistry().view<SpotLightComponent>();
+    auto spotView = registry.view<SpotLightComponent>();
     for (auto entity : spotView) {
         if (lightData.numSpotLights >= 8) break;
         auto& sl = spotView.get<SpotLightComponent>(entity);
         auto& data = lightData.spots[lightData.numSpotLights];
 
-        if (world.GetRegistry().all_of<TransformComponent>(entity)) {
-            data.position = world.GetRegistry().get<TransformComponent>(entity).Translation;
+        if (registry.all_of<TransformComponent>(entity)) {
+            data.position = registry.get<TransformComponent>(entity).Translation;
         } else {
             data.position = sl.Position;
         }
@@ -388,11 +393,12 @@ void RenderSystem::SetupLightUniforms(Shader* shader, const LightingData& lightD
 }
 
 void RenderSystem::SetupMaterialUniforms(Shader* shader, World& world, uint32_t entity) {
-    auto entityID = static_cast<entt::entity>(entity);
+    auto& registry = Internal::GetRegistry(world);
+    auto entityID = Internal::ToEnTT(EntityHandle::FromValue(entity));
     bool isPBR = (m_Config.Path == RenderPath::Advanced);
 
-    if (world.GetRegistry().all_of<PBRMaterialComponent>(entityID)) {
-        auto& mat = world.GetRegistry().get<PBRMaterialComponent>(entityID);
+    if (registry.all_of<PBRMaterialComponent>(entityID)) {
+        auto& mat = registry.get<PBRMaterialComponent>(entityID);
 
         if (isPBR) {
             // PBR path: set scalar uniforms

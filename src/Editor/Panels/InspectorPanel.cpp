@@ -1,4 +1,5 @@
 #include <Zgine/Editor/Panels/InspectorPanel.h>
+#include <Zgine/Editor/Core/AssetSelectionContext.h>
 #include <Zgine/Editor/Core/EditorContext.h>
 #include <Zgine/Editor/Core/SelectionContext.h>
 #include <Zgine/Editor/Core/EditorEventBus.h>
@@ -43,7 +44,12 @@ void InspectorPanel::OnGuiRender() {
     Entity selected = selectionContext.GetPrimary();
 
     if (!selected) {
-        ImGui::Text("No entity selected");
+        const auto& assetSelection = GetContext().GetAssetSelectionContext();
+        if (assetSelection.HasSelection()) {
+            DrawAssetInspector(assetSelection.GetSelection());
+        } else {
+            ImGui::Text("No entity or asset selected");
+        }
         EndPanel();
         return;
     }
@@ -63,7 +69,7 @@ void InspectorPanel::OnGuiRender() {
     }
 
     ImGui::SameLine();
-    ImGui::Text("ID: %u", static_cast<uint32_t>(static_cast<entt::entity>(selected)));
+    ImGui::Text("ID: %u", selected.GetHandle().GetValue());
 
     // Tag (always editable, no collapsing header)
     if (selected.HasComponent<TagComponent>()) {
@@ -73,7 +79,12 @@ void InspectorPanel::OnGuiRender() {
     ImGui::Separator();
 
     // Draw all components
-    DrawComponentInspector<TransformComponent>(selected, &UI::Inspectors::CoreInspector::DrawTransformProperties);
+    if (selected.HasComponent<TransformComponent>()) {
+        UI::Inspectors::CoreInspector::DrawTransformProperties(
+            selected,
+            &GetContext().GetCommandHistory()
+        );
+    }
     DrawComponentInspector<PrimitiveComponent>(selected, &UI::Inspectors::RenderingInspector::DrawPrimitiveProperties);
     DrawComponentInspector<MeshComponent>(selected, &UI::Inspectors::RenderingInspector::DrawMeshRendererProperties);
     DrawComponentInspector<ColorComponent>(selected, &UI::Inspectors::RenderingInspector::DrawColorProperties);
@@ -179,6 +190,23 @@ void InspectorPanel::DeleteEntity(World* World, Entity entity) {
     // Execute command through CommandHistory
     auto& commandHistory = GetContext().GetCommandHistory();
     commandHistory.Execute(std::move(command));
+}
+
+void InspectorPanel::DrawAssetInspector(const AssetSelection& selection) {
+    ImGui::TextUnformatted("Asset");
+    ImGui::Separator();
+    ImGui::Text("Name: %s", selection.SourcePath.filename().string().c_str());
+    ImGui::Text("Type: %s", AssetTypeToString(selection.Type));
+    ImGui::Text("Relative: %s", selection.RelativePath.generic_string().c_str());
+    ImGui::Text("Source: %s", selection.SourcePath.string().c_str());
+    ImGui::Text("Directory: %s", selection.IsDirectory ? "true" : "false");
+    ImGui::Text("Metadata: %s", selection.HasMetadata ? "true" : "false");
+
+    if (selection.Handle.IsValid()) {
+        ImGui::Text("Handle: %s", selection.Handle.ToString().c_str());
+    } else {
+        ImGui::TextUnformatted("Handle: <none>");
+    }
 }
 
 } // namespace Zgine

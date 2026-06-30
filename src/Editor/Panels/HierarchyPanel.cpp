@@ -66,15 +66,7 @@ void HierarchyPanel::OnGuiRender() {
 
     ImGui::BeginChild("HierarchyList", ImVec2(0.0f, 0.0f), false);
 
-    // Render root entities
-    auto& registry = m_World->GetRegistry();
-    auto view = registry.view<TagComponent, RelationshipComponent>();
-    for (auto entity : view) {
-        auto& rel = registry.get<RelationshipComponent>(entity);
-        // Only render root entities
-        if (rel.Parent != entt::null) continue;
-
-        Entity e(entity, m_World);
+    for (Entity e : m_World->GetRootEntities()) {
         if (!PassHierarchyFilter(m_World, e)) continue;
 
         DrawHierarchyNode(m_World, e);
@@ -126,9 +118,10 @@ bool HierarchyPanel::PassHierarchyFilter(World* World, Entity entity) {
 
 void HierarchyPanel::DrawHierarchyNode(World* World, Entity entity) {
     auto& selectionContext = GetContext().GetSelectionContext();
-    auto& registry = World->GetRegistry();
-    auto& tag = registry.get<TagComponent>(static_cast<entt::entity>(entity));
-    auto* rel = registry.try_get<RelationshipComponent>(static_cast<entt::entity>(entity));
+    auto& tag = entity.GetComponent<TagComponent>();
+    const RelationshipComponent* rel = entity.HasComponent<RelationshipComponent>()
+        ? &entity.GetComponent<RelationshipComponent>()
+        : nullptr;
 
     const bool hasChildren = rel && !rel->Children.empty();
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -143,7 +136,7 @@ void HierarchyPanel::DrawHierarchyNode(World* World, Entity entity) {
     }
 
     bool opened = ImGui::TreeNodeEx(
-        reinterpret_cast<void*>(static_cast<uintptr_t>(static_cast<entt::entity>(entity))),
+        reinterpret_cast<void*>(static_cast<uintptr_t>(entity.GetHandle().GetValue())),
         flags, "%s", tag.Tag.c_str()
     );
 
@@ -161,17 +154,18 @@ void HierarchyPanel::DrawHierarchyNode(World* World, Entity entity) {
 
     // Drag & Drop
     if (ImGui::BeginDragDropSource()) {
-        entt::entity payload = static_cast<entt::entity>(entity);
-        ImGui::SetDragDropPayload("ZGINE_ENTITY", &payload, sizeof(entt::entity));
+        uint32_t payload = entity.GetHandle().GetValue();
+        ImGui::SetDragDropPayload("ZGINE_ENTITY", &payload, sizeof(uint32_t));
         ImGui::TextUnformatted(tag.Tag.c_str());
         ImGui::EndDragDropSource();
     }
 
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("ZGINE_ENTITY")) {
-            entt::entity dropped = *static_cast<const entt::entity*>(payload->Data);
-            if (dropped != static_cast<entt::entity>(entity)) {
-                World->SetParent(Entity(dropped, World), entity);
+            uint32_t dropped = *static_cast<const uint32_t*>(payload->Data);
+            Entity droppedEntity(EntityHandle::FromValue(dropped), World);
+            if (droppedEntity != entity) {
+                World->SetParent(droppedEntity, entity);
             }
         }
         ImGui::EndDragDropTarget();
@@ -200,8 +194,8 @@ void HierarchyPanel::DrawHierarchyNode(World* World, Entity entity) {
     // Render children
     if (opened && hasChildren) {
         for (auto child : rel->Children) {
-            if (!registry.valid(child)) continue;
             Entity childEntity(child, World);
+            if (!World->IsEntityValid(childEntity)) continue;
             if (!PassHierarchyFilter(World, childEntity)) continue;
             DrawHierarchyNode(World, childEntity);
         }

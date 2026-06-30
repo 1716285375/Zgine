@@ -94,6 +94,12 @@ namespace Zgine {
             // Initialize Editor UI
             auto& window = Application::Get().GetWindow();
             m_Editor.Initialize(&window);
+            m_Editor.GetContext().SetPlayRuntimeConfigurator([this](World& runtimeWorld) {
+                auto& systems = runtimeWorld.GetSystemManager();
+                systems.RegisterExternalSystem(&m_PhysicsSystem);
+                systems.RegisterExternalSystem(&m_AudioSystem);
+                systems.RegisterExternalSystem(&m_ScriptSystem);
+            });
 
             // Setup Editor callbacks
             SetupEditorCallbacks();
@@ -121,20 +127,17 @@ namespace Zgine {
         virtual void OnDetach() override {
             ZGINE_CORE_INFO("EditorLayer::OnDetach - Shutting down Editor");
 
-            // Stop systems
-            m_PhysicsSystem.OnSceneStop();
-            m_AudioSystem.OnSceneStop();
-            m_ScriptSystem.OnSceneStop();
-
-            // Shutdown
             m_Editor.Shutdown();
+            m_ScriptSystem.Shutdown();
+            m_AudioSystem.Shutdown();
+            m_PhysicsSystem.Shutdown();
             m_RenderSystem.Shutdown();
         }
 
-        virtual void OnFixedUpdate(Timestep /*ts*/) override {
-            // ZGINE_CORE_INFO("EditorLayer::OnFixedUpdate");
-            // This runs at 60Hz. If we print it it will spam the console, so it's commented out.
-            // But we can update physics here if it was separated from the variable update!
+        virtual void OnFixedUpdate(Timestep ts) override {
+            if (m_Editor.GetMode() == EditorMode::Play) {
+                m_Editor.GetContext().FixedUpdatePlayRuntime(ts.GetSecondsF());
+            }
         }
 
         virtual void OnUpdate(Timestep ts) override {
@@ -150,12 +153,8 @@ namespace Zgine {
                 HandleCameraInput(ts);
             }
 
-            // Update systems based on editor mode
             if (m_Editor.GetMode() == EditorMode::Play) {
-                m_PhysicsSystem.Step(ts);
-                m_PhysicsSystem.SyncPhysicsToECS(&m_World);
-                m_AudioSystem.Update(&m_World, ts);
-                m_ScriptSystem.Update(&m_World, ts);
+                m_Editor.GetContext().UpdatePlayRuntime(ts.GetSecondsF());
             }
 
             // Render World to framebuffer (now with correct size)
@@ -229,8 +228,12 @@ namespace Zgine {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             // Begin frame and render World
+            World* renderWorld = m_Editor.GetContext().GetSceneContext().GetActiveScene();
+            if (!renderWorld) {
+                renderWorld = &m_World;
+            }
             m_RenderSystem.BeginFrame();
-            m_RenderSystem.RenderScene(&m_World, &m_EditorCamera);
+            m_RenderSystem.RenderScene(renderWorld, &m_EditorCamera);
 
             // Unbind framebuffer and restore state
             m_SceneFramebuffer->Unbind();
@@ -405,16 +408,8 @@ namespace Zgine {
             // Subscribe to play mode change events
             eventBus.Subscribe<PlayModeChangedEvent>([this](PlayModeChangedEvent& e) {
                 if (e.GetMode() == EditorMode::Play) {
-                    // Start play mode
-                    m_PhysicsSystem.OnSceneStart(&m_World);
-                    m_AudioSystem.OnSceneStart(&m_World);
-                    m_ScriptSystem.OnSceneStart(&m_World);
                     ZGINE_CORE_INFO("Entered Play mode");
-                } else {
-                    // Stop play mode
-                    m_PhysicsSystem.OnSceneStop();
-                    m_AudioSystem.OnSceneStop();
-                    m_ScriptSystem.OnSceneStop();
+                } else if (e.GetMode() == EditorMode::Edit) {
                     ZGINE_CORE_INFO("Exited Play mode");
                 }
             });

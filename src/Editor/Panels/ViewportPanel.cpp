@@ -12,7 +12,6 @@
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <ImGuizmo.h>
-#include <entt/entt.hpp>
 
 namespace Zgine {
 
@@ -108,10 +107,12 @@ namespace Zgine {
 		Entity closestEntity;
 		float closestT = 1e30f;
 
-		auto& registry = m_World->GetRegistry();
-		auto view = registry.view<TransformComponent>();
-		for (auto enttId : view) {
-			auto& tc = view.get<TransformComponent>(enttId);
+		for (Entity candidate : m_World->GetAllEntities()) {
+			if (!candidate.HasComponent<TransformComponent>()) {
+				continue;
+			}
+
+			auto& tc = candidate.GetComponent<TransformComponent>();
 
 			// Build AABB from transform (base unit cube [-0.5, 0.5] scaled and translated)
 			Math::Vector3 halfExtents = tc.Scale * 0.5f;
@@ -130,7 +131,7 @@ namespace Zgine {
 			if (RayIntersectsAABB(rayOrigin, rayDir, aabbMin, aabbMax, t)) {
 				if (t < closestT) {
 					closestT = t;
-					closestEntity = Entity(enttId, m_World);
+					closestEntity = candidate;
 				}
 			}
 		}

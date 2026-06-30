@@ -7,15 +7,15 @@ using namespace Zgine;
 int main() {
     World World;
 
-    std::cout << "Initial count: " << World.GetRegistry().storage<entt::entity>().size() << std::endl;
+    std::cout << "Initial count: " << World.GetEntityCount() << std::endl;
 
     Entity e1 = World.CreateEntity("Test1");
-    std::cout << "After create: " << World.GetRegistry().storage<entt::entity>().size() << std::endl;
+    std::cout << "After create: " << World.GetEntityCount() << std::endl;
     std::cout << "Entity valid: " << (bool)e1 << std::endl;
-    std::cout << "Entity handle: " << (uint32_t)static_cast<entt::entity>(e1) << std::endl;
+    std::cout << "Entity handle: " << e1.GetHandle().GetValue() << std::endl;
 
     World.DestroyEntity(e1);
-    std::cout << "After destroy: " << World.GetRegistry().storage<entt::entity>().size() << std::endl;
+    std::cout << "After destroy: " << World.GetEntityCount() << std::endl;
     std::cout << "Entity still valid (bool): " << (bool)e1 << std::endl;
 
     return 0;

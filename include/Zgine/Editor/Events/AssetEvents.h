@@ -1,8 +1,10 @@
 #pragma once
 
 #include <Zgine/Editor/Events/EditorEvent.h>
+#include <Zgine/Resources/Core/AssetType.h>
 #include <filesystem>
 #include <sstream>
+#include <utility>
 
 namespace Zgine {
 
@@ -57,6 +59,45 @@ public:
 
 private:
     std::filesystem::path m_AssetPath;
+};
+
+/**
+ * @brief Event fired when an asset is selected in editor tooling
+ */
+class AssetSelectedEvent : public EditorEvent {
+public:
+    AssetSelectedEvent(std::filesystem::path relativePath, AssetType type)
+        : m_RelativePath(std::move(relativePath)), m_Type(type) {}
+
+    const std::filesystem::path& GetRelativePath() const noexcept { return m_RelativePath; }
+    AssetType GetAssetType() const noexcept { return m_Type; }
+
+    std::string ToString() const override {
+        std::stringstream ss;
+        ss << "AssetSelectedEvent [ID:" << GetEventID()
+           << ", Asset:" << m_RelativePath.generic_string()
+           << ", Type:" << AssetTypeToString(m_Type) << "]";
+        return ss.str();
+    }
+
+    ZGINE_EDITOR_EVENT_CLASS_TYPE(AssetSelectedEvent)
+    ZGINE_EDITOR_EVENT_CLASS_CATEGORY(Selection)
+
+private:
+    std::filesystem::path m_RelativePath;
+    AssetType m_Type = AssetType::Unknown;
+};
+
+/**
+ * @brief Event fired when editor asset selection is cleared
+ */
+class AssetSelectionClearedEvent : public EditorEvent {
+public:
+    AssetSelectionClearedEvent() = default;
+
+    ZGINE_EDITOR_EVENT_CLASS_TYPE(AssetSelectionClearedEvent)
+    ZGINE_EDITOR_EVENT_CLASS_CATEGORY(Selection)
+    ZGINE_EDITOR_EVENT_TOSTRING()
 };
 
 } // namespace Zgine

@@ -27,6 +27,17 @@ public:
     virtual void Shutdown() = 0;
 
     /*
+        Purpose : Bind the system to a runtime scene. This is separate from
+                  Initialize() so resource lifetime and Play Mode lifetime stay clear.
+    */
+    virtual void OnSceneStart(World* World) { (void)World; }
+
+    /*
+        Purpose : Release scene-bound runtime state without destroying engine resources.
+    */
+    virtual void OnSceneStop() {}
+
+    /*
         Purpose : Variable-timestep update — process entities each frame.
         Args    : World — World containing entities; deltaTime — seconds since last frame.
     */

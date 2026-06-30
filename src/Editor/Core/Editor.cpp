@@ -237,7 +237,10 @@ void Editor::Render(World* World) {
         return;
     }
 
-    AttachScene(World);
+    m_Mode = m_Context.GetMode();
+    if (m_Mode == EditorMode::Edit) {
+        AttachScene(World);
+    }
     RenderDockSpace(World);
     HandleShortcuts(World);
     m_PanelManager.OnUpdate(ImGui::GetIO().DeltaTime);
@@ -694,7 +697,20 @@ void Editor::SetTheme(ImGuiThemeType theme) {
 void Editor::InitializePanels() {
     // Create and initialize toolbar
     m_Toolbar = std::make_unique<ToolbarPanel>(m_Context);
-    m_Toolbar->SetPlayModeCallback(m_OnPlayMode);
+    m_Toolbar->SetPlayModeCallback([this](EditorMode requestedMode) {
+        switch (requestedMode) {
+            case EditorMode::Play:
+                m_Context.EnterPlayMode();
+                break;
+            case EditorMode::Pause:
+                m_Context.PausePlayMode();
+                break;
+            case EditorMode::Edit:
+                m_Context.ExitPlayMode();
+                break;
+        }
+        m_Mode = m_Context.GetMode();
+    });
     m_Toolbar->SetModeRef(&m_Mode);
     m_Toolbar->SetGizmoOperationRef(&m_GizmoOperation);
     m_Toolbar->SetGizmoModeRef(&m_GizmoMode);

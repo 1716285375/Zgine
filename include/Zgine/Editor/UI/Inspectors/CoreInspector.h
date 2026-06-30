@@ -3,6 +3,9 @@
 #include <Zgine/World/Core/Entity.h>
 
 namespace Zgine {
+
+class EditorCommandHistory;
+
 namespace UI {
 namespace Inspectors {
 
@@ -17,8 +20,9 @@ public:
     /**
      * @brief Draw Transform component properties
      * @param entity Entity with TransformComponent
+     * @param commandHistory Optional command history for undoable edits
      */
-    static void DrawTransformProperties(Entity entity);
+    static void DrawTransformProperties(Entity entity, EditorCommandHistory* commandHistory = nullptr);
 
     /**
      * @brief Draw Tag component properties

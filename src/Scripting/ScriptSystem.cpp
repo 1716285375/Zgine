@@ -8,6 +8,7 @@
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
 #include <Zgine/Platform/IO/File.h>
+#include <World/Core/WorldRegistryAccess.h>
 
 #include <sol/sol.hpp>
 #include <GLFW/glfw3.h>
@@ -200,13 +201,13 @@ void ScriptSystem::BindEntityAPI() {
     m_Impl->LuaState["findEntity"] = [this](const std::string& name) -> Entity {
         if (!m_World) return Entity();
 
-        auto& registry = m_World->GetRegistry();
+        auto& registry = Internal::GetRegistry(*m_World);
         auto view = registry.view<TagComponent>();
 
         for (auto entity : view) {
             auto& tag = registry.get<TagComponent>(entity);
             if (tag.Tag == name) {
-                return Entity(entity, m_World);
+                return Entity(Internal::FromEnTT(entity), m_World);
             }
         }
         return Entity();
@@ -271,11 +272,11 @@ void ScriptSystem::OnSceneStart(World* World) {
 
     // 加载所有脚本组件
     if (World) {
-        auto& registry = World->GetRegistry();
+        auto& registry = Internal::GetRegistry(*World);
         auto view = registry.view<ScriptComponent>();
 
         for (auto entity : view) {
-            LoadScript(Entity(entity, World));
+            LoadScript(Entity(Internal::FromEnTT(entity), World));
         }
     }
 }
@@ -286,11 +287,11 @@ void ScriptSystem::OnSceneStop() {
     }
 
     // 卸载所有脚本
-    auto& registry = m_World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*m_World);
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
-        UnloadScript(Entity(entity, m_World));
+        UnloadScript(Entity(Internal::FromEnTT(entity), m_World));
     }
 
     m_Impl->ScriptInstances.clear();
@@ -310,7 +311,7 @@ void ScriptSystem::Update(World* World, float deltaTime) {
         return;
     }
 
-    auto& registry = World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*World);
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
@@ -330,7 +331,7 @@ void ScriptSystem::Update(World* World, float deltaTime) {
         // 调用 OnUpdate
         try {
             if (it->second.OnUpdate.valid()) {
-                auto result = it->second.OnUpdate(Entity(entity, World), deltaTime);
+                auto result = it->second.OnUpdate(Entity(Internal::FromEnTT(entity), World), deltaTime);
                 if (!result.valid()) {
                     sol::error err = result;
                     ZGINE_CORE_ERROR("Script error in OnUpdate (entity {}): {}", entityId, err.what());
@@ -372,7 +373,7 @@ bool ScriptSystem::LoadScript(Entity entity) {
         }
 
         // 缓存函数引用
-        uint32_t entityId = static_cast<uint32_t>(entity);
+        uint32_t entityId = entity.GetHandle().GetValue();
         Impl::ScriptInstance instance;
         instance.ScriptPath = script.ScriptPath;
         instance.OnStart = m_Impl->LuaState["OnStart"];
@@ -422,7 +423,7 @@ void ScriptSystem::UnloadScript(Entity entity) {
 
     if (script.IsInitialized) {
         // 调用 OnDestroy
-        uint32_t entityId = static_cast<uint32_t>(entity);
+        uint32_t entityId = entity.GetHandle().GetValue();
         auto it = m_Impl->ScriptInstances.find(entityId);
         if (it != m_Impl->ScriptInstances.end()) {
             try {
@@ -453,7 +454,7 @@ void ScriptSystem::CheckForChanges(World* World) {
         return;
     }
 
-    auto& registry = World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*World);
     auto view = registry.view<ScriptComponent>();
 
     for (auto entity : view) {
@@ -476,7 +477,7 @@ void ScriptSystem::CheckForChanges(World* World) {
                     timeSinceEpoch).count();
                 if (currentTime != it->second.LastModified) {
                     ZGINE_CORE_INFO("Script file changed, reloading: {}", script.ScriptPath);
-                    ReloadScript(Entity(entity, World));
+                    ReloadScript(Entity(Internal::FromEnTT(entity), World));
                 }
             }
         } catch (...) {

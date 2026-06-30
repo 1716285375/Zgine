@@ -20,9 +20,13 @@ endif()
 
 # Test executable
 add_executable(ZgineTests
+    AssetDatabaseTests.cpp
     AssetManagerTests.cpp
+    DocumentationStructureTests.cpp
     EngineSmokeTests.cpp
+    PrefabTests.cpp
     RendererBackendTests.cpp
+    SceneRuntimeTests.cpp
     SystemManagerTests.cpp
 )
 
@@ -30,6 +34,10 @@ add_executable(ZgineTests
 target_link_libraries(ZgineTests PRIVATE
     ZgineRuntime
     GTest::gtest_main
+)
+
+target_compile_definitions(ZgineTests PRIVATE
+    ZGINE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 
 # C++ standard

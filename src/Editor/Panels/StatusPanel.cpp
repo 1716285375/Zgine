@@ -40,9 +40,7 @@ namespace Zgine
 
         if (m_World)
         {
-            auto &registry = m_World->GetRegistry();
-            auto &entities = registry.storage<entt::entity>();
-            ImGui::Text("Entities: %zu", entities.size());
+            ImGui::Text("Entities: %zu", m_World->GetEntityCount());
         }
 
         EndPanel();

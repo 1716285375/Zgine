@@ -1,7 +1,7 @@
 #pragma once
 
-#include <entt/entt.hpp>
 #include <cstdint>
+#include <limits>
 
 namespace Zgine {
 
@@ -16,12 +16,17 @@ class World;
  */
 class EntityHandle {
 public:
+    static constexpr uint32_t NullValue = std::numeric_limits<uint32_t>::max();
+
     EntityHandle() = default;
 
-    explicit EntityHandle(entt::entity handle)
-        : m_Handle(handle)
-        , m_Version(static_cast<uint32_t>(handle))
+    explicit EntityHandle(uint32_t value)
+        : m_Value(value)
     {}
+
+    static EntityHandle FromValue(uint32_t value) {
+        return EntityHandle(value);
+    }
 
     /**
      * @brief Check if this handle is valid in the given World
@@ -32,49 +37,41 @@ public:
 
     /**
      * @brief Check if handle is not null (doesn't check registry validity)
-     * @return true if handle != entt::null
+     * @return true if the handle is not null
      */
     explicit operator bool() const {
-        return m_Handle != entt::null;
+        return m_Value != NullValue;
     }
 
     /**
-     * @brief Convert to entt::entity for registry operations
+     * @brief Get the engine-level raw handle value
      */
-    operator entt::entity() const {
-        return m_Handle;
-    }
-
-    /**
-     * @brief Get the raw entt entity handle
-     */
-    entt::entity GetHandle() const {
-        return m_Handle;
+    uint32_t GetValue() const {
+        return m_Value;
     }
 
     /**
      * @brief Get version number for validity checking
      */
     uint32_t GetVersion() const {
-        return m_Version;
+        return m_Value;
     }
 
     // Comparison operators
     bool operator==(const EntityHandle& other) const {
-        return m_Handle == other.m_Handle;
+        return m_Value == other.m_Value;
     }
 
     bool operator!=(const EntityHandle& other) const {
-        return m_Handle != other.m_Handle;
+        return m_Value != other.m_Value;
     }
 
     bool operator<(const EntityHandle& other) const {
-        return m_Handle < other.m_Handle;
+        return m_Value < other.m_Value;
     }
 
 private:
-    entt::entity m_Handle{ entt::null };
-    uint32_t m_Version{ 0 };
+    uint32_t m_Value{ NullValue };
 };
 
 } // namespace Zgine

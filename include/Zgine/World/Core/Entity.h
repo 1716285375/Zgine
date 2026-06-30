@@ -1,6 +1,5 @@
 #pragma once
 
-#include <entt/entt.hpp>
 #include <type_traits>
 #include <utility>
 #include <Zgine/World/Core/World.h>
@@ -23,8 +22,7 @@ public:
         , m_Scene(World)
     {}
 
-    // Legacy constructor for compatibility
-    Entity(entt::entity handle, World* World)
+    Entity(uint32_t handle, World* World)
         : m_Handle(EntityHandle(handle))
         , m_Scene(World)
     {}
@@ -44,37 +42,39 @@ public:
         return m_Handle;
     }
 
+    World* GetWorld() const noexcept {
+        return m_Scene;
+    }
+
     template<typename T, typename... Args>
-    decltype(auto) AddComponent(Args&&... args) {
-        if constexpr (std::is_empty_v<T>) {
-            m_Scene->m_Registry.emplace<T>(m_Handle.GetHandle(), std::forward<Args>(args)...);
-        } else {
-            return m_Scene->m_Registry.emplace<T>(m_Handle.GetHandle(), std::forward<Args>(args)...);
-        }
+    T& AddComponent(Args&&... args) {
+        T component(std::forward<Args>(args)...);
+        return m_Scene->AddComponentFromValue<T>(m_Handle, std::move(component));
     }
 
     template<typename T>
     T& GetComponent() {
-        return m_Scene->m_Registry.get<T>(m_Handle.GetHandle());
+        return m_Scene->GetComponent<T>(m_Handle);
     }
 
     template<typename T>
-    bool HasComponent() {
-        return m_Scene->m_Registry.all_of<T>(m_Handle.GetHandle());
+    const T& GetComponent() const {
+        return m_Scene->GetComponent<T>(m_Handle);
+    }
+
+    template<typename T>
+    bool HasComponent() const {
+        return m_Scene->HasComponent<T>(m_Handle);
     }
 
     template<typename T>
     void RemoveComponent() {
-        m_Scene->m_Registry.remove<T>(m_Handle.GetHandle());
+        m_Scene->RemoveComponent<T>(m_Handle);
     }
 
     // Operators
     operator bool() const {
         return static_cast<bool>(m_Handle);
-    }
-
-    operator entt::entity() const {
-        return m_Handle.GetHandle();
     }
 
     bool operator==(const Entity& other) const {

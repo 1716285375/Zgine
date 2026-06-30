@@ -30,6 +30,8 @@ struct AudioSourceComponent {
  * @brief Audio listener component (usually attached to camera)
  */
 struct AudioListenerComponent {
+    bool Enabled = true;
+
     AudioListenerComponent() = default;
     AudioListenerComponent(const AudioListenerComponent&) = default;
 };

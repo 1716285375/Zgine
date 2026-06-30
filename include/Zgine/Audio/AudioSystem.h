@@ -25,9 +25,8 @@ public:
     const char* GetName() const override { return "AudioSystem"; }
     int GetPriority() const override { return 20; }  // Audio runs after physics
 
-    // Legacy interface (kept for compatibility)
-    void OnSceneStart(World* World);
-    void OnSceneStop();
+    void OnSceneStart(World* World) override;
+    void OnSceneStop() override;
 
     // 音频源管理
     void CreateAudioSource(Entity entity);

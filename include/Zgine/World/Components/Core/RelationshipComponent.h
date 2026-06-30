@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <entt/entt.hpp>
+#include <Zgine/World/Core/EntityHandle.h>
 
 namespace Zgine {
 
@@ -9,8 +9,8 @@ namespace Zgine {
  * @brief Entity hierarchy relationship component
  */
 struct RelationshipComponent {
-    entt::entity Parent = entt::null;
-    std::vector<entt::entity> Children;
+    EntityHandle Parent;
+    std::vector<EntityHandle> Children;
 
     RelationshipComponent() = default;
     RelationshipComponent(const RelationshipComponent&) = default;

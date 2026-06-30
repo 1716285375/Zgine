@@ -70,9 +70,10 @@ void ToolbarPanel::OnGuiRender() {
         if (*m_ModeRef == nextMode) {
             return;
         }
-        *m_ModeRef = nextMode;
         if (m_OnPlayMode) {
             m_OnPlayMode(nextMode);
+        } else {
+            *m_ModeRef = nextMode;
         }
     };
 

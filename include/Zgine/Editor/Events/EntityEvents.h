@@ -22,7 +22,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "EntityCreatedEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity) << "]";
+           << ", Entity:" << m_Entity.GetHandle().GetValue() << "]";
         return ss.str();
     }
 
@@ -47,7 +47,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "EntityDeletedEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity) << "]";
+           << ", Entity:" << m_Entity.GetHandle().GetValue() << "]";
         return ss.str();
     }
 
@@ -70,7 +70,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "EntityDestroyedEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity) << "]";
+           << ", Entity:" << m_Entity.GetHandle().GetValue() << "]";
         return ss.str();
     }
 

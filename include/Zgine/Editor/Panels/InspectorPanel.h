@@ -6,6 +6,7 @@
 namespace Zgine {
 
 class World;
+struct AssetSelection;
 
 /**
  * @brief Inspector panel for editing entity components
@@ -61,6 +62,7 @@ private:
     void AddComponentMenuItem(Entity entity, const char* label);
 
     void DeleteEntity(World* World, Entity entity);
+    void DrawAssetInspector(const AssetSelection& selection);
 
     World* m_World = nullptr;
 };

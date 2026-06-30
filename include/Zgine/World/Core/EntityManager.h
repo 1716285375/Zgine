@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Zgine/World/Core/EntityHandle.h>
-#include <entt/entt.hpp>
 #include <string>
 #include <functional>
 
@@ -21,7 +20,7 @@ public:
     using EntityCreatedCallback = std::function<void(EntityHandle)>;
     using EntityDestroyedCallback = std::function<void(EntityHandle)>;
 
-    explicit EntityManager(entt::registry& registry);
+    explicit EntityManager(World& world);
     ~EntityManager() = default;
 
     /**
@@ -69,14 +68,8 @@ public:
         m_OnEntityDestroyed = std::move(callback);
     }
 
-    /**
-     * @brief Get the underlying registry (for World/System access only)
-     */
-    entt::registry& GetRegistry() { return m_Registry; }
-    const entt::registry& GetRegistry() const { return m_Registry; }
-
 private:
-    entt::registry& m_Registry;
+    World& m_World;
     EntityCreatedCallback m_OnEntityCreated;
     EntityDestroyedCallback m_OnEntityDestroyed;
 };

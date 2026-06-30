@@ -1,24 +1,29 @@
 #include <Zgine/World/Core/EntityManager.h>
 #include <Zgine/World/Core/Entity.h>
+#include <Zgine/World/Core/World.h>
 #include <Zgine/World/Components/Components.h>
+#include "WorldRegistryAccess.h"
 #include <algorithm>
+#include <vector>
 
 namespace Zgine {
 
-EntityManager::EntityManager(entt::registry& registry)
-    : m_Registry(registry)
+EntityManager::EntityManager(World& world)
+    : m_World(world)
 {}
 
 EntityHandle EntityManager::Create(const std::string& name) {
+    auto& registry = Internal::GetRegistry(m_World);
+
     // Create the entity in the registry
-    entt::entity handle = m_Registry.create();
-    EntityHandle entityHandle(handle);
+    entt::entity handle = registry.create();
+    EntityHandle entityHandle = Internal::FromEnTT(handle);
 
     // Add default components
-    m_Registry.emplace<IDComponent>(handle);
-    m_Registry.emplace<TagComponent>(handle, name.empty() ? "Entity" : name);
-    m_Registry.emplace<TransformComponent>(handle);
-    m_Registry.emplace<RelationshipComponent>(handle);
+    registry.emplace<IDComponent>(handle);
+    registry.emplace<TagComponent>(handle, name.empty() ? "Entity" : name);
+    registry.emplace<TransformComponent>(handle);
+    registry.emplace<RelationshipComponent>(handle);
 
     // Notify listeners
     if (m_OnEntityCreated) {
@@ -33,17 +38,18 @@ bool EntityManager::Destroy(EntityHandle handle) {
         return false;
     }
 
-    entt::entity entity = handle.GetHandle();
+    auto& registry = Internal::GetRegistry(m_World);
+    entt::entity entity = Internal::ToEnTT(handle);
 
     // Handle relationship cleanup
-    if (m_Registry.all_of<RelationshipComponent>(entity)) {
-        auto& rel = m_Registry.get<RelationshipComponent>(entity);
+    if (registry.all_of<RelationshipComponent>(entity)) {
+        auto& rel = registry.get<RelationshipComponent>(entity);
 
         // Remove from parent's children list
-        if (rel.Parent != entt::null && m_Registry.valid(rel.Parent)) {
-            auto& parentRel = m_Registry.get<RelationshipComponent>(rel.Parent);
+        if (rel.Parent && registry.valid(Internal::ToEnTT(rel.Parent))) {
+            auto& parentRel = registry.get<RelationshipComponent>(Internal::ToEnTT(rel.Parent));
             parentRel.Children.erase(
-                std::remove(parentRel.Children.begin(), parentRel.Children.end(), entity),
+                std::remove(parentRel.Children.begin(), parentRel.Children.end(), handle),
                 parentRel.Children.end());
         }
 
@@ -60,7 +66,7 @@ bool EntityManager::Destroy(EntityHandle handle) {
     }
 
     // Actually destroy the entity
-    m_Registry.destroy(entity);
+    registry.destroy(entity);
     return true;
 }
 
@@ -68,15 +74,32 @@ bool EntityManager::IsValid(EntityHandle handle) const {
     if (!handle) {
         return false;
     }
-    return m_Registry.valid(handle.GetHandle());
+    return Internal::GetRegistry(m_World).valid(Internal::ToEnTT(handle));
 }
 
 size_t EntityManager::GetEntityCount() const {
-    return m_Registry.storage<IDComponent>().size();
+    return Internal::GetRegistry(m_World).storage<IDComponent>().size();
 }
 
 void EntityManager::Clear() {
-    m_Registry.clear();
+    auto& registry = Internal::GetRegistry(m_World);
+
+    std::vector<EntityHandle> roots;
+    auto view = registry.view<IDComponent, RelationshipComponent>();
+    for (auto entity : view) {
+        const auto& rel = view.get<RelationshipComponent>(entity);
+        if (!rel.Parent || !registry.valid(Internal::ToEnTT(rel.Parent))) {
+            roots.push_back(Internal::FromEnTT(entity));
+        }
+    }
+
+    for (EntityHandle root : roots) {
+        Destroy(root);
+    }
+
+    // Components should be gone through Destroy(), but keep a final guard for
+    // malformed relationship graphs or entities created outside EntityManager.
+    registry.clear();
 }
 
 } // namespace Zgine

@@ -20,9 +20,8 @@ public:
     const char* GetName() const override { return "PhysicsSystem"; }
     int GetPriority() const override { return 10; }  // Physics runs early
 
-    // Legacy interface (kept for compatibility)
-    void OnSceneStart(World* World);
-    void OnSceneStop();
+    void OnSceneStart(World* World) override;
+    void OnSceneStop() override;
     void Step(float deltaTime);
 
     // 创建物理体

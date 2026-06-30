@@ -1,10 +1,13 @@
 #pragma once
 
 #include <Zgine/Editor/Panels/EditorPanel.h>
+#include <Zgine/Resources/Core/AssetDatabase.h>
+
 #include <filesystem>
+#include <memory>
 #include <string>
 #include <unordered_map>
-#include <memory>
+#include <vector>
 
 namespace Zgine {
 
@@ -48,11 +51,20 @@ public:
 
 private:
     void RenderAssetTreeNode(const std::filesystem::path& path);
+    void RefreshAssetDatabase();
+    void RenderSelectedAssetDetails();
+    void CreatePrefabFromPrimarySelection();
+    void InstantiateSelectedPrefab();
+    [[nodiscard]] std::vector<const AssetRecord*> GetCurrentDirectoryRecords() const;
+    [[nodiscard]] std::filesystem::path GetCurrentRelativeDirectory() const;
     static bool IsImageFile(const std::filesystem::path& path);
+    static const char* GetAssetButtonLabel(AssetType type, bool isDirectory);
+    static std::string SanitizeAssetFilename(std::string value);
 
 private:
     std::filesystem::path m_AssetsRoot;
     std::filesystem::path m_AssetsCurrentDir;
+    AssetDatabase m_AssetDatabase;
     std::string m_AssetSearch;
     std::string m_ImportPathInput;
     std::unordered_map<std::string, std::shared_ptr<Texture>> m_ThumbnailCache;

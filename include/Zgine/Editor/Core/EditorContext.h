@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Zgine/Core/Math/MathTypes.h>
+#include <Zgine/Editor/Core/EditorTypes.h>
+#include <functional>
 #include <memory>
 #include <string>
 #include <Zgine/World/Core/Entity.h>
@@ -8,9 +10,11 @@
 namespace Zgine {
 
 // Forward declarations
+class AssetSelectionContext;
 class SelectionContext;
 class EditorEventBus;
 class EditorCommandHistory;
+class SceneRuntime;
 class World;
 class SceneViewModel;
 
@@ -132,6 +136,8 @@ private:
  */
 class EditorContext {
 public:
+    using PlayRuntimeConfigurator = std::function<void(World&)>;
+
     EditorContext();
     ~EditorContext();
 
@@ -144,6 +150,9 @@ public:
     // Service accessors
     SelectionContext& GetSelectionContext() { return *m_SelectionContext; }
     const SelectionContext& GetSelectionContext() const { return *m_SelectionContext; }
+
+    AssetSelectionContext& GetAssetSelectionContext() { return *m_AssetSelectionContext; }
+    const AssetSelectionContext& GetAssetSelectionContext() const { return *m_AssetSelectionContext; }
 
     EditorEventBus& GetEventBus() { return *m_EventBus; }
     const EditorEventBus& GetEventBus() const { return *m_EventBus; }
@@ -162,12 +171,28 @@ public:
 
     // Helper to set active World and create/update ViewModel
     void SetActiveScene(World* World);
+    void SetPlayRuntimeConfigurator(PlayRuntimeConfigurator configurator);
+
+    // Play mode runtime control
+    [[nodiscard]] EditorMode GetMode() const noexcept { return m_Mode; }
+    [[nodiscard]] bool IsPlaying() const noexcept { return m_Mode == EditorMode::Play; }
+    [[nodiscard]] bool IsPaused() const noexcept { return m_Mode == EditorMode::Pause; }
+    [[nodiscard]] bool EnterPlayMode();
+    void PausePlayMode();
+    void ExitPlayMode();
+    void UpdatePlayRuntime(float deltaTime);
+    void FixedUpdatePlayRuntime(float fixedDeltaTime);
 
 private:
+    void PublishPlayModeChanged();
+
     // Core services (owned)
     std::unique_ptr<SelectionContext> m_SelectionContext;
+    std::unique_ptr<AssetSelectionContext> m_AssetSelectionContext;
     std::unique_ptr<EditorEventBus> m_EventBus;
     std::unique_ptr<EditorCommandHistory> m_CommandHistory;
+    std::unique_ptr<SceneRuntime> m_PlayRuntime;
+    PlayRuntimeConfigurator m_PlayRuntimeConfigurator;
 
     // ViewModel (MVVM Presentation Layer)
     std::unique_ptr<SceneViewModel> m_SceneViewModel; // Added SceneViewModel member
@@ -175,6 +200,8 @@ private:
     // Contexts (value types)
     ViewportContext m_ViewportContext;
     SceneContext m_SceneContext;
+    World* m_EditSceneBeforePlay = nullptr;
+    EditorMode m_Mode = EditorMode::Edit;
 
     bool m_Initialized = false;
 };

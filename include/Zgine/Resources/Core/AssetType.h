@@ -8,12 +8,15 @@ namespace Zgine {
 
 enum class AssetType : uint8_t {
     Unknown = 0,
+    Folder,
     Texture,
     Mesh,
     Audio,
     Shader,
     World,
-    Material
+    Material,
+    Prefab,
+    Script
 };
 
 const char* AssetTypeToString(AssetType type);

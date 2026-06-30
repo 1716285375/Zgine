@@ -5,6 +5,7 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/Math.h>
 #include <Zgine/World/Camera/Camera.h>
+#include <World/Core/WorldRegistryAccess.h>
 #include <miniaudio.h>
 
 namespace Zgine {
@@ -66,11 +67,11 @@ void AudioSystem::OnSceneStart(World* World) {
 
     // 遍历所有有 AudioSourceComponent 的实体，创建音频源
     if (World) {
-        auto& registry = World->GetRegistry();
+        auto& registry = Internal::GetRegistry(*World);
         auto view = registry.view<AudioSourceComponent>();
 
         for (auto entity : view) {
-            CreateAudioSource(Entity(entity, World));
+            CreateAudioSource(Entity(Internal::FromEnTT(entity), World));
         }
     }
 
@@ -83,11 +84,11 @@ void AudioSystem::OnSceneStop() {
     }
 
     // 销毁所有音频源
-    auto& registry = m_World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*m_World);
     auto view = registry.view<AudioSourceComponent>();
 
     for (auto entity : view) {
-        DestroyAudioSource(Entity(entity, m_World));
+        DestroyAudioSource(Entity(Internal::FromEnTT(entity), m_World));
     }
 
     m_World = nullptr;
@@ -106,11 +107,11 @@ void AudioSystem::Update(World* World, float deltaTime) {
 
     // 更新所有音频源的位置（3D 空间音频）
     if (World) {
-        auto& registry = World->GetRegistry();
+        auto& registry = Internal::GetRegistry(*World);
         auto view = registry.view<AudioSourceComponent, TransformComponent>();
 
         for (auto entity : view) {
-            UpdateAudioSourcePosition(Entity(entity, World));
+            UpdateAudioSourcePosition(Entity(Internal::FromEnTT(entity), World));
         }
     }
 }
@@ -304,7 +305,7 @@ void AudioSystem::UpdateListener(World* World) {
     }
 
     // 查找主摄像机（带 AudioListenerComponent）
-    auto& registry = World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*World);
     auto listenerView = registry.view<AudioListenerComponent, CameraComponent, TransformComponent>();
 
     if (listenerView.begin() == listenerView.end()) {

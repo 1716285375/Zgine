@@ -30,9 +30,14 @@
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
 #include <Zgine/Scripting/ScriptSystem.h>
+#include <Zgine/Resources/Core/AssetDatabase.h>
 #include <Zgine/Resources/Core/AssetManager.h>
 #include <Zgine/Resources/Material/PBRMaterialPreset.h>
 #include <Zgine/Resources/Mesh/PrimitiveMesh.h>
+#include <Zgine/Resources/Prefab/PrefabAsset.h>
+#include <Zgine/Resources/Prefab/PrefabSerializer.h>
+
+#include <Zgine/Runtime/SceneRuntime.h>
 
 #include <Zgine/Platform/IO/File.h>
 #include <Zgine/Platform/IO/VFS.h>

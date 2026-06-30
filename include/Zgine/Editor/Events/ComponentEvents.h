@@ -21,7 +21,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "ComponentAddedEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity)
+           << ", Entity:" << m_Entity.GetHandle().GetValue()
            << ", Component:" << m_ComponentType.name() << "]";
         return ss.str();
     }
@@ -48,7 +48,7 @@ public:
     std::string ToString() const override {
         std::stringstream ss;
         ss << "ComponentRemovedEvent [ID:" << GetEventID()
-           << ", Entity:" << static_cast<uint32_t>(m_Entity)
+           << ", Entity:" << m_Entity.GetHandle().GetValue()
            << ", Component:" << m_ComponentType.name() << "]";
         return ss.str();
     }

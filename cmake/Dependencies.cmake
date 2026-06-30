@@ -199,6 +199,7 @@ if(TARGET imgui)
 endif()
 
 # ImGuizmo
+set(IMGUIZMO_BUILD_EXAMPLE OFF CACHE BOOL "" FORCE)
 zgine_find_or_fetch_dependency(imguizmo
     VERSION be8aa4aeab86b402701c8c1df011bd8cd776760b
     GIT_REPOSITORY https://github.com/CedricGuillemet/ImGuizmo.git
@@ -342,17 +343,30 @@ endif()
 # ImGuizmo manual setup
 FetchContent_GetProperties(imguizmo)
 if(imguizmo_POPULATED)
-    if(NOT TARGET ImGuizmo)
-        set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}")
-        set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/ImGuizmo.cpp")
+    set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}")
+    set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/ImGuizmo.cpp")
 
-        if(EXISTS "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
-            set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}/src")
-            set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
-        elseif(NOT EXISTS "${ZGINE_IMGUIZMO_SOURCE}")
-            message(FATAL_ERROR "ImGuizmo source file not found in ${imguizmo_SOURCE_DIR}")
+    if(EXISTS "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
+        set(ZGINE_IMGUIZMO_INCLUDE_DIR "${imguizmo_SOURCE_DIR}/src")
+        set(ZGINE_IMGUIZMO_SOURCE "${imguizmo_SOURCE_DIR}/src/ImGuizmo.cpp")
+    elseif(NOT EXISTS "${ZGINE_IMGUIZMO_SOURCE}")
+        message(FATAL_ERROR "ImGuizmo source file not found in ${imguizmo_SOURCE_DIR}")
+    endif()
+
+    if(TARGET imguizmo)
+        target_include_directories(imguizmo PUBLIC
+            $<BUILD_INTERFACE:${ZGINE_IMGUIZMO_INCLUDE_DIR}>
+        )
+        target_compile_definitions(imguizmo PRIVATE
+            IMGUI_DEFINE_MATH_OPERATORS
+            IMGUI_DISABLE_OBSOLETE_FUNCTIONS=0
+        )
+        target_link_libraries(imguizmo PUBLIC imgui::imgui)
+
+        if(NOT TARGET ImGuizmo::ImGuizmo)
+            add_library(ImGuizmo::ImGuizmo ALIAS imguizmo)
         endif()
-
+    elseif(NOT TARGET ImGuizmo)
         add_library(ImGuizmo STATIC
             ${ZGINE_IMGUIZMO_SOURCE}
         )
@@ -367,9 +381,10 @@ if(imguizmo_POPULATED)
             IMGUI_DISABLE_OBSOLETE_FUNCTIONS=0
         )
         target_link_libraries(ImGuizmo PUBLIC imgui::imgui)
-    endif()
-    if(TARGET ImGuizmo AND NOT TARGET ImGuizmo::ImGuizmo)
-        add_library(ImGuizmo::ImGuizmo ALIAS ImGuizmo)
+
+        if(NOT TARGET ImGuizmo::ImGuizmo)
+            add_library(ImGuizmo::ImGuizmo ALIAS ImGuizmo)
+        endif()
     endif()
 endif()
 

@@ -51,12 +51,15 @@ bool AudioSourceSerializer::HasComponent(const Entity& entity) const {
 // AudioListenerSerializer
 // ============================================================================
 
-void AudioListenerSerializer::Serialize(const Entity& /*entity*/, json& out) const {
+void AudioListenerSerializer::Serialize(const Entity& entity, json& out) const {
+    auto& listener = const_cast<Entity&>(entity).GetComponent<AudioListenerComponent>();
     out["AudioListener"] = json::object();
+    out["AudioListener"]["Enabled"] = listener.Enabled;
 }
 
-bool AudioListenerSerializer::Deserialize(const json& /*data*/, Entity& entity) const {
-    entity.AddComponent<AudioListenerComponent>();
+bool AudioListenerSerializer::Deserialize(const json& data, Entity& entity) const {
+    auto& listener = entity.AddComponent<AudioListenerComponent>();
+    if (data.contains("Enabled")) listener.Enabled = data["Enabled"].get<bool>();
     return true;
 }
 

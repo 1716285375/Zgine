@@ -5,6 +5,7 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Platform/IO/File.h>
 #include <Zgine/Core/UUID/UUID.h>
+#include <World/Core/WorldRegistryAccess.h>
 #include <nlohmann/json.hpp>
 #include <unordered_map>
 
@@ -27,12 +28,12 @@ std::string JsonWorldSerializer::Serialize(World* World) const {
     sceneJson["World"] = json::object();
     sceneJson["Entities"] = json::array();
 
-    auto& registry = World->GetRegistry();
+    auto& registry = Internal::GetRegistry(*World);
 
     // Iterate through all entities with TagComponent
     auto view = registry.view<TagComponent>();
     for (auto entityHandle : view) {
-        Entity entity(entityHandle, World);
+        Entity entity(Internal::FromEnTT(entityHandle), World);
         json entityJson;
 
         // Always serialize ID
@@ -57,7 +58,7 @@ std::string JsonWorldSerializer::Serialize(World* World) const {
         // Handle parent relationships
         if (entity.HasComponent<RelationshipComponent>()) {
             auto& rel = entity.GetComponent<RelationshipComponent>();
-            if (rel.Parent != entt::null) {
+            if (rel.Parent) {
                 Entity parentEntity(rel.Parent, World);
                 if (parentEntity.HasComponent<IDComponent>()) {
                     entityJson["Parent"] = parentEntity.GetComponent<IDComponent>().ID.ToString();
@@ -94,8 +95,8 @@ bool JsonWorldSerializer::Deserialize(std::string_view data, World* World) {
                            version, kSceneVersion);
         }
 
-        std::unordered_map<std::string, entt::entity> uuidMap;
-        std::vector<std::pair<entt::entity, std::string>> parentLinks;
+        std::unordered_map<std::string, EntityHandle> uuidMap;
+        std::vector<std::pair<EntityHandle, std::string>> parentLinks;
 
         // First pass: Create entities and deserialize components
         for (const auto& entityJson : sceneJson["Entities"]) {
@@ -107,7 +108,7 @@ bool JsonWorldSerializer::Deserialize(std::string_view data, World* World) {
                 if (entity.HasComponent<IDComponent>()) {
                     entity.GetComponent<IDComponent>().ID = UUID::FromString(uuid);
                 }
-                uuidMap[uuid] = static_cast<entt::entity>(entity);
+                uuidMap[uuid] = entity.GetHandle();
             }
 
             // Restore Tag
@@ -126,7 +127,7 @@ bool JsonWorldSerializer::Deserialize(std::string_view data, World* World) {
 
             // Store parent relationships for second pass
             if (entityJson.contains("Parent") && entityJson["Parent"].is_string()) {
-                parentLinks.emplace_back(static_cast<entt::entity>(entity),
+                parentLinks.emplace_back(entity.GetHandle(),
                                         entityJson["Parent"].get<std::string>());
             }
         }

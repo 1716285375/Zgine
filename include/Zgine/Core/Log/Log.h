@@ -65,12 +65,12 @@ public:
     /**
      * @brief Get the core (engine) logger
      */
-    inline static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
+    static std::shared_ptr<spdlog::logger>& GetCoreLogger();
 
     /**
      * @brief Get the client (application) logger
      */
-    inline static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+    static std::shared_ptr<spdlog::logger>& GetClientLogger();
 
 private:
     static std::shared_ptr<spdlog::logger> s_CoreLogger;

@@ -3,6 +3,7 @@ find_package(GTest REQUIRED)
 
 # Editor单元测试
 add_executable(ZgineEditorTests
+    AssetSelectionContextTests.cpp
     EditorContextTests.cpp
     EditorEventBusTests.cpp
     EditorCommandTests.cpp

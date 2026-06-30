@@ -16,6 +16,15 @@ public:
     void Initialize() override {}
     void Shutdown() override {}
 
+    void OnSceneStart(Zgine::World* world) override {
+        (void)world;
+        m_Order->push_back("start:" + m_Name);
+    }
+
+    void OnSceneStop() override {
+        m_Order->push_back("stop:" + m_Name);
+    }
+
     void Update(Zgine::World* world, float deltaTime) override {
         (void)world;
         (void)deltaTime;
@@ -68,4 +77,33 @@ TEST(SystemManagerTest, PreservesRegistrationOrderForEqualPriorityAcrossOwnershi
     ASSERT_EQ(order.size(), 2);
     EXPECT_EQ(order[0], "external-first");
     EXPECT_EQ(order[1], "owned-second");
+}
+
+TEST(SystemManagerTest, StartsSceneByPriorityAndStopsInReverseOrder) {
+    Zgine::World world;
+    Zgine::SystemManager manager;
+    std::vector<std::string> order;
+
+    auto external = std::make_unique<OrderedTestSystem>(&order, "external-early", 10);
+    manager.RegisterSystem<OrderedTestSystem>(&order, "owned-late", 50);
+    manager.RegisterExternalSystem(external.get());
+
+    manager.StartScene(&world);
+
+    ASSERT_EQ(order.size(), 2);
+    EXPECT_EQ(order[0], "start:external-early");
+    EXPECT_EQ(order[1], "start:owned-late");
+    EXPECT_TRUE(manager.IsSceneRunning());
+    EXPECT_EQ(manager.GetActiveScene(), &world);
+
+    manager.StartScene(&world);
+    EXPECT_EQ(order.size(), 2);
+
+    manager.StopScene();
+
+    ASSERT_EQ(order.size(), 4);
+    EXPECT_EQ(order[2], "stop:owned-late");
+    EXPECT_EQ(order[3], "stop:external-early");
+    EXPECT_FALSE(manager.IsSceneRunning());
+    EXPECT_EQ(manager.GetActiveScene(), nullptr);
 }
