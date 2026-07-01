@@ -1,9 +1,10 @@
 #pragma once
 
 #include <Zgine/Core/Input/InputCodes.h>
-#include <bitset>
-#include <array>
 #include <Zgine/Core/Math/Vector2.h>
+
+#include <bitset>
+#include <cstddef>
 
 namespace Zgine {
 
@@ -23,18 +24,19 @@ struct InputState {
     std::bitset<kMaxKeys> KeysLastFrame;  ///< previous frame snapshot
 
     [[nodiscard]] bool IsKeyDown(KeyCode key) const {
-        return Keys[static_cast<size_t>(key)];
+        auto index = static_cast<std::size_t>(key);
+        return index < kMaxKeys && Keys[index];
     }
     [[nodiscard]] bool IsKeyUp(KeyCode key) const {
-        return !Keys[static_cast<size_t>(key)];
+        return !IsKeyDown(key);
     }
     [[nodiscard]] bool IsKeyPressed(KeyCode key) const {   // pressed this frame
-        auto k = static_cast<size_t>(key);
-        return Keys[k] && !KeysLastFrame[k];
+        auto index = static_cast<std::size_t>(key);
+        return index < kMaxKeys && Keys[index] && !KeysLastFrame[index];
     }
     [[nodiscard]] bool IsKeyReleased(KeyCode key) const {  // released this frame
-        auto k = static_cast<size_t>(key);
-        return !Keys[k] && KeysLastFrame[k];
+        auto index = static_cast<std::size_t>(key);
+        return index < kMaxKeys && !Keys[index] && KeysLastFrame[index];
     }
 
     // --- Mouse ---
@@ -47,15 +49,16 @@ struct InputState {
     float     ScrollDelta = 0.f;
 
     [[nodiscard]] bool IsMouseButtonDown(MouseButton btn) const {
-        return MouseButtons[static_cast<size_t>(btn)];
+        auto index = static_cast<std::size_t>(btn);
+        return index < kMaxButtons && MouseButtons[index];
     }
     [[nodiscard]] bool IsMouseButtonPressed(MouseButton btn) const {
-        auto b = static_cast<size_t>(btn);
-        return MouseButtons[b] && !MouseButtonsLastFrame[b];
+        auto index = static_cast<std::size_t>(btn);
+        return index < kMaxButtons && MouseButtons[index] && !MouseButtonsLastFrame[index];
     }
     [[nodiscard]] bool IsMouseButtonReleased(MouseButton btn) const {
-        auto b = static_cast<size_t>(btn);
-        return !MouseButtons[b] && MouseButtonsLastFrame[b];
+        auto index = static_cast<std::size_t>(btn);
+        return index < kMaxButtons && !MouseButtons[index] && MouseButtonsLastFrame[index];
     }
 };
 

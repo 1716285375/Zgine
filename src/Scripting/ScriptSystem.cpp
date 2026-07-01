@@ -3,7 +3,7 @@
 #include <Zgine/World/Core/Entity.h>
 #include <Zgine/World/Components/Components.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Platform/Input.h>
+#include <Zgine/Core/Input/Input.h>
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Physics/PhysicsSystem.h>
 #include <Zgine/Audio/AudioSystem.h>
@@ -11,7 +11,6 @@
 #include <World/Core/WorldRegistryAccess.h>
 
 #include <sol/sol.hpp>
-#include <GLFW/glfw3.h>
 
 #include <ctime>
 #include <chrono>
@@ -23,6 +22,22 @@
 namespace fs = std::filesystem;
 
 namespace Zgine {
+
+namespace {
+    KeyCode ToKeyCode(int key) {
+        if (key < 0 || key >= static_cast<int>(InputState::kMaxKeys)) {
+            return KeyCode::None;
+        }
+        return static_cast<KeyCode>(key);
+    }
+
+    MouseButton ToMouseButton(int button) {
+        if (button < 0 || button >= static_cast<int>(InputState::kMaxButtons)) {
+            return MouseButton::None;
+        }
+        return static_cast<MouseButton>(button);
+    }
+}
 
 struct ScriptSystem::Impl {
     sol::state LuaState;
@@ -161,28 +176,27 @@ void ScriptSystem::BindTransformAPI() {
 
 void ScriptSystem::BindInputAPI() {
     m_Impl->LuaState["isKeyPressed"] = [](int key) -> bool {
-        return Input::IsKeyPressed(key);
+        return Input::IsKeyDown(ToKeyCode(key));
     };
 
     m_Impl->LuaState["isMouseButtonPressed"] = [](int button) -> bool {
-        return Input::IsMouseButtonPressed(button);
+        return Input::IsMouseButtonDown(ToMouseButton(button));
     };
 
     m_Impl->LuaState["getMousePosition"] = [this]() -> sol::table {
-        auto [x, y] = Input::GetMousePosition();
+        const Math::Vector2 position = Input::GetMousePosition();
         auto table = m_Impl->LuaState.create_table();
-        table["x"] = x;
-        table["y"] = y;
+        table["x"] = position.x;
+        table["y"] = position.y;
         return table;
     };
 
-    // GLFW 键码常量
-    m_Impl->LuaState["KEY_W"] = GLFW_KEY_W;
-    m_Impl->LuaState["KEY_S"] = GLFW_KEY_S;
-    m_Impl->LuaState["KEY_A"] = GLFW_KEY_A;
-    m_Impl->LuaState["KEY_D"] = GLFW_KEY_D;
-    m_Impl->LuaState["KEY_SPACE"] = GLFW_KEY_SPACE;
-    m_Impl->LuaState["KEY_ESCAPE"] = GLFW_KEY_ESCAPE;
+    m_Impl->LuaState["KEY_W"] = static_cast<int>(KeyCode::W);
+    m_Impl->LuaState["KEY_S"] = static_cast<int>(KeyCode::S);
+    m_Impl->LuaState["KEY_A"] = static_cast<int>(KeyCode::A);
+    m_Impl->LuaState["KEY_D"] = static_cast<int>(KeyCode::D);
+    m_Impl->LuaState["KEY_SPACE"] = static_cast<int>(KeyCode::Space);
+    m_Impl->LuaState["KEY_ESCAPE"] = static_cast<int>(KeyCode::Escape);
 }
 
 void ScriptSystem::BindTimeAPI() {

@@ -1,14 +1,15 @@
 #include <glad/glad.h>
 #include "GLFWWindow.h"
-#include "GLFWInput.h"
 #include <Zgine/Core/Base/Prerequisites.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Base/Assert.h>
+#include <Zgine/Core/Input/Input.h>
 
 #include <Zgine/Core/Events/ApplicationEvent.h>
 #include <Zgine/Core/Events/MouseEvent.h>
 #include <Zgine/Core/Events/KeyEvent.h>
 
+#include <algorithm>
 #include <filesystem>
 #include <stb_image.h>
 
@@ -17,6 +18,91 @@ namespace Zgine {
     static bool s_GLFWInitialized = false;
 
     namespace {
+        constexpr KeyCode kPolledKeys[] = {
+            KeyCode::Space,
+            KeyCode::Apostrophe,
+            KeyCode::Comma,
+            KeyCode::Minus,
+            KeyCode::Period,
+            KeyCode::Slash,
+            KeyCode::D0,
+            KeyCode::D1,
+            KeyCode::D2,
+            KeyCode::D3,
+            KeyCode::D4,
+            KeyCode::D5,
+            KeyCode::D6,
+            KeyCode::D7,
+            KeyCode::D8,
+            KeyCode::D9,
+            KeyCode::Semicolon,
+            KeyCode::Equal,
+            KeyCode::A,
+            KeyCode::B,
+            KeyCode::C,
+            KeyCode::D,
+            KeyCode::E,
+            KeyCode::F,
+            KeyCode::G,
+            KeyCode::H,
+            KeyCode::I,
+            KeyCode::J,
+            KeyCode::K,
+            KeyCode::L,
+            KeyCode::M,
+            KeyCode::N,
+            KeyCode::O,
+            KeyCode::P,
+            KeyCode::Q,
+            KeyCode::R,
+            KeyCode::S,
+            KeyCode::T,
+            KeyCode::U,
+            KeyCode::V,
+            KeyCode::W,
+            KeyCode::X,
+            KeyCode::Y,
+            KeyCode::Z,
+            KeyCode::LeftBracket,
+            KeyCode::Backslash,
+            KeyCode::RightBracket,
+            KeyCode::GraveAccent,
+            KeyCode::Escape,
+            KeyCode::Enter,
+            KeyCode::Tab,
+            KeyCode::Backspace,
+            KeyCode::Insert,
+            KeyCode::Delete,
+            KeyCode::Right,
+            KeyCode::Left,
+            KeyCode::Down,
+            KeyCode::Up,
+            KeyCode::PageUp,
+            KeyCode::PageDown,
+            KeyCode::Home,
+            KeyCode::End,
+            KeyCode::F1,
+            KeyCode::F2,
+            KeyCode::F3,
+            KeyCode::F4,
+            KeyCode::F5,
+            KeyCode::F6,
+            KeyCode::F7,
+            KeyCode::F8,
+            KeyCode::F9,
+            KeyCode::F10,
+            KeyCode::F11,
+            KeyCode::F12,
+            KeyCode::LeftShift,
+            KeyCode::LeftControl,
+            KeyCode::LeftAlt,
+            KeyCode::LeftSuper,
+            KeyCode::RightShift,
+            KeyCode::RightControl,
+            KeyCode::RightAlt,
+            KeyCode::RightSuper,
+        };
+
         const char* ToString(WindowGraphicsAPI api) {
             switch (api) {
                 case WindowGraphicsAPI::None:
@@ -94,8 +180,6 @@ namespace Zgine {
             glfwMakeContextCurrent(m_Window);
         }
         glfwSetWindowUserPointer(m_Window, &m_Data);
-
-        GLFWInput::SetWindow(m_Window);
 
         if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
             int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
@@ -182,6 +266,7 @@ namespace Zgine {
 
         glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset) {
             auto data = (WindowData*)glfwGetWindowUserPointer(window);
+            data->ScrollDelta += static_cast<float>(yOffset);
             MouseScrolledEvent event((float)xOffset, (float)yOffset);
             data->EventCallback(event);
         });
@@ -195,6 +280,8 @@ namespace Zgine {
         if (props.GraphicsAPI == WindowGraphicsAPI::OpenGL) {
             glfwSwapInterval(1); // VSync
         }
+
+        UpdateInputState();
     }
 
     void GLFWWindow::Shutdown() {
@@ -206,6 +293,7 @@ namespace Zgine {
 
     void GLFWWindow::OnUpdate() {
         glfwPollEvents();
+        UpdateInputState();
         SwapBuffers();
     }
 
@@ -227,6 +315,33 @@ namespace Zgine {
                 data->RefreshCallback();
             }
         });
+    }
+
+    void GLFWWindow::UpdateInputState() {
+        InputState state;
+
+        for (KeyCode key : kPolledKeys) {
+            const int keyCode = static_cast<int>(key);
+            const int keyState = glfwGetKey(m_Window, keyCode);
+            state.Keys.set(static_cast<std::size_t>(keyCode), keyState == GLFW_PRESS || keyState == GLFW_REPEAT);
+        }
+
+        const int maxButton = std::min(GLFW_MOUSE_BUTTON_LAST, static_cast<int>(InputState::kMaxButtons) - 1);
+        for (int button = 0; button <= maxButton; ++button) {
+            const int buttonState = glfwGetMouseButton(m_Window, button);
+            state.MouseButtons.set(static_cast<std::size_t>(button), buttonState == GLFW_PRESS);
+        }
+
+        double mouseX = 0.0;
+        double mouseY = 0.0;
+        glfwGetCursorPos(m_Window, &mouseX, &mouseY);
+
+        state.MousePosition = Math::Vector2(static_cast<float>(mouseX), static_cast<float>(mouseY));
+        state.MouseDelta = state.MousePosition - Input::GetState().MousePosition;
+        state.ScrollDelta = m_Data.ScrollDelta;
+        m_Data.ScrollDelta = 0.0f;
+
+        Input::UpdateState(state);
     }
 
     // Factory function for platform abstraction

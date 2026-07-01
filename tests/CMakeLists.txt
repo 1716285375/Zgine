@@ -24,6 +24,7 @@ add_executable(ZgineTests
     AssetManagerTests.cpp
     DocumentationStructureTests.cpp
     EngineSmokeTests.cpp
+    InputTests.cpp
     PrefabTests.cpp
     RendererBackendTests.cpp
     SceneRuntimeTests.cpp

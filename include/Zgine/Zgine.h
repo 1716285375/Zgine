@@ -8,9 +8,9 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Base/Assert.h>
 #include <Zgine/Core/Time/Timestep.h>
+#include <Zgine/Core/Input/Input.h>
 #include <Zgine/Gui/GuiLayer.h>
 
-#include <Zgine/Platform/Input.h>
 #include <Zgine/Platform/Window.h>
 
 #include <Zgine/Renderer/Pipeline/RenderSystem.h>

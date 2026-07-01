@@ -31,7 +31,6 @@
 #include <Zgine/World/Serialization/WorldSerializer.h>
 #include <Zgine/World/Components/Components.h>
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <ImGuizmo.h>
 
 namespace Zgine {
@@ -289,18 +288,20 @@ namespace Zgine {
             float mouseSensitivity = 0.2f;
 
             // Right-click camera rotation (orbit)
-            auto [mouseX, mouseY] = Input::GetMousePosition();
-            bool rightClick = Input::IsMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT);
+            const Math::Vector2 mousePosition = Input::GetMousePosition();
+            const float mouseX = mousePosition.x;
+            const float mouseY = mousePosition.y;
+            bool rightClick = Input::IsMouseButtonDown(MouseButton::Right);
 
             // WASD movement only when right mouse button is held (FPS-style camera)
             if (rightClick && m_Editor.IsSceneViewportFocused()) {
-                if (Input::IsKeyPressed(GLFW_KEY_W)) m_EditorCamera.MoveForward(moveSpeed);
-                if (Input::IsKeyPressed(GLFW_KEY_S)) m_EditorCamera.MoveForward(-moveSpeed);
-                if (Input::IsKeyPressed(GLFW_KEY_A)) m_EditorCamera.MoveRight(-moveSpeed);
-                if (Input::IsKeyPressed(GLFW_KEY_D)) m_EditorCamera.MoveRight(moveSpeed);
-                if (Input::IsKeyPressed(GLFW_KEY_Q))
+                if (Input::IsKeyDown(KeyCode::W)) m_EditorCamera.MoveForward(moveSpeed);
+                if (Input::IsKeyDown(KeyCode::S)) m_EditorCamera.MoveForward(-moveSpeed);
+                if (Input::IsKeyDown(KeyCode::A)) m_EditorCamera.MoveRight(-moveSpeed);
+                if (Input::IsKeyDown(KeyCode::D)) m_EditorCamera.MoveRight(moveSpeed);
+                if (Input::IsKeyDown(KeyCode::Q))
                     m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + Math::Vector3(0, -moveSpeed, 0));
-                if (Input::IsKeyPressed(GLFW_KEY_E))
+                if (Input::IsKeyDown(KeyCode::E))
                     m_EditorCamera.SetPosition(m_EditorCamera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
             }
 

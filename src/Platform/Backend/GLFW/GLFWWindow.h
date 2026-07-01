@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Zgine/Platform/Window.h>
+
 #ifndef GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_NONE
 #endif
@@ -31,6 +32,7 @@ namespace Zgine {
     private:
         virtual void Init(const WindowProps& props);
         virtual void Shutdown();
+        void UpdateInputState();
 
         GLFWwindow* m_Window;
 
@@ -40,6 +42,7 @@ namespace Zgine {
             WindowGraphicsAPI GraphicsAPI = WindowGraphicsAPI::OpenGL;
             EventCallbackFn EventCallback;
             RefreshCallbackFn RefreshCallback;
+            float ScrollDelta = 0.0f;
         };
 
         WindowData m_Data;

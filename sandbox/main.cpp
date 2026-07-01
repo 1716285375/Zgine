@@ -4,7 +4,6 @@
 #include <Zgine/Core/Math/Math.h>
 #include <Zgine/Renderer/RHI/RendererAPI.h>
 #include <glad/glad.h>
-#include <GLFW/glfw3.h>
 #include <Zgine/Core/Application/Application.h>
 
 #include <string>
@@ -123,12 +122,12 @@ namespace Zgine {
             float mouseSensitivity = 0.1f;
             float moveSpeed = 10.0f * ts.GetSecondsF();
 
-            if (Input::IsKeyPressed(GLFW_KEY_W)) m_Camera.MoveForward(moveSpeed);
-            if (Input::IsKeyPressed(GLFW_KEY_S)) m_Camera.MoveForward(-moveSpeed);
-            if (Input::IsKeyPressed(GLFW_KEY_A)) m_Camera.MoveRight(-moveSpeed);
-            if (Input::IsKeyPressed(GLFW_KEY_D)) m_Camera.MoveRight(moveSpeed);
-            if (Input::IsKeyPressed(GLFW_KEY_Q)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, -moveSpeed, 0));
-            if (Input::IsKeyPressed(GLFW_KEY_E)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
+            if (Input::IsKeyDown(KeyCode::W)) m_Camera.MoveForward(moveSpeed);
+            if (Input::IsKeyDown(KeyCode::S)) m_Camera.MoveForward(-moveSpeed);
+            if (Input::IsKeyDown(KeyCode::A)) m_Camera.MoveRight(-moveSpeed);
+            if (Input::IsKeyDown(KeyCode::D)) m_Camera.MoveRight(moveSpeed);
+            if (Input::IsKeyDown(KeyCode::Q)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, -moveSpeed, 0));
+            if (Input::IsKeyDown(KeyCode::E)) m_Camera.SetPosition(m_Camera.GetPosition() + Math::Vector3(0, moveSpeed, 0));
 
             m_World.GetSystemManager().UpdateAll(&m_World, ts.GetSecondsF());
 
