@@ -2,8 +2,9 @@
 
 #include "VulkanContextAccess.h"
 
+#include <Zgine/Core/Log/Log.h>
+
 #include <cstring>
-#include <stdexcept>
 
 namespace Zgine {
 
@@ -32,7 +33,7 @@ namespace {
         if (vkMapMemory(context.Device, stagingMemory, 0, size, 0, &mappedData) != VK_SUCCESS) {
             vkDestroyBuffer(context.Device, stagingBuffer, nullptr);
             vkFreeMemory(context.Device, stagingMemory, nullptr);
-            throw std::runtime_error("Failed to map Vulkan vertex staging buffer.");
+            ZGINE_CORE_THROW_RUNTIME("Failed to map Vulkan vertex staging buffer.");
         }
         std::memcpy(mappedData, data, static_cast<size_t>(size));
         vkUnmapMemory(context.Device, stagingMemory);
@@ -72,7 +73,7 @@ VulkanVertexBuffer::VulkanVertexBuffer(const void* data, uint32_t size)
     , m_RendererID(Vulkan::AllocateResourceID())
 {
     if (size == 0) {
-        throw std::invalid_argument("VulkanVertexBuffer requires a non-zero size.");
+        ZGINE_CORE_THROW_INVALID_ARGUMENT("VulkanVertexBuffer requires a non-zero size.");
     }
 
     if (data) {

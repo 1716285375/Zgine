@@ -17,7 +17,6 @@
 #include <limits>
 #include <optional>
 #include <set>
-#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -65,12 +64,10 @@ VkBool32 VKAPI_PTR VulkanDebugCallback(
     ZGINE_UNUSED(messageType);
     ZGINE_UNUSED(userData);
 
-    if (auto& logger = Log::GetCoreLogger()) {
-        if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            logger->warn("Vulkan validation: {}", callbackData->pMessage);
-        } else {
-            logger->trace("Vulkan validation: {}", callbackData->pMessage);
-        }
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        ZGINE_CORE_WARN("Vulkan validation: {}", callbackData->pMessage);
+    } else {
+        ZGINE_CORE_TRACE("Vulkan validation: {}", callbackData->pMessage);
     }
 
     return VK_FALSE;
@@ -154,7 +151,7 @@ std::vector<const char*> GetRequiredInstanceExtensions(bool enableValidationLaye
     uint32_t glfwExtensionCount = 0;
     const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
     if (!glfwExtensions || glfwExtensionCount == 0) {
-        throw std::runtime_error("GLFW did not report required Vulkan instance extensions.");
+        ZGINE_CORE_THROW_RUNTIME("GLFW did not report required Vulkan instance extensions.");
     }
 
     std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
@@ -315,7 +312,7 @@ const char* DeviceTypeToString(VkPhysicalDeviceType type) {
 
 void CheckVk(VkResult result, const char* message) {
     if (result != VK_SUCCESS) {
-        throw std::runtime_error(message);
+        ZGINE_CORE_THROW_RUNTIME("{}", message);
     }
 }
 
@@ -362,7 +359,7 @@ void VulkanRendererAPI::Init() {
     Window& window = Application::Get().GetWindow();
     auto* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeWindow());
     if (!glfwWindow) {
-        throw std::runtime_error("Vulkan renderer requires a GLFW native window.");
+        ZGINE_CORE_THROW_RUNTIME("Vulkan renderer requires a GLFW native window.");
     }
 
     if (m_Context->Instance != VK_NULL_HANDLE) {
@@ -403,7 +400,7 @@ void VulkanRendererAPI::Init() {
     }
 
     if (vkCreateInstance(&createInfo, nullptr, &m_Context->Instance) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan instance.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan instance.");
     }
 
     if (m_Context->ValidationLayersEnabled) {
@@ -419,13 +416,13 @@ void VulkanRendererAPI::Init() {
     }
 
     if (glfwCreateWindowSurface(m_Context->Instance, glfwWindow, nullptr, &m_Context->Surface) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan window surface.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan window surface.");
     }
 
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Context->Instance, &deviceCount, nullptr);
     if (deviceCount == 0) {
-        throw std::runtime_error("No Vulkan-capable GPU found.");
+        ZGINE_CORE_THROW_RUNTIME("No Vulkan-capable GPU found.");
     }
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
@@ -439,7 +436,7 @@ void VulkanRendererAPI::Init() {
     }
 
     if (m_Context->PhysicalDevice == VK_NULL_HANDLE) {
-        throw std::runtime_error("No suitable Vulkan physical device found.");
+        ZGINE_CORE_THROW_RUNTIME("No suitable Vulkan physical device found.");
     }
 
     m_Context->QueueFamilies = FindQueueFamilies(m_Context->PhysicalDevice, m_Context->Surface);
@@ -471,7 +468,7 @@ void VulkanRendererAPI::Init() {
     deviceCreateInfo.ppEnabledExtensionNames = kDeviceExtensions.data();
 
     if (vkCreateDevice(m_Context->PhysicalDevice, &deviceCreateInfo, nullptr, &m_Context->Device) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create Vulkan logical device.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan logical device.");
     }
 
     vkGetDeviceQueue(m_Context->Device, m_Context->QueueFamilies.GraphicsFamily.value(), 0, &m_Context->GraphicsQueue);
@@ -837,7 +834,7 @@ void VulkanRendererAPI::Clear() {
         return;
     }
     if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("Failed to acquire Vulkan swapchain image.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to acquire Vulkan swapchain image.");
     }
 
     bool shouldRecreateSwapchain = acquireResult == VK_SUBOPTIMAL_KHR;
@@ -900,7 +897,7 @@ void VulkanRendererAPI::Clear() {
     if (presentResult == VK_ERROR_OUT_OF_DATE_KHR || presentResult == VK_SUBOPTIMAL_KHR) {
         shouldRecreateSwapchain = true;
     } else if (presentResult != VK_SUCCESS) {
-        throw std::runtime_error("Failed to present Vulkan clear frame.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to present Vulkan clear frame.");
     }
 
     if (shouldRecreateSwapchain) {

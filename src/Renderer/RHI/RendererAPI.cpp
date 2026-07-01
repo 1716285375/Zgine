@@ -94,10 +94,8 @@ namespace Zgine {
     }
 
     void RendererAPI::ReportUnavailableBackend(std::string_view resourceType) {
-        if (auto& logger = Log::GetCoreLogger()) {
-            logger->error("{} is not implemented for renderer backend '{}'.",
-                resourceType, ToString(s_API));
-        }
+        ZGINE_CORE_ERROR("{} is not implemented for renderer backend '{}'.",
+            resourceType, ToString(s_API));
     }
 
     std::unique_ptr<RendererAPI> RendererAPI::Create() {

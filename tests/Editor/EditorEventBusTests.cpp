@@ -5,6 +5,7 @@
 #include <Zgine/Editor/Events/SceneEvents.h>
 #include <Zgine/Editor/Events/TransformEvents.h>
 #include <Zgine/Editor/Events/EditorEvents.h>
+#include <Zgine/Core/Log/Log.h>
 #include <thread>
 #include <chrono>
 
@@ -336,7 +337,6 @@ TEST_F(EditorEventBusTest, PerformanceTest) {
     EXPECT_EQ(eventCount, numEvents);
 
     // Should complete in reasonable time
-    std::cout << "Dispatched " << numEvents << " events in "
-              << duration.count() << "ms" << std::endl;
+    ZGINE_CORE_INFO("Dispatched {} events in {}ms", numEvents, duration.count());
     EXPECT_LT(duration.count(), 100);
 }

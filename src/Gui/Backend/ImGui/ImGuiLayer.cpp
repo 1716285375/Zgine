@@ -186,10 +186,8 @@ namespace Zgine {
     Ref<GuiLayer> GuiLayer::Create()
     {
         if (RendererAPI::GetAPI() != RendererAPI::API::OpenGL) {
-            if (auto& logger = Log::GetCoreLogger()) {
-                logger->warn("GuiLayer is using NullGuiLayer because '{}' does not have an ImGui backend yet.",
-                    RendererAPI::ToString(RendererAPI::GetAPI()));
-            }
+            ZGINE_CORE_WARN("GuiLayer is using NullGuiLayer because '{}' does not have an ImGui backend yet.",
+                RendererAPI::ToString(RendererAPI::GetAPI()));
             return CreateRef<NullGuiLayer>();
         }
 

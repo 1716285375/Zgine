@@ -2,8 +2,9 @@
 
 #include "VulkanContextAccess.h"
 
+#include <Zgine/Core/Log/Log.h>
+
 #include <cstring>
-#include <stdexcept>
 
 namespace Zgine {
 
@@ -31,7 +32,7 @@ namespace {
         if (vkMapMemory(context.Device, stagingMemory, 0, size, 0, &mappedData) != VK_SUCCESS) {
             vkDestroyBuffer(context.Device, stagingBuffer, nullptr);
             vkFreeMemory(context.Device, stagingMemory, nullptr);
-            throw std::runtime_error("Failed to map Vulkan index staging buffer.");
+            ZGINE_CORE_THROW_RUNTIME("Failed to map Vulkan index staging buffer.");
         }
         std::memcpy(mappedData, indices, static_cast<size_t>(size));
         vkUnmapMemory(context.Device, stagingMemory);
@@ -71,7 +72,7 @@ VulkanIndexBuffer::VulkanIndexBuffer(uint32_t* indices, uint32_t count)
     , m_RendererID(Vulkan::AllocateResourceID())
 {
     if (count == 0) {
-        throw std::invalid_argument("VulkanIndexBuffer requires a non-zero index count.");
+        ZGINE_CORE_THROW_INVALID_ARGUMENT("VulkanIndexBuffer requires a non-zero index count.");
     }
 
     const VkDeviceSize size = static_cast<VkDeviceSize>(count) * sizeof(uint32_t);

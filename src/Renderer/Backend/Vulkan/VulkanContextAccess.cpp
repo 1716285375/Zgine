@@ -1,7 +1,8 @@
 #include "VulkanContextAccess.h"
 
+#include <Zgine/Core/Log/Log.h>
+
 #include <atomic>
-#include <stdexcept>
 
 namespace Zgine::Vulkan {
 
@@ -12,7 +13,7 @@ namespace {
 
     void CheckVk(VkResult result, const char* message) {
         if (result != VK_SUCCESS) {
-            throw std::runtime_error(message);
+            ZGINE_CORE_THROW_RUNTIME("{}", message);
         }
     }
 
@@ -27,7 +28,7 @@ bool HasDeviceContext() {
 
 const DeviceContext& GetDeviceContext() {
     if (!HasDeviceContext()) {
-        throw std::runtime_error("Vulkan device context is not initialized.");
+        ZGINE_CORE_THROW_RUNTIME("Vulkan device context is not initialized.");
     }
 
     return g_DeviceContext;
@@ -61,7 +62,7 @@ uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
         }
     }
 
-    throw std::runtime_error("Failed to find a suitable Vulkan memory type.");
+    ZGINE_CORE_THROW_RUNTIME("Failed to find a suitable Vulkan memory type.");
 }
 
 void CreateBuffer(
@@ -96,7 +97,7 @@ void CreateBuffer(
     if (allocationResult != VK_SUCCESS) {
         vkDestroyBuffer(context.Device, buffer, nullptr);
         buffer = VK_NULL_HANDLE;
-        throw std::runtime_error("Failed to allocate Vulkan buffer memory.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to allocate Vulkan buffer memory.");
     }
 
     const VkResult bindResult = vkBindBufferMemory(context.Device, buffer, bufferMemory, 0);
@@ -105,7 +106,7 @@ void CreateBuffer(
         vkDestroyBuffer(context.Device, buffer, nullptr);
         bufferMemory = VK_NULL_HANDLE;
         buffer = VK_NULL_HANDLE;
-        throw std::runtime_error("Failed to bind Vulkan buffer memory.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to bind Vulkan buffer memory.");
     }
 }
 
@@ -129,7 +130,7 @@ void CopyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size) {
 
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
         vkFreeCommandBuffers(context.Device, context.CommandPool, 1, &commandBuffer);
-        throw std::runtime_error("Failed to begin Vulkan transfer command buffer.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to begin Vulkan transfer command buffer.");
     }
 
     VkBufferCopy copyRegion{};
@@ -138,7 +139,7 @@ void CopyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size) {
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         vkFreeCommandBuffers(context.Device, context.CommandPool, 1, &commandBuffer);
-        throw std::runtime_error("Failed to end Vulkan transfer command buffer.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to end Vulkan transfer command buffer.");
     }
 
     VkSubmitInfo submitInfo{};
@@ -148,11 +149,11 @@ void CopyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size) {
 
     if (vkQueueSubmit(context.GraphicsQueue, 1, &submitInfo, VK_NULL_HANDLE) != VK_SUCCESS) {
         vkFreeCommandBuffers(context.Device, context.CommandPool, 1, &commandBuffer);
-        throw std::runtime_error("Failed to submit Vulkan buffer copy.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to submit Vulkan buffer copy.");
     }
     if (vkQueueWaitIdle(context.GraphicsQueue) != VK_SUCCESS) {
         vkFreeCommandBuffers(context.Device, context.CommandPool, 1, &commandBuffer);
-        throw std::runtime_error("Failed to wait for Vulkan buffer copy.");
+        ZGINE_CORE_THROW_RUNTIME("Failed to wait for Vulkan buffer copy.");
     }
 
     vkFreeCommandBuffers(context.Device, context.CommandPool, 1, &commandBuffer);

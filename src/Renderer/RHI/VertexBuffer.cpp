@@ -19,9 +19,7 @@ namespace Zgine {
             case RendererAPI::API::Vulkan:
 #if ZGINE_HAS_VULKAN
                 if (!Vulkan::HasDeviceContext()) {
-                    if (auto& logger = Log::GetCoreLogger()) {
-                        logger->error("VertexBuffer requires an initialized Vulkan renderer.");
-                    }
+                    ZGINE_CORE_ERROR("VertexBuffer requires an initialized Vulkan renderer.");
                     return nullptr;
                 }
                 return std::make_shared<VulkanVertexBuffer>(data, size);

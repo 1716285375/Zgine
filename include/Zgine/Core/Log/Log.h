@@ -5,6 +5,8 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <memory>
+#include <stdexcept>
+#include <string>
 
 namespace Zgine {
 
@@ -90,6 +92,16 @@ private:
 #define ZGINE_CORE_WARN(...)     ::Zgine::Log::GetCoreLogger()->warn(__VA_ARGS__)
 #define ZGINE_CORE_ERROR(...)    ::Zgine::Log::GetCoreLogger()->error(__VA_ARGS__)
 #define ZGINE_CORE_FATAL(...)    ::Zgine::Log::GetCoreLogger()->critical(__VA_ARGS__)
+
+#define ZGINE_CORE_THROW(exceptionType, ...) \
+    do { \
+        const std::string zgineExceptionMessage = fmt::format(__VA_ARGS__); \
+        ZGINE_CORE_ERROR("{}", zgineExceptionMessage); \
+        throw exceptionType(zgineExceptionMessage); \
+    } while (false)
+
+#define ZGINE_CORE_THROW_RUNTIME(...)          ZGINE_CORE_THROW(std::runtime_error, __VA_ARGS__)
+#define ZGINE_CORE_THROW_INVALID_ARGUMENT(...) ZGINE_CORE_THROW(std::invalid_argument, __VA_ARGS__)
 
 // ============================================================================
 // Client Application Log Macros
