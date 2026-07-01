@@ -267,18 +267,30 @@ VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
     return VK_PRESENT_MODE_FIFO_KHR;
 }
 
-VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, GLFWwindow* window) {
+GLFWwindow* GetGlfwNativeWindow(const Window& window) {
+    auto* nativeWindow = static_cast<GLFWwindow*>(window.GetNativeWindow());
+    if (!nativeWindow) {
+        ZGINE_CORE_THROW_RUNTIME("Vulkan renderer requires a native window handle.");
+    }
+
+    return nativeWindow;
+}
+
+void CreateWindowSurface(VkInstance instance, const Window& window, VkSurfaceKHR& surface) {
+    GLFWwindow* nativeWindow = GetGlfwNativeWindow(window);
+    if (glfwCreateWindowSurface(instance, nativeWindow, nullptr, &surface) != VK_SUCCESS) {
+        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan window surface.");
+    }
+}
+
+VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, const Window& window) {
     if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
         return capabilities.currentExtent;
     }
 
-    int width = 0;
-    int height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-
     VkExtent2D actualExtent{
-        static_cast<uint32_t>(std::max(width, 1)),
-        static_cast<uint32_t>(std::max(height, 1)),
+        static_cast<uint32_t>(std::max(window.GetWidth(), 1u)),
+        static_cast<uint32_t>(std::max(window.GetHeight(), 1u)),
     };
 
     actualExtent.width = std::clamp(
@@ -357,9 +369,8 @@ VulkanRendererAPI::~VulkanRendererAPI() {
 
 void VulkanRendererAPI::Init() {
     Window& window = Application::Get().GetWindow();
-    auto* glfwWindow = static_cast<GLFWwindow*>(window.GetNativeWindow());
-    if (!glfwWindow) {
-        ZGINE_CORE_THROW_RUNTIME("Vulkan renderer requires a GLFW native window.");
+    if (window.GetGraphicsAPI() != WindowGraphicsAPI::Vulkan) {
+        ZGINE_CORE_THROW_RUNTIME("Vulkan renderer requires a Window created for the Vulkan graphics API.");
     }
 
     if (m_Context->Instance != VK_NULL_HANDLE) {
@@ -415,9 +426,7 @@ void VulkanRendererAPI::Init() {
         }
     }
 
-    if (glfwCreateWindowSurface(m_Context->Instance, glfwWindow, nullptr, &m_Context->Surface) != VK_SUCCESS) {
-        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan window surface.");
-    }
+    CreateWindowSurface(m_Context->Instance, window, m_Context->Surface);
 
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Context->Instance, &deviceCount, nullptr);
@@ -474,7 +483,7 @@ void VulkanRendererAPI::Init() {
     vkGetDeviceQueue(m_Context->Device, m_Context->QueueFamilies.GraphicsFamily.value(), 0, &m_Context->GraphicsQueue);
     vkGetDeviceQueue(m_Context->Device, m_Context->QueueFamilies.PresentFamily.value(), 0, &m_Context->PresentQueue);
 
-    CreateSwapchainResources(glfwWindow);
+    CreateSwapchainResources(window);
 
     VkCommandPoolCreateInfo commandPoolInfo{};
     commandPoolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
@@ -530,7 +539,7 @@ void VulkanRendererAPI::Init() {
         m_Context->SwapchainImages.size());
 }
 
-void VulkanRendererAPI::CreateSwapchainResources(GLFWwindow* window) {
+void VulkanRendererAPI::CreateSwapchainResources(const Window& window) {
     const SwapchainSupportDetails swapchainSupport =
         QuerySwapchainSupport(m_Context->PhysicalDevice, m_Context->Surface);
     const VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(swapchainSupport.Formats);
@@ -717,17 +726,14 @@ void VulkanRendererAPI::CleanupSwapchainResources() {
     m_Context->SwapchainExtent = {};
 }
 
-void VulkanRendererAPI::RecreateSwapchain(GLFWwindow* window) {
-    if (!window || !m_Context || m_Context->Device == VK_NULL_HANDLE) {
+void VulkanRendererAPI::RecreateSwapchain(const Window& window) {
+    if (!m_Context || m_Context->Device == VK_NULL_HANDLE) {
         return;
     }
 
-    int width = 0;
-    int height = 0;
-    glfwGetFramebufferSize(window, &width, &height);
-    while (width == 0 || height == 0) {
-        glfwWaitEvents();
-        glfwGetFramebufferSize(window, &width, &height);
+    if (window.GetWidth() == 0 || window.GetHeight() == 0) {
+        ZGINE_CORE_TRACE("Skipping Vulkan swapchain recreation for minimized window.");
+        return;
     }
 
     vkDeviceWaitIdle(m_Context->Device);
@@ -808,10 +814,7 @@ void VulkanRendererAPI::Clear() {
         return;
     }
 
-    auto* glfwWindow = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
-    if (!glfwWindow) {
-        return;
-    }
+    Window& window = Application::Get().GetWindow();
 
     const uint32_t frame = m_Context->CurrentFrame;
     const VkFence inFlightFence = m_Context->InFlightFences[frame];
@@ -830,7 +833,7 @@ void VulkanRendererAPI::Clear() {
         &imageIndex);
 
     if (acquireResult == VK_ERROR_OUT_OF_DATE_KHR) {
-        RecreateSwapchain(glfwWindow);
+        RecreateSwapchain(window);
         return;
     }
     if (acquireResult != VK_SUCCESS && acquireResult != VK_SUBOPTIMAL_KHR) {
@@ -901,7 +904,7 @@ void VulkanRendererAPI::Clear() {
     }
 
     if (shouldRecreateSwapchain) {
-        RecreateSwapchain(glfwWindow);
+        RecreateSwapchain(window);
     } else {
         m_Context->CurrentFrame = (m_Context->CurrentFrame + 1) % kMaxFramesInFlight;
     }

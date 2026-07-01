@@ -4,9 +4,9 @@
 
 #include <memory>
 
-struct GLFWwindow;
-
 namespace Zgine {
+
+class Window;
 
 class VulkanRendererAPI final : public RendererAPI {
 public:
@@ -23,9 +23,9 @@ private:
     struct VulkanContext;
 
     void Shutdown();
-    void CreateSwapchainResources(GLFWwindow* window);
+    void CreateSwapchainResources(const Window& window);
     void CleanupSwapchainResources();
-    void RecreateSwapchain(GLFWwindow* window);
+    void RecreateSwapchain(const Window& window);
 
     std::unique_ptr<VulkanContext> m_Context;
 };
