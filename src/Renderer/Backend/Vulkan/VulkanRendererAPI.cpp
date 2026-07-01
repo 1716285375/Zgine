@@ -1,6 +1,3 @@
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
 #include "VulkanRendererAPI.h"
 
 #include "VulkanContextAccess.h"
@@ -9,6 +6,7 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/Platform/Window.h>
+#include <Zgine/Platform/VulkanSurface.h>
 
 #include <algorithm>
 #include <array>
@@ -148,13 +146,7 @@ bool CheckValidationLayerSupport() {
 }
 
 std::vector<const char*> GetRequiredInstanceExtensions(bool enableValidationLayers, bool& enablePortabilityEnumeration) {
-    uint32_t glfwExtensionCount = 0;
-    const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-    if (!glfwExtensions || glfwExtensionCount == 0) {
-        ZGINE_CORE_THROW_RUNTIME("GLFW did not report required Vulkan instance extensions.");
-    }
-
-    std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+    std::vector<const char*> extensions = Platform::GetRequiredVulkanInstanceExtensions();
 
     if (enableValidationLayers) {
         extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -265,22 +257,6 @@ VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& avai
     }
 
     return VK_PRESENT_MODE_FIFO_KHR;
-}
-
-GLFWwindow* GetGlfwNativeWindow(const Window& window) {
-    auto* nativeWindow = static_cast<GLFWwindow*>(window.GetNativeWindow());
-    if (!nativeWindow) {
-        ZGINE_CORE_THROW_RUNTIME("Vulkan renderer requires a native window handle.");
-    }
-
-    return nativeWindow;
-}
-
-void CreateWindowSurface(VkInstance instance, const Window& window, VkSurfaceKHR& surface) {
-    GLFWwindow* nativeWindow = GetGlfwNativeWindow(window);
-    if (glfwCreateWindowSurface(instance, nativeWindow, nullptr, &surface) != VK_SUCCESS) {
-        ZGINE_CORE_THROW_RUNTIME("Failed to create Vulkan window surface.");
-    }
 }
 
 VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilities, const Window& window) {
@@ -426,7 +402,7 @@ void VulkanRendererAPI::Init() {
         }
     }
 
-    CreateWindowSurface(m_Context->Instance, window, m_Context->Surface);
+    Platform::CreateVulkanSurface(window, m_Context->Instance, m_Context->Surface);
 
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(m_Context->Instance, &deviceCount, nullptr);

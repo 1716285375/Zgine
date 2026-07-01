@@ -240,6 +240,7 @@ endif()
 if(ZGINE_HAS_VULKAN)
     set_source_files_properties(
         ${CMAKE_SOURCE_DIR}/src/Renderer/Backend/Vulkan/VulkanRendererAPI.cpp
+        ${CMAKE_SOURCE_DIR}/src/Platform/VulkanSurface.cpp
         PROPERTIES SKIP_PRECOMPILE_HEADERS ON
     )
 endif()
