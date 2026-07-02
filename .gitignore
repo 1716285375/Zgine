@@ -1,5 +1,6 @@
 # Build directories
 build/
+build*/
 cmake-build-*/
 out/
 bin/
@@ -144,7 +145,10 @@ __pycache__/
 
 # Local tool artifacts
 .claude/
+.code-review-graph/
 .codegraph/
+.skill/
+imgui.ini
 repomix-output.xml
 
 # Backup files
@@ -154,12 +158,4 @@ repomix-output.xml
 docs/fix
 docs/dev/*
 
-
-
-# 构建脚本
-
-build*/
-
 .gemini*
-
-.skill/*.zip

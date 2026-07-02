@@ -108,12 +108,6 @@ file(GLOB_RECURSE ZGINE_SOURCES
 list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Editor/")
 list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/include/Zgine/Editor/")
 
-# Exclude non-GLM math backend implementations to avoid duplicate definitions
-# We use GLM as the backend, so generic implementations should not be compiled
-list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Vector[234]\\.cpp$")
-list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Matrix[34]\\.cpp$")
-list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Core/Math/Math\\.cpp$")
-
 if(NOT ZGINE_HAS_VULKAN)
     list(FILTER ZGINE_SOURCES EXCLUDE REGEX "${CMAKE_SOURCE_DIR}/src/Renderer/Backend/Vulkan/")
 endif()
