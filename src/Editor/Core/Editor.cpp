@@ -1,7 +1,7 @@
 #include <Zgine/Editor/Core/Editor.h>
 #include <Zgine/Platform/Window.h>
-#include <Zgine/Gui/Fonts/FontManager.h>
-#include <Zgine/Gui/Themes/ImGuiTheme.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontManager.h>
+#include <Zgine/Gui/Backend/ImGui/Themes/ImGuiTheme.h>
 #include <Zgine/World/Core/World.h>
 #include <Zgine/World/Core/Entity.h>
 #include <Zgine/World/Components/Components.h>
@@ -17,12 +17,13 @@
 #include <Zgine/Editor/Commands/EntityCommands.h>
 #include <Zgine/Editor/Commands/EditorCommandHistory.h>
 #include <Zgine/World/Serialization/WorldSerializer.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_internal.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 #include <ImGuizmo.h>
-#include <GLFW/glfw3.h>
 #include <algorithm>
 #include <filesystem>
 #include <cstring>

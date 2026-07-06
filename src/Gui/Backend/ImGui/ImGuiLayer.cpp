@@ -1,6 +1,8 @@
 #include <Zgine/Gui/Backend/ImGui/ImGuiLayer.h>
 
-
+#include <glad/glad.h>
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
@@ -9,10 +11,6 @@
 #include <Zgine/Core/Application/Application.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Renderer/RHI/RendererAPI.h>
-
-// 暂时硬编码，后续应从 Window 或 Renderer 获取
-#include <GLFW/glfw3.h>
-#include <glad/glad.h>
 
 namespace Zgine {
 

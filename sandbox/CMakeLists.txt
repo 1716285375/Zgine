@@ -33,8 +33,10 @@ else()
     add_executable(ZgineSandbox ${_sandbox_sources})
 endif()
 
-# Link to ZgineRuntime - this is all that's needed!
-target_link_libraries(ZgineSandbox PRIVATE ZgineRuntime)
+# The sandbox renders directly to the OpenGL default framebuffer for teaching
+# purposes, so it owns its explicit glad dependency instead of receiving it
+# through the runtime target.
+target_link_libraries(ZgineSandbox PRIVATE ZgineRuntime glad)
 
 # C++ standard
 set_target_properties(ZgineSandbox PROPERTIES

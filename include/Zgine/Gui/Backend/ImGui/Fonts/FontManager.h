@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Zgine/Gui/Fonts/FontConfig.h>
-#include <Zgine/Gui/Fonts/FontTypes.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontConfig.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontTypes.h>
 #include <imgui.h>
 #include <string>
 #include <unordered_map>

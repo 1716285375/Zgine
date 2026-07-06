@@ -28,7 +28,7 @@ add_library(ZgineEditorCore STATIC ${EDITOR_CORE_SOURCES})
 
 target_link_libraries(ZgineEditorCore
     PUBLIC ZgineRuntime imgui::imgui
-    PRIVATE ImGuizmo::ImGuizmo
+    PRIVATE ImGuizmo::ImGuizmo glfw
 )
 
 target_include_directories(ZgineEditorCore PUBLIC
@@ -82,8 +82,8 @@ else()
 endif()
 
 # Link to editor core - Editor depends on Runtime through ZgineEditorCore, not vice versa.
-# main.cpp also uses ImGuizmo directly for editor input focus checks.
-target_link_libraries(ZgineEditor PRIVATE ZgineEditorCore ImGuizmo::ImGuizmo)
+# main.cpp also uses OpenGL and ImGuizmo directly for editor viewport work.
+target_link_libraries(ZgineEditor PRIVATE ZgineEditorCore glad ImGuizmo::ImGuizmo)
 
 # Include Editor headers
 target_include_directories(ZgineEditor PRIVATE

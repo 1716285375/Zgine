@@ -1,6 +1,6 @@
-#include <Zgine/Gui/Fonts/FontManager.h>
-#include <Zgine/Gui/Fonts/FontConstants.h>
-#include <Zgine/Gui/Fonts/FontUtils.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontManager.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontConstants.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontUtils.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Platform/IO/File.h>
 #include <imgui.h>

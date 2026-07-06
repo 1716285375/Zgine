@@ -1,6 +1,6 @@
 #include <Zgine/Editor/Panels/PerformancePanel.h>
-#include <Zgine/Gui/Fonts/FontManager.h>
-#include <Zgine/Gui/Fonts/FontTypes.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontManager.h>
+#include <Zgine/Gui/Backend/ImGui/Fonts/FontTypes.h>
 #include <imgui.h>
 
 namespace Zgine

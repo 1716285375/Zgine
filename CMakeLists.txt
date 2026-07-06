@@ -126,11 +126,12 @@ add_library(ZgineRuntime ${_zgine_engine_type} ${ZGINE_SOURCES})
 # Use generator expressions to handle build vs install interface
 target_include_directories(ZgineRuntime PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-
+target_include_directories(ZgineRuntime PRIVATE
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/src>
+)
 
 # Jolt include path is an implementation detail hidden behind PhysicsSystem.
 if(DEFINED jolt_SOURCE_DIR)
@@ -153,27 +154,25 @@ endif()
 
 # 链接第三方库
 # Link third-party libraries
-# PUBLIC: Used in public API headers (include/ and src/ headers exposed to users)
-# EnTT and GLM types still appear in the ECS public API, so they remain PUBLIC.
-# glad appears in include/Zgine/Renderer/GL.h
+# PUBLIC: Used in public API headers under include/.
 target_link_libraries(ZgineRuntime PUBLIC
     glm::glm
     EnTT::EnTT
-    glad
+    imgui::imgui
     spdlog::spdlog
     stduuid
-    glfw
     nlohmann_json::nlohmann_json
-    assimp
 )
 
 # PRIVATE: Implementation details not exposed in public API
 target_link_libraries(ZgineRuntime PRIVATE
+    glad
+    glfw
+    assimp
     stb_image
     Jolt
     lua::lua
     sol2
-    imgui::imgui
     ImGuizmo::ImGuizmo
     miniaudio::miniaudio
     physfs-static

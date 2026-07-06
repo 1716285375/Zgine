@@ -3,7 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
-#include <Zgine/Platform/VulkanSurface.h>
+#include <Platform/VulkanSurface.h>
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Platform/Window.h>
 

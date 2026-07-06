@@ -9,7 +9,7 @@
 #include <Zgine/Editor/Manager/EditorPanelManager.h>
 #include <Zgine/Editor/Panels/ToolbarPanel.h>
 #include <Zgine/Editor/Core/EditorTypes.h>
-#include <Zgine/Gui/Themes/ImGuiTheme.h>
+#include <Zgine/Gui/Backend/ImGui/Themes/ImGuiTheme.h>
 #include <Zgine/Renderer/Pipeline/RenderStats.h>
 #include <imgui.h>
 

@@ -2,7 +2,7 @@
 
 #include <string>
 #include <filesystem>
-#include <Zgine/Gui/Themes/ImGuiTheme.h>
+#include <Zgine/Gui/Backend/ImGui/Themes/ImGuiTheme.h>
 
 namespace Zgine {
 

@@ -6,7 +6,7 @@
 #include <Zgine/Core/Log/Log.h>
 #include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/Platform/Window.h>
-#include <Zgine/Platform/VulkanSurface.h>
+#include <Platform/VulkanSurface.h>
 
 #include <algorithm>
 #include <array>
