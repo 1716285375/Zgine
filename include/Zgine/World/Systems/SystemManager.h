@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Zgine/World/Systems/ISystem.h>
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <memory>
 #include <vector>
 #include <algorithm>

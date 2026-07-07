@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Events/Event.h>
 #include <Zgine/Core/Events/ApplicationEvent.h>
-#include <Zgine/Core/Layers/LayerStack.h>
+#include <Zgine/Core/Application/LayerStack.h>
 #include <Zgine/Platform/Window.h>
 #include <Zgine/Core/Time/Timestep.h>
 #include <Zgine/Core/Time/TimerManager.h>

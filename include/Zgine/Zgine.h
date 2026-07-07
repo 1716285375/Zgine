@@ -2,11 +2,11 @@
 
 // 为 Zgine 应用程序提供的头文件
 
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Application/Application.h>
-#include <Zgine/Core/Layers/Layer.h>
+#include <Zgine/Core/Application/Layer.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Assert.h>
+#include <Zgine/Core/Foundation/Assert.h>
 #include <Zgine/Core/Time/Timestep.h>
 #include <Zgine/Core/Input/Input.h>
 #include <Zgine/Gui/GuiLayer.h>

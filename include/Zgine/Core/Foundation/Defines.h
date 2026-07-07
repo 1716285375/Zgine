@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Core/Base/Platform.h>
+#include <Zgine/Core/Foundation/Platform.h>
 
 // ============================================================================
 // Debug Break Macros

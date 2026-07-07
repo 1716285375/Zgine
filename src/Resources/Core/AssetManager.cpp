@@ -1,6 +1,6 @@
 #include <Zgine/Resources/Core/AssetManager.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Macro.h>
+#include <Zgine/Core/Foundation/Macro.h>
 #include <algorithm>
 #include <fstream>
 

@@ -3,7 +3,7 @@
 #include <Zgine/Gui/GuiLayer.h>
 #include <Zgine/Platform/IO/VFS.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Assert.h>
+#include <Zgine/Core/Foundation/Assert.h>
 #include <Zgine/Core/Time/Timestep.h>
 
 namespace Zgine {

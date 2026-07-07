@@ -226,7 +226,7 @@ set_project_warnings(ZgineRuntime)
 # ============================================================================
 if(ZGINE_USE_PCH)
     target_precompile_headers(ZgineRuntime PRIVATE
-        ${CMAKE_SOURCE_DIR}/include/Zgine/Core/PCH/PCH.h
+        ${CMAKE_SOURCE_DIR}/src/Core/PCH/PCH.h
     )
 endif()
 

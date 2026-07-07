@@ -13,18 +13,18 @@
 // - Smart pointer type aliases
 //
 // Usage:
-//   #include <Zgine/Core/Base/Prerequisites.h>
+//   #include <Zgine/Core/Foundation/Prerequisites.h>
 
 #include <filesystem>
 
 // Platform detection
-#include <Zgine/Core/Base/Platform.h>
+#include <Zgine/Core/Foundation/Platform.h>
 
 // Common utility macros
-#include <Zgine/Core/Base/Macro.h>
+#include <Zgine/Core/Foundation/Macro.h>
 
 // Debug and configuration macros
-#include <Zgine/Core/Base/Defines.h>
+#include <Zgine/Core/Foundation/Defines.h>
 
 // Type aliases
-#include <Zgine/Core/Base/Types.h>
+#include <Zgine/Core/Foundation/Types.h>

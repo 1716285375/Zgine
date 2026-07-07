@@ -6,7 +6,7 @@
  * with the Editor UI for game development.
  */
 
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Zgine.h>
 #include <Zgine/Core/Application/EntryPoint.h>
 #include <Zgine/Core/Application/Application.h>

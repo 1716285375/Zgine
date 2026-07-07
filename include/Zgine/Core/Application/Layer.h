@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Zgine/Core/Base/Macro.h>
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Macro.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Events/Event.h>
 #include <Zgine/Core/Time/Timestep.h>
 #include <string>

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Math/MathTypes.h>
 #include <Zgine/Editor/Core/EditorTypes.h>
 #include <Zgine/World/Core/Entity.h>

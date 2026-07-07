@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Zgine/Core/Layers/Layer.h>
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Application/Layer.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 
 namespace Zgine {
 

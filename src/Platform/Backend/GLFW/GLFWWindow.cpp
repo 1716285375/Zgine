@@ -1,8 +1,8 @@
 #include <glad/glad.h>
 #include "GLFWWindow.h"
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Assert.h>
+#include <Zgine/Core/Foundation/Assert.h>
 #include <Zgine/Core/Input/Input.h>
 
 #include <Zgine/Core/Events/ApplicationEvent.h>

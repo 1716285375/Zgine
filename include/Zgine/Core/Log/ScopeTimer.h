@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Core/Base/Macro.h>
+#include <Zgine/Core/Foundation/Macro.h>
 #include <chrono>
 #include <string>
 

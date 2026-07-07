@@ -2,7 +2,7 @@
 #include <Zgine/Resources/Core/AssetManager.h>
 #include <Zgine/Platform/IO/File.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Macro.h>
+#include <Zgine/Core/Foundation/Macro.h>
 #include <Zgine/Renderer/RHI/Texture.h>
 #include <Zgine/Renderer/RHI/Shader.h>
 #include <Zgine/Resources/Mesh/MeshLoader.h>

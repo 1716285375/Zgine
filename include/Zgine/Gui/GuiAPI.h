@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Core/Math/Vector2.h>
 
 namespace Zgine {

@@ -1,7 +1,7 @@
 #include <Zgine/Resources/Mesh/MeshLoader.h>
 #include <Zgine/Renderer/RHI/Texture.h>
 #include <Zgine/Core/Log/Log.h>
-#include <Zgine/Core/Base/Macro.h>
+#include <Zgine/Core/Foundation/Macro.h>
 #include <assimp/Importer.hpp>
 #include <assimp/material.h>
 #include <assimp/scene.h>

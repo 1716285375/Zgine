@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Zgine/Scripting/IScript.h>
-#include <Zgine/Core/Base/Types.h>
+#include <Zgine/Core/Foundation/Types.h>
 #include <string_view>
 #include <unordered_map>
 #include <memory>

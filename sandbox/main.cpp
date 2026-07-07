@@ -1,4 +1,4 @@
-#include <Zgine/Core/Base/Prerequisites.h>
+#include <Zgine/Core/Foundation/Prerequisites.h>
 #include <Zgine/Zgine.h>
 #include <Zgine/Core/Application/EntryPoint.h>
 #include <Zgine/Core/Math/Math.h>
